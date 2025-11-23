@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return '<h1>Fight Schedule - Coming Soon!</h1>'
+    return '<h1>Fight Schedule - Day 2!!</h1>'
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
