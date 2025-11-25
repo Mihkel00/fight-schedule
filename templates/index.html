@@ -5,130 +5,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fight Schedule</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dark-bg': '#0f0f0f',
+                        'dark-card': '#1a1a1a',
+                        'dark-elevated': '#242424',
+                        'dark-border': '#2a2a2a',
+                        'text-primary': '#ffffff',
+                        'text-secondary': '#a3a3a3',
+                        'text-tertiary': '#6b6b6b',
+                        'accent-blue': '#3b82f6',
+                        'accent-red': '#dc2626',
+                        'accent-orange': '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Header -->
+<body class="bg-dark-bg text-text-primary">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex items-center justify-between mb-8">
-            <h1 class="text-2xl font-bold tracking-tight">FIGHT<br>SCHEDULE</h1>
-            <div class="text-right">
-                <div class="text-sm text-blue-600 flex items-center justify-end gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    Monday, November 17
-                </div>
-                <div class="text-sm text-blue-600 flex items-center justify-end gap-1 mt-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    Europe/Tallinn
-                </div>
-            </div>
+        <!-- Header with Logo -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-white tracking-tight leading-tight" style="font-family: 'Impact', 'Arial Black', sans-serif; letter-spacing: 0.02em;">
+                FIGHT<br><span class="text-text-secondary">SCHEDULE</span>
+            </h1>
         </div>
 
-        <!-- Search Bar -->
-        <div class="mb-6">
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
+        <!-- Search Bar and Filter Pills -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <!-- Search Bar -->
+                <div class="w-full md:w-96">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <input type="text" placeholder="Search fighter or event" class="block w-full pl-10 pr-3 py-3 border border-dark-border rounded-lg bg-dark-bg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent">
+                    </div>
                 </div>
-                <input type="text" placeholder="Search fighter or event" class="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-            </div>
-        </div>
 
-        <!-- Filter Pills -->
-        <div class="flex gap-3 mb-8">
-            <button class="px-8 py-2.5 bg-gray-900 text-white rounded-full font-medium">All</button>
-            <button class="px-8 py-2.5 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200">UFC</button>
-            <button class="px-8 py-2.5 bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200">Boxing</button>
+                <!-- Filter Pills -->
+                <div class="flex gap-3">
+                    <button class="px-6 py-2.5 bg-text-primary text-dark-bg rounded-full font-medium text-sm">All</button>
+                    <button class="px-6 py-2.5 bg-dark-card text-text-secondary rounded-full font-medium text-sm hover:bg-dark-elevated transition-colors">UFC</button>
+                    <button class="px-6 py-2.5 bg-dark-card text-text-secondary rounded-full font-medium text-sm hover:bg-dark-elevated transition-colors">Boxing</button>
+                </div>
+            </div>
         </div>
 
         <!-- Upcoming Today Section -->
         <h2 class="text-lg font-semibold mb-4">Upcoming today</h2>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
             <!-- Fight Card 1 -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-center gap-6 mb-6">
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 1
+            <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors">
+                <div class="flex items-center justify-center gap-8 mb-6">
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 1
+                        </div>
+                        <p class="font-semibold">Connor<br>McGregor</p>
                     </div>
-                    <div class="bg-white px-4 py-2 rounded-full font-semibold text-gray-700 shadow-sm">VS</div>
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 2
+                    <div class="text-text-secondary font-medium text-sm">VS</div>
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 2
+                        </div>
+                        <p class="font-semibold">Dustin<br>Poirier</p>
                     </div>
                 </div>
-                <h3 class="text-center font-semibold text-lg mb-2">Connor McGregor vs Dustin Poirier</h3>
-                <p class="text-center text-blue-600 font-medium text-lg mb-3">Tonight 11:00 PM GMT+2</p>
-                <div class="flex items-center gap-2">
-                    <span class="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded">UFC</span>
-                    <span class="text-gray-500 text-sm">T-Mobile Arena, Las Vegas</span>
+                <div class="border-t border-dark-border pt-4">
+                    <p class="text-accent-blue font-medium mb-2">Tonight • 11:00 PM • GMT+2</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-text-secondary text-sm">T-Mobile Arena, Las Vegas</span>
+                        <span class="bg-accent-red text-white text-xs font-bold px-3 py-1 rounded">UFC</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Fight Card 2 -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-center gap-6 mb-6">
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 1
+            <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors">
+                <div class="flex items-center justify-center gap-8 mb-6">
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 1
+                        </div>
+                        <p class="font-semibold">Tyson<br>Fury</p>
                     </div>
-                    <div class="bg-white px-4 py-2 rounded-full font-semibold text-gray-700 shadow-sm">VS</div>
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 2
+                    <div class="text-text-secondary font-medium text-sm">VS</div>
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 2
+                        </div>
+                        <p class="font-semibold">Anthony<br>Joshua</p>
                     </div>
                 </div>
-                <h3 class="text-center font-semibold text-lg mb-2">Tyson Fury vs Anthony Joshua</h3>
-                <p class="text-center text-blue-600 font-medium text-lg mb-3">Tonight 10:00 PM GMT+2</p>
-                <div class="flex items-center gap-2">
-                    <span class="bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded">Boxing</span>
-                    <span class="text-gray-500 text-sm">Wembley Stadium, London</span>
+                <div class="border-t border-dark-border pt-4">
+                    <p class="text-accent-blue font-medium mb-2">Tonight • 11:00 PM • GMT+2</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-text-secondary text-sm">Wembley Stadium, London</span>
+                        <span class="bg-accent-orange text-white text-xs font-bold px-3 py-1 rounded">Boxing</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Fight Card 3 -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-center gap-6 mb-6">
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 1
+            <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors">
+                <div class="flex items-center justify-center gap-8 mb-6">
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 1
+                        </div>
+                        <p class="font-semibold">Israel<br>Adesanya</p>
                     </div>
-                    <div class="bg-white px-4 py-2 rounded-full font-semibold text-gray-700 shadow-sm">VS</div>
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 2
+                    <div class="text-text-secondary font-medium text-sm">VS</div>
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 2
+                        </div>
+                        <p class="font-semibold">Alex<br>Pereira</p>
                     </div>
                 </div>
-                <h3 class="text-center font-semibold text-lg mb-2">Israel Adesanya vs Alex Pereira</h3>
-                <p class="text-center text-blue-600 font-medium text-lg mb-3">Tomorrow 8:00 PM GMT+2</p>
-                <div class="flex items-center gap-2">
-                    <span class="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded">UFC</span>
-                    <span class="text-gray-500 text-sm">UFC Apex, Las Vegas</span>
+                <div class="border-t border-dark-border pt-4">
+                    <p class="text-accent-blue font-medium mb-2">Tomorrow • 8:00 PM • GMT+2</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-text-secondary text-sm">UFC Apex, Las Vegas</span>
+                        <span class="bg-accent-red text-white text-xs font-bold px-3 py-1 rounded">UFC</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Fight Card 4 -->
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-center gap-6 mb-6">
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 1
+            <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors">
+                <div class="flex items-center justify-center gap-8 mb-6">
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 1
+                        </div>
+                        <p class="font-semibold">Connor<br>McGregor</p>
                     </div>
-                    <div class="bg-white px-4 py-2 rounded-full font-semibold text-gray-700 shadow-sm">VS</div>
-                    <div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">
-                        Fighter 2
+                    <div class="text-text-secondary font-medium text-sm">VS</div>
+                    <div class="text-center">
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
+                            Fighter 2
+                        </div>
+                        <p class="font-semibold">Dustin<br>Poirier</p>
                     </div>
                 </div>
-                <h3 class="text-center font-semibold text-lg mb-2">Connor McGregor vs Dustin Poirier</h3>
-                <p class="text-center text-blue-600 font-medium text-lg mb-3">Tonight 11:00 PM GMT+2</p>
-                <div class="flex items-center gap-2">
-                    <span class="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded">UFC</span>
-                    <span class="text-gray-500 text-sm">T-Mobile Arena, Las Vegas</span>
+                <div class="border-t border-dark-border pt-4">
+                    <p class="text-accent-blue font-medium mb-2">Tonight • 11:00 PM • GMT+2</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-text-secondary text-sm">T-Mobile Arena, Las Vegas</span>
+                        <span class="bg-accent-red text-white text-xs font-bold px-3 py-1 rounded">UFC</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -136,76 +176,76 @@
         <!-- Upcoming This Month Section -->
         <h2 class="text-lg font-semibold mb-4">Upcoming This month</h2>
         
-        <div class="bg-white rounded-2xl divide-y divide-gray-100 shadow-sm">
+        <div class="bg-dark-card rounded-xl border border-dark-border divide-y divide-dark-border">
             <!-- Compact List Item 1 -->
-            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors">
                 <div class="flex items-center gap-3">
-                    <span class="font-medium text-gray-900">Oleksandr Usyk vs Daniel Dubois</span>
-                    <span class="bg-yellow-500 text-white text-xs font-bold px-2.5 py-1 rounded">Boxing</span>
+                    <span class="font-medium text-text-primary">Oleksandr Usyk vs Daniel Dubois</span>
+                    <span class="bg-accent-orange text-white text-xs font-bold px-2.5 py-1 rounded">Boxing</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-blue-600 font-medium">In 4 days - 6:00 PM GMT+2</span>
-                    <span class="text-gray-500 text-sm">Kingdom Arena, Riyadh</span>
+                <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
+                    <span class="text-accent-blue font-medium whitespace-nowrap text-sm md:text-base">In 4 days - 6:00 PM GMT+2</span>
+                    <span class="text-text-tertiary text-sm whitespace-nowrap">Kingdom Arena, Riyadh</span>
                 </div>
             </div>
 
             <!-- Compact List Item 2 -->
-            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors">
                 <div class="flex items-center gap-3">
-                    <span class="font-medium text-gray-900">Max Holloway vs Arnold Allen</span>
-                    <span class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded">UFC</span>
+                    <span class="font-medium text-text-primary">Max Holloway vs Arnold Allen</span>
+                    <span class="bg-accent-red text-white text-xs font-bold px-2.5 py-1 rounded">UFC</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-blue-600 font-medium">In 5 days - 8:30 PM GMT+2</span>
-                    <span class="text-gray-500 text-sm">UFC Apex, Las Vegas</span>
+                <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
+                    <span class="text-accent-blue font-medium whitespace-nowrap text-sm md:text-base">In 5 days - 8:30 PM GMT+2</span>
+                    <span class="text-text-tertiary text-sm whitespace-nowrap">UFC Apex, Las Vegas</span>
                 </div>
             </div>
 
             <!-- Compact List Item 3 -->
-            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors">
                 <div class="flex items-center gap-3">
-                    <span class="font-medium text-gray-900">Terence Crawford vs Errol Spence Jr</span>
-                    <span class="bg-yellow-500 text-white text-xs font-bold px-2.5 py-1 rounded">Boxing</span>
+                    <span class="font-medium text-text-primary">Terence Crawford vs Errol Spence Jr</span>
+                    <span class="bg-accent-orange text-white text-xs font-bold px-2.5 py-1 rounded">Boxing</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-blue-600 font-medium">In 6 days - 10:00 PM GMT+2</span>
-                    <span class="text-gray-500 text-sm">Allegiant Stadium, Las Vegas</span>
+                <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
+                    <span class="text-accent-blue font-medium whitespace-nowrap text-sm md:text-base">In 6 days - 10:00 PM GMT+2</span>
+                    <span class="text-text-tertiary text-sm whitespace-nowrap">Allegiant Stadium, Las Vegas</span>
                 </div>
             </div>
 
             <!-- Compact List Item 4 -->
-            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors">
                 <div class="flex items-center gap-3">
-                    <span class="font-medium text-gray-900">Sean Strickland vs Dricus Du Plessis</span>
-                    <span class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded">UFC</span>
+                    <span class="font-medium text-text-primary">Sean Strickland vs Dricus Du Plessis</span>
+                    <span class="bg-accent-red text-white text-xs font-bold px-2.5 py-1 rounded">UFC</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-blue-600 font-medium">Nov 25 - 9:00 PM GMT+2</span>
-                    <span class="text-gray-500 text-sm">RAC Arena, Perth</span>
+                <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
+                    <span class="text-accent-blue font-medium whitespace-nowrap text-sm md:text-base">Nov 25 - 9:00 PM GMT+2</span>
+                    <span class="text-text-tertiary text-sm whitespace-nowrap">RAC Arena, Perth</span>
                 </div>
             </div>
 
             <!-- Compact List Item 5 -->
-            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors">
                 <div class="flex items-center gap-3">
-                    <span class="font-medium text-gray-900">Deontay Wilder vs Joseph Parker</span>
-                    <span class="bg-yellow-500 text-white text-xs font-bold px-2.5 py-1 rounded">Boxing</span>
+                    <span class="font-medium text-text-primary">Deontay Wilder vs Joseph Parker</span>
+                    <span class="bg-accent-orange text-white text-xs font-bold px-2.5 py-1 rounded">Boxing</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-blue-600 font-medium">Nov 28 - 7:00 PM GMT+2</span>
-                    <span class="text-gray-500 text-sm">Barclays Center, Brooklyn</span>
+                <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
+                    <span class="text-accent-blue font-medium whitespace-nowrap text-sm md:text-base">Nov 28 - 7:00 PM GMT+2</span>
+                    <span class="text-text-tertiary text-sm whitespace-nowrap">Barclays Center, Brooklyn</span>
                 </div>
             </div>
 
             <!-- Compact List Item 6 -->
-            <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors">
                 <div class="flex items-center gap-3">
-                    <span class="font-medium text-gray-900">Robert Whittaker vs Paulo Costa</span>
-                    <span class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded">UFC</span>
+                    <span class="font-medium text-text-primary">Robert Whittaker vs Paulo Costa</span>
+                    <span class="bg-accent-red text-white text-xs font-bold px-2.5 py-1 rounded">UFC</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <span class="text-blue-600 font-medium">Dec 2 - 10:30 PM GMT+2</span>
-                    <span class="text-gray-500 text-sm">UFC Apex, Las Vegas</span>
+                <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
+                    <span class="text-accent-blue font-medium whitespace-nowrap text-sm md:text-base">Dec 2 - 10:30 PM GMT+2</span>
+                    <span class="text-text-tertiary text-sm whitespace-nowrap">UFC Apex, Las Vegas</span>
                 </div>
             </div>
         </div>
