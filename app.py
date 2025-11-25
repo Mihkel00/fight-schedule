@@ -54,8 +54,8 @@ def fetch_fights():
     # If no cache, fetch from API
     fights = []
     
-    # API key (using free tier for testing)
-    api_key = '3'
+    # API key (using free tier key '123')
+    api_key = '123'
     
     # Fetch UFC events (League ID: 4443)
     ufc_url = f'https://www.thesportsdb.com/api/v1/json/{api_key}/eventsnextleague.php?id=4443'
