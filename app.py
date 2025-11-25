@@ -64,17 +64,21 @@ def fetch_fights():
         response = requests.get(ufc_url, timeout=5)
         if response.status_code == 200:
             data = response.json()
+            print(f"UFC API Response: {data}")  # Debug print
             if data.get('events'):
                 for event in data['events'][:15]:  # Limit to 15 events
+                    print(f"Event data: {event}")  # Debug print each event
                     fights.append({
-                        'fighter1': event.get('strHomeTeam', 'TBA'),
-                        'fighter2': event.get('strAwayTeam', 'TBA'),
+                        'fighter1': event.get('strHomeTeam') or event.get('strEvent', 'TBA').split(' vs ')[0] if ' vs ' in event.get('strEvent', '') else 'TBA',
+                        'fighter2': event.get('strAwayTeam') or event.get('strEvent', 'TBA').split(' vs ')[1] if ' vs ' in event.get('strEvent', '') and len(event.get('strEvent', '').split(' vs ')) > 1 else 'TBA',
                         'date': event.get('dateEvent', ''),
                         'time': event.get('strTime', ''),
                         'venue': event.get('strVenue', 'TBA'),
                         'location': event.get('strCity', '') + ', ' + event.get('strCountry', ''),
                         'sport': 'UFC'
                     })
+        else:
+            print(f"UFC API error: Status {response.status_code}")
     except Exception as e:
         print(f"Error fetching UFC events: {e}")
     
@@ -85,17 +89,21 @@ def fetch_fights():
         response = requests.get(boxing_url, timeout=5)
         if response.status_code == 200:
             data = response.json()
+            print(f"Boxing API Response: {data}")  # Debug print
             if data.get('events'):
                 for event in data['events'][:15]:  # Limit to 15 events
+                    print(f"Event data: {event}")  # Debug print each event
                     fights.append({
-                        'fighter1': event.get('strHomeTeam', 'TBA'),
-                        'fighter2': event.get('strAwayTeam', 'TBA'),
+                        'fighter1': event.get('strHomeTeam') or event.get('strEvent', 'TBA').split(' vs ')[0] if ' vs ' in event.get('strEvent', '') else 'TBA',
+                        'fighter2': event.get('strAwayTeam') or event.get('strEvent', 'TBA').split(' vs ')[1] if ' vs ' in event.get('strEvent', '') and len(event.get('strEvent', '').split(' vs ')) > 1 else 'TBA',
                         'date': event.get('dateEvent', ''),
                         'time': event.get('strTime', ''),
                         'venue': event.get('strVenue', 'TBA'),
                         'location': event.get('strCity', '') + ', ' + event.get('strCountry', ''),
                         'sport': 'Boxing'
                     })
+        else:
+            print(f"Boxing API error: Status {response.status_code}")
     except Exception as e:
         print(f"Error fetching Boxing events: {e}")
     
