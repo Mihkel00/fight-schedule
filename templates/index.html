@@ -74,16 +74,28 @@
             <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors">
                 <div class="flex items-center justify-center gap-8 mb-6">
                     <div class="text-center">
+                        {% if fight.fighter1_image %}
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                            <img src="{{ fight.fighter1_image }}" alt="{{ fight.fighter1 }}" class="w-full h-full object-cover">
+                        </div>
+                        {% else %}
                         <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
                             Fighter
                         </div>
+                        {% endif %}
                         <p class="font-semibold text-sm">{{ fight.fighter1 }}</p>
                     </div>
                     <div class="text-text-secondary font-medium text-sm">VS</div>
                     <div class="text-center">
+                        {% if fight.fighter2_image %}
+                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                            <img src="{{ fight.fighter2_image }}" alt="{{ fight.fighter2 }}" class="w-full h-full object-cover">
+                        </div>
+                        {% else %}
                         <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto flex items-center justify-center text-text-tertiary text-xs">
                             Fighter
                         </div>
+                        {% endif %}
                         <p class="font-semibold text-sm">{{ fight.fighter2 }}</p>
                     </div>
                 </div>
