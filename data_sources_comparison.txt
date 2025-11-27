@@ -1,0 +1,52 @@
+
+============================================================
+FIGHT DATA SOURCES COMPARISON
+============================================================
+
+--- BBC SPORT BOXING ---
+BBC Sport Boxing found: 58 fights
+
+  • Bradley Casey vs Antonio Borovina - 2026-11-01 - Co-op Live Arena, England
+  • Leon Hughes vs Pavol Garaj - 2026-11-01 - Co-op Live Arena, England
+  • Leighton Birchall vs Wilbert Panttin - 2026-11-01 - Co-op Live Arena, England
+  • Jermaine Dhliwayo vs Cesar Paredes - 2026-11-01 - Co-op Live Arena, England
+  • John Tom Varey vs Brandon Gallardo - 2026-11-01 - Co-op Live Arena, England
+  ... and 53 more
+
+
+--- THESPORTSDB UFC ---
+TheSportsDB UFC found: 1 fights
+
+  • Dvalishvili vs Yan - 2025-12-06 - T-Mobile Arena
+    ✓ Has fighter images
+
+--- THESPORTSDB BOXING ---
+TheSportsDB Boxing found: 11 fights
+
+  • TBA vs TBA - 2025-12-06 - 
+  • Pitbull vs Lamont Roach Jr. - 2025-12-06 - Frost Bank Center
+    ✓ Has fighter images
+  • Diego Pacheco vs Kévin Lele Sadjo - 2025-12-13 - Adventist Health Arena
+  • TBA vs TBA - 2025-12-19 - 
+  • Jake Paul vs Anthony Joshua - 2025-12-20 - Kaseya Center
+    ✓ Has fighter images
+  ... and 6 more
+
+
+============================================================
+MERGING DATA...
+============================================================
+
+Merged images for 1 fights
+Added 11 new fights from TheSportsDB
+
+--- FETCHING MISSING FIGHTER IMAGES ---
+
+Fetched 52 additional fighter images
+
+============================================================
+Filtered out 0 past fights
+FINAL RESULT: 69 upcoming fights
+============================================================
+Fights with at least one image: 42 (60%)
+
