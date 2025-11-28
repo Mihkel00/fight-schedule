@@ -1,0 +1,259 @@
+======================================================================
+MISSING FIGHTER IMAGES REPORT
+======================================================================
+
+Generated: 2025-12-04
+Total fights analyzed: 23
+Unique fighters missing images: 35
+Total missing image slots: 35
+
+======================================================================
+IMAGE REQUIREMENTS
+======================================================================
+
+FORMAT: PNG or JPG
+SIZE: Any (will be displayed at ~200-300px)
+ASPECT RATIO: Square or portrait recommended
+BACKGROUND: Light/white background preferred (matches existing)
+QUALITY: Official promotional photos work best
+
+HOW TO FIND IMAGES:
+1. Google: '[Fighter Name] official photo' or '[Fighter Name] UFC/boxing'
+2. Right-click image > 'Copy image address'
+3. Use the command below with that URL
+
+======================================================================
+HOW TO ADD IMAGES
+======================================================================
+
+COMMAND FORMAT:
+python add_fighter_image.py "Fighter Name" "IMAGE_URL" sport
+
+EXAMPLES:
+python add_fighter_image.py "Isaac Cruz" "https://example.com/cruz.jpg" boxing
+python add_fighter_image.py "Jon Jones" "https://ufc.com/jones.png" ufc
+
+======================================================================
+BREAKDOWN BY SPORT
+======================================================================
+
+UFC fighters missing: 8
+Boxing fighters missing: 27
+
+======================================================================
+MISSING FIGHTERS (RANKED BY FREQUENCY)
+======================================================================
+
+Thammanoon Niyomtrong
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-04: Carlos Canizales vs Thammanoon Niyomtrong
+  COMMAND: python add_fighter_image.py "Thammanoon Niyomtrong" "IMAGE_URL" boxing
+
+Jai Tapu Opetaia
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-06: Jai Tapu Opetaia vs Huseyin Cinkara
+  COMMAND: python add_fighter_image.py "Jai Tapu Opetaia" "IMAGE_URL" boxing
+
+Huseyin Cinkara
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-06: Jai Tapu Opetaia vs Huseyin Cinkara
+  COMMAND: python add_fighter_image.py "Huseyin Cinkara" "IMAGE_URL" boxing
+
+Cristian Zara
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-06: Cristian Zara vs Elie Konki
+  COMMAND: python add_fighter_image.py "Cristian Zara" "IMAGE_URL" boxing
+
+Elif Nur Turhan
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-06: Beatriz Ferreira vs Elif Nur Turhan
+  COMMAND: python add_fighter_image.py "Elif Nur Turhan" "IMAGE_URL" boxing
+
+Diego Natchoo
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-06: Diego Natchoo vs Bilel Jkitou
+  COMMAND: python add_fighter_image.py "Diego Natchoo" "IMAGE_URL" boxing
+
+Bilel Jkitou
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-06: Diego Natchoo vs Bilel Jkitou
+  COMMAND: python add_fighter_image.py "Bilel Jkitou" "IMAGE_URL" boxing
+
+Shabaz Masoud
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-06: Shabaz Masoud vs Peter McGrail
+  COMMAND: python add_fighter_image.py "Shabaz Masoud" "IMAGE_URL" boxing
+
+Dvalishvili
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2025-12-06: Dvalishvili vs Yan
+  COMMAND: python add_fighter_image.py "Dvalishvili" "IMAGE_URL" ufc
+
+Yan
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2025-12-06: Dvalishvili vs Yan
+  COMMAND: python add_fighter_image.py "Yan" "IMAGE_URL" ufc
+
+Zhanibek Alimkhanuly
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-07: Erislandy Lara vs Zhanibek Alimkhanuly
+  COMMAND: python add_fighter_image.py "Zhanibek Alimkhanuly" "IMAGE_URL" boxing
+
+Bree Burbeary
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-07: Bree Burbeary vs Geetika Prem Singh
+  COMMAND: python add_fighter_image.py "Bree Burbeary" "IMAGE_URL" boxing
+
+Geetika Prem Singh
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-07: Bree Burbeary vs Geetika Prem Singh
+  COMMAND: python add_fighter_image.py "Geetika Prem Singh" "IMAGE_URL" boxing
+
+Vadim Musaev
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-12: Vadim Musaev vs Thulani Mbenge
+  COMMAND: python add_fighter_image.py "Vadim Musaev" "IMAGE_URL" boxing
+
+Thulani Mbenge
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-12: Vadim Musaev vs Thulani Mbenge
+  COMMAND: python add_fighter_image.py "Thulani Mbenge" "IMAGE_URL" boxing
+
+UFC Fight Night 266 Royval
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2025-12-13: UFC Fight Night 266 Royval vs Kape
+  COMMAND: python add_fighter_image.py "UFC Fight Night 266 Royval" "IMAGE_URL" ufc
+
+Kape
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2025-12-13: UFC Fight Night 266 Royval vs Kape
+  COMMAND: python add_fighter_image.py "Kape" "IMAGE_URL" ufc
+
+Badou Jack
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-14: Badou Jack vs Noel Mikaelyan
+  COMMAND: python add_fighter_image.py "Badou Jack" "IMAGE_URL" boxing
+
+Noel Mikaelyan
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-14: Badou Jack vs Noel Mikaelyan
+  COMMAND: python add_fighter_image.py "Noel Mikaelyan" "IMAGE_URL" boxing
+
+Kyosuke Takami
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-17: Kyosuke Takami vs Rene Santiago
+  COMMAND: python add_fighter_image.py "Kyosuke Takami" "IMAGE_URL" boxing
+
+Rene Santiago
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-17: Kyosuke Takami vs Rene Santiago
+  COMMAND: python add_fighter_image.py "Rene Santiago" "IMAGE_URL" boxing
+
+Callum Simpson
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-20: Callum Simpson vs Troy Williamson
+  COMMAND: python add_fighter_image.py "Callum Simpson" "IMAGE_URL" boxing
+
+Troy Williamson
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-20: Callum Simpson vs Troy Williamson
+  COMMAND: python add_fighter_image.py "Troy Williamson" "IMAGE_URL" boxing
+
+Olivia Curry
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-21: Olivia Curry vs Kaye Scott
+  COMMAND: python add_fighter_image.py "Olivia Curry" "IMAGE_URL" boxing
+
+Kaye Scott
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-21: Olivia Curry vs Kaye Scott
+  COMMAND: python add_fighter_image.py "Kaye Scott" "IMAGE_URL" boxing
+
+Masamichi Yabuki
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-27: Masamichi Yabuki vs Felix Alvarado
+  COMMAND: python add_fighter_image.py "Masamichi Yabuki" "IMAGE_URL" boxing
+
+Felix Alvarado
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-27: Masamichi Yabuki vs Felix Alvarado
+  COMMAND: python add_fighter_image.py "Felix Alvarado" "IMAGE_URL" boxing
+
+David Picasso
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-27: Naoya Inoue vs David Picasso
+  COMMAND: python add_fighter_image.py "David Picasso" "IMAGE_URL" boxing
+
+Willibaldo Garcia
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-27: Willibaldo Garcia vs Ken Shiro
+  COMMAND: python add_fighter_image.py "Willibaldo Garcia" "IMAGE_URL" boxing
+
+Ken Shiro
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-27: Willibaldo Garcia vs Ken Shiro
+  COMMAND: python add_fighter_image.py "Ken Shiro" "IMAGE_URL" boxing
+
+Erika Cruz
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2026-01-03: Amanda Serrano vs Erika Cruz
+  COMMAND: python add_fighter_image.py "Erika Cruz" "IMAGE_URL" boxing
+
+Gaethje
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2026-01-24: Gaethje vs Pimblett
+  COMMAND: python add_fighter_image.py "Gaethje" "IMAGE_URL" ufc
+
+Pimblett
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2026-01-24: Gaethje vs Pimblett
+  COMMAND: python add_fighter_image.py "Pimblett" "IMAGE_URL" ufc
+
+Volkanovski
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2026-01-31: Volkanovski vs Lopes
+  COMMAND: python add_fighter_image.py "Volkanovski" "IMAGE_URL" ufc
+
+Lopes
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2026-01-31: Volkanovski vs Lopes
+  COMMAND: python add_fighter_image.py "Lopes" "IMAGE_URL" ufc
+
+======================================================================
+END OF REPORT
+======================================================================

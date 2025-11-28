@@ -56,78 +56,105 @@ def analyze_missing_fighters():
         fighter2 = fight.get('fighter2')
         sport = fight.get('sport', 'Boxing')
         
-        # Check fighter1
-        if fighter1 and fighter1 != 'TBA' and fighter1 not in fighters_db:
-            missing_fighters.append({
-                'name': fighter1,
-                'sport': sport,
-                'fight': f"{fighter1} vs {fighter2}",
-                'date': fight.get('date', 'Unknown')
-            })
+        # Check fighter1 - missing from DB or has no valid image URL
+        if fighter1 and fighter1 != 'TBA':
+            if fighter1 not in fighters_db or not fighters_db.get(fighter1):
+                missing_fighters.append({
+                    'name': fighter1,
+                    'sport': sport,
+                    'fight': f"{fighter1} vs {fighter2}",
+                    'date': fight.get('date', 'Unknown')
+                })
         
-        # Check fighter2
-        if fighter2 and fighter2 != 'TBA' and fighter2 not in fighters_db:
-            missing_fighters.append({
-                'name': fighter2,
-                'sport': sport,
-                'fight': f"{fighter1} vs {fighter2}",
-                'date': fight.get('date', 'Unknown')
-            })
+        # Check fighter2 - missing from DB or has no valid image URL
+        if fighter2 and fighter2 != 'TBA':
+            if fighter2 not in fighters_db or not fighters_db.get(fighter2):
+                missing_fighters.append({
+                    'name': fighter2,
+                    'sport': sport,
+                    'fight': f"{fighter1} vs {fighter2}",
+                    'date': fight.get('date', 'Unknown')
+                })
     
     # Count frequency
     fighter_counts = Counter([f['name'] for f in missing_fighters])
     
-    # Print results
-    print("\n" + "="*70)
-    print("MISSING FIGHTER IMAGES REPORT")
-    print("="*70)
-    print(f"\nTotal fights analyzed: {len(fights)}")
-    print(f"Unique fighters missing images: {len(fighter_counts)}")
-    print(f"Total missing image slots: {len(missing_fighters)}")
-    print("\n" + "-"*70)
-    print("MOST FREQUENT MISSING FIGHTERS (prioritize these for manual addition)")
-    print("-"*70 + "\n")
+    # Write results to file
+    output_file = "missing_fighters_report.txt"
     
-    # Group by fighter and show details
-    for fighter_name, count in fighter_counts.most_common():
-        # Get first occurrence for details
-        fighter_info = next(f for f in missing_fighters if f['name'] == fighter_name)
-        sport = fighter_info['sport']
+    with open(output_file, 'w', encoding='utf-8') as f:
+        # Header with instructions
+        f.write("="*70 + "\n")
+        f.write("MISSING FIGHTER IMAGES REPORT\n")
+        f.write("="*70 + "\n\n")
         
-        print(f"🥊 {fighter_name}")
-        print(f"   Sport: {sport}")
-        print(f"   Appears in: {count} fight(s)")
+        f.write(f"Generated: {fights[0].get('date', 'Unknown') if fights else 'Unknown'}\n")
+        f.write(f"Total fights analyzed: {len(fights)}\n")
+        f.write(f"Unique fighters missing images: {len(fighter_counts)}\n")
+        f.write(f"Total missing image slots: {len(missing_fighters)}\n\n")
         
-        # Show all fights this fighter appears in
-        fighter_fights = [f for f in missing_fighters if f['name'] == fighter_name]
-        for fight in fighter_fights[:3]:  # Show max 3 fights
-            print(f"   - {fight['date']}: {fight['fight']}")
+        # Image requirements
+        f.write("="*70 + "\n")
+        f.write("IMAGE REQUIREMENTS\n")
+        f.write("="*70 + "\n\n")
+        f.write("FORMAT: PNG or JPG\n")
+        f.write("SIZE: Any (will be displayed at ~200-300px)\n")
+        f.write("ASPECT RATIO: Square or portrait recommended\n")
+        f.write("BACKGROUND: Light/white background preferred (matches existing)\n")
+        f.write("QUALITY: Official promotional photos work best\n\n")
         
-        print()
+        f.write("HOW TO FIND IMAGES:\n")
+        f.write("1. Google: '[Fighter Name] official photo' or '[Fighter Name] UFC/boxing'\n")
+        f.write("2. Right-click image > 'Copy image address'\n")
+        f.write("3. Use the command below with that URL\n\n")
+        
+        # Example usage
+        f.write("="*70 + "\n")
+        f.write("HOW TO ADD IMAGES\n")
+        f.write("="*70 + "\n\n")
+        f.write("COMMAND FORMAT:\n")
+        f.write("python add_fighter_image.py \"Fighter Name\" \"IMAGE_URL\" sport\n\n")
+        f.write("EXAMPLES:\n")
+        f.write("python add_fighter_image.py \"Isaac Cruz\" \"https://example.com/cruz.jpg\" boxing\n")
+        f.write("python add_fighter_image.py \"Jon Jones\" \"https://ufc.com/jones.png\" ufc\n\n")
+        
+        # Breakdown by sport
+        ufc_missing = [f for f in missing_fighters if f['sport'] == 'UFC']
+        boxing_missing = [f for f in missing_fighters if f['sport'] != 'UFC']
+        
+        f.write("="*70 + "\n")
+        f.write("BREAKDOWN BY SPORT\n")
+        f.write("="*70 + "\n\n")
+        f.write(f"UFC fighters missing: {len(set(f['name'] for f in ufc_missing))}\n")
+        f.write(f"Boxing fighters missing: {len(set(f['name'] for f in boxing_missing))}\n\n")
+        
+        # List fighters in priority order
+        f.write("="*70 + "\n")
+        f.write("MISSING FIGHTERS (RANKED BY FREQUENCY)\n")
+        f.write("="*70 + "\n\n")
+        
+        for fighter_name, count in fighter_counts.most_common():
+            fighter_info = next(f for f in missing_fighters if f['name'] == fighter_name)
+            sport = fighter_info['sport']
+            sport_label = 'ufc' if sport == 'UFC' else 'boxing'
+            
+            f.write(f"{fighter_name}\n")
+            f.write(f"  Sport: {sport}\n")
+            f.write(f"  Appears in: {count} fight(s)\n")
+            
+            # Show fights this fighter appears in
+            fighter_fights = [ff for ff in missing_fighters if ff['name'] == fighter_name]
+            for fight in fighter_fights[:3]:
+                f.write(f"  - {fight['date']}: {fight['fight']}\n")
+            
+            f.write(f"  COMMAND: python add_fighter_image.py \"{fighter_name}\" \"IMAGE_URL\" {sport_label}\n\n")
+        
+        f.write("="*70 + "\n")
+        f.write("END OF REPORT\n")
+        f.write("="*70 + "\n")
     
-    # Summary by sport
-    print("-"*70)
-    print("BREAKDOWN BY SPORT")
-    print("-"*70 + "\n")
-    
-    ufc_missing = [f for f in missing_fighters if f['sport'] == 'UFC']
-    boxing_missing = [f for f in missing_fighters if f['sport'] != 'UFC']
-    
-    print(f"UFC fighters missing: {len(set(f['name'] for f in ufc_missing))}")
-    print(f"Boxing fighters missing: {len(set(f['name'] for f in boxing_missing))}")
-    
-    # Suggest commands
-    print("\n" + "="*70)
-    print("TO ADD IMAGES MANUALLY:")
-    print("="*70)
-    print("\nTop 5 priorities:\n")
-    
-    for i, (fighter_name, count) in enumerate(fighter_counts.most_common(5), 1):
-        fighter_info = next(f for f in missing_fighters if f['name'] == fighter_name)
-        sport = 'ufc' if fighter_info['sport'] == 'UFC' else 'boxing'
-        print(f'{i}. python add_fighter_image.py "{fighter_name}" "IMAGE_URL" {sport}')
-    
-    print("\n" + "="*70 + "\n")
+    print(f"\n✅ Report saved to: {output_file}")
+    print(f"   Found {len(fighter_counts)} fighters missing images\n")
 
 if __name__ == "__main__":
     analyze_missing_fighters()
