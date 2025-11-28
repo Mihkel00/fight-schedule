@@ -689,9 +689,14 @@ def fetch_fights():
     fights_before_filter = len(fights)
     fights = [f for f in fights if f.get('date', '') >= today]
     
+    # Filter to title fights only (championship bouts)
+    fights_before_title_filter = len(fights)
+    fights = [f for f in fights if 'Title' in f.get('weight_class', '') or f.get('sport') == 'UFC']
+    
     log("\n" + "="*60)
     log(f"Filtered out {fights_before_filter - len(fights)} past fights")
-    log(f"FINAL RESULT: {len(fights)} upcoming fights")
+    log(f"Filtered to {len(fights)} title fights (removed {fights_before_title_filter - len(fights)} non-title bouts)")
+    log(f"FINAL RESULT: {len(fights)} upcoming championship fights")
     log("="*60)
     
     # Count fights with images

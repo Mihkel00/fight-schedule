@@ -15,9 +15,15 @@ BBC Sport Boxing found: 58 fights
 
 
 --- THESPORTSDB UFC ---
-TheSportsDB UFC found: 1 fights
+TheSportsDB UFC found: 4 fights
 
   • Dvalishvili vs Yan - 2025-12-06 - T-Mobile Arena
+    ✓ Has fighter images
+  • UFC Fight Night 266 Royval vs Kape - 2025-12-13 - UFC APEX
+    ✓ Has fighter images
+  • Gaethje vs Pimblett - 2026-01-24 - T-Mobile Arena
+    ✓ Has fighter images
+  • Volkanovski vs Lopes - 2026-01-31 - Qudos Bank Arena
     ✓ Has fighter images
 
 --- THESPORTSDB BOXING ---
@@ -38,15 +44,16 @@ MERGING DATA...
 ============================================================
 
 Merged images for 1 fights
-Added 11 new fights from TheSportsDB
+Added 14 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 52 additional fighter images
+Fetched 58 additional fighter images
 
 ============================================================
-Filtered out 0 past fights
-FINAL RESULT: 69 upcoming fights
+Filtered out 55 past fights
+Filtered to 17 title fights (removed 55 non-title bouts)
+FINAL RESULT: 17 upcoming championship fights
 ============================================================
-Fights with at least one image: 42 (60%)
+Fights with at least one image: 14 (82%)
 
