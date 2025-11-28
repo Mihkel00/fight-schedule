@@ -4,14 +4,14 @@ FIGHT DATA SOURCES COMPARISON
 ============================================================
 
 --- BBC SPORT BOXING ---
-BBC Sport Boxing found: 58 fights
+BBC Sport Boxing found: 77 fights
 
-  • Bradley Casey vs Antonio Borovina - 2026-11-01 - Co-op Live Arena, England
-  • Leon Hughes vs Pavol Garaj - 2026-11-01 - Co-op Live Arena, England
-  • Leighton Birchall vs Wilbert Panttin - 2026-11-01 - Co-op Live Arena, England
-  • Jermaine Dhliwayo vs Cesar Paredes - 2026-11-01 - Co-op Live Arena, England
-  • John Tom Varey vs Brandon Gallardo - 2026-11-01 - Co-op Live Arena, England
-  ... and 53 more
+  • Bradley Casey vs Antonio Borovina - 2025-11-01 - Co-op Live Arena, England
+  • Leon Hughes vs Pavol Garaj - 2025-11-01 - Co-op Live Arena, England
+  • Leighton Birchall vs Wilbert Panttin - 2025-11-01 - Co-op Live Arena, England
+  • Jermaine Dhliwayo vs Cesar Paredes - 2025-11-01 - Co-op Live Arena, England
+  • John Tom Varey vs Brandon Gallardo - 2025-11-01 - Co-op Live Arena, England
+  ... and 72 more
 
 
 --- THESPORTSDB UFC ---
@@ -43,17 +43,17 @@ TheSportsDB Boxing found: 11 fights
 MERGING DATA...
 ============================================================
 
-Merged images for 1 fights
-Added 14 new fights from TheSportsDB
+Merged images for 4 fights
+Added 11 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 58 additional fighter images
+Fetched 44 additional fighter images
 
 ============================================================
-Filtered out 55 past fights
-Filtered to 17 title fights (removed 55 non-title bouts)
-FINAL RESULT: 17 upcoming championship fights
+Filtered out 64 past fights
+Filtered to 24 title fights (removed 14 non-title bouts)
+FINAL RESULT: 24 upcoming championship fights
 ============================================================
-Fights with at least one image: 14 (82%)
+Fights with at least one image: 6 (25%)
 

@@ -236,100 +236,116 @@ def scrape_bbc_boxing():
     
     try:
         print("Scraping BBC Sport Boxing calendar...")
-        url = 'https://www.bbc.com/sport/boxing/calendar'
+        
+        from bs4 import BeautifulSoup
+        from datetime import datetime, timedelta
+        from dateutil.relativedelta import relativedelta
+        
+        # Get current month and next 2 months
+        now = datetime.now()
+        months_to_scrape = [
+            now.strftime("%Y-%m"),
+            (now + relativedelta(months=1)).strftime("%Y-%m"),
+            (now + relativedelta(months=2)).strftime("%Y-%m")
+        ]
         
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         
-        response = requests.get(url, headers=headers, timeout=15)
-        
-        if response.status_code != 200:
-            print(f"BBC Sport scrape failed: {response.status_code}")
-            return fights
-        
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Find all fight cards
-        cards = soup.find_all('div', class_='ssrcss-dvz3gg-Card')
-        
-        from datetime import datetime
-        current_year = datetime.now().year
-        
-        for card in cards:
+        for month in months_to_scrape:
             try:
-                # Skip cancelled fights
-                if card.find('span', class_='ssrcss-1xk4umy-Label'):
+                url = f'https://www.bbc.com/sport/boxing/calendar/{month}'
+                print(f"Fetching {month}...")
+                
+                response = requests.get(url, headers=headers, timeout=15)
+                
+                if response.status_code != 200:
+                    print(f"BBC Sport scrape failed for {month}: {response.status_code}")
                     continue
                 
-                # Extract date (e.g., "Saturday 22 November")
-                date_elem = card.find('span', class_='visually-hidden')
-                if not date_elem:
-                    continue
-                date_text = date_elem.get_text(strip=True)
+                soup = BeautifulSoup(response.text, 'html.parser')
                 
-                # Extract fighters (hyphen-separated)
-                fighters_elem = card.find('li', class_='ssrcss-3wkvfu-EventName')
-                if not fighters_elem:
-                    continue
-                fighters_text = fighters_elem.get_text(strip=True)
+                # Find all fight cards
+                cards = soup.find_all('div', class_='ssrcss-dvz3gg-Card')
                 
-                # Split on hyphen
-                fighter_parts = fighters_text.split('-')
-                if len(fighter_parts) < 2:
-                    continue
-                fighter1 = fighter_parts[0].strip()
-                fighter2 = fighter_parts[1].strip()
+                # Extract year from month string
+                year = int(month.split('-')[0])
                 
-                # Skip if names too short
-                if len(fighter1) < 2 or len(fighter2) < 2:
-                    continue
+                for card in cards:
+                    try:
+                        # Skip cancelled fights
+                        if card.find('span', class_='ssrcss-1xk4umy-Label'):
+                            continue
+                        
+                        # Extract date (e.g., "Saturday 22 November")
+                        date_elem = card.find('span', class_='visually-hidden')
+                        if not date_elem:
+                            continue
+                        date_text = date_elem.get_text(strip=True)
+                        
+                        # Extract fighters (hyphen-separated)
+                        fighters_elem = card.find('li', class_='ssrcss-3wkvfu-EventName')
+                        if not fighters_elem:
+                            continue
+                        fighters_text = fighters_elem.get_text(strip=True)
+                        
+                        # Split on hyphen
+                        fighter_parts = fighters_text.split('-')
+                        if len(fighter_parts) < 2:
+                            continue
+                        fighter1 = fighter_parts[0].strip()
+                        fighter2 = fighter_parts[1].strip()
+                        
+                        # Skip if names too short
+                        if len(fighter1) < 2 or len(fighter2) < 2:
+                            continue
+                        
+                        # Extract venue
+                        venue_elem = card.find('li', class_='ssrcss-1sjq6ac-VenueName')
+                        venue = venue_elem.get_text(strip=True) if venue_elem else 'TBA'
+                        
+                        # Extract time and weight class
+                        secondary = card.find_all('li', class_='ssrcss-8blldk-Secondary')
+                        time_str = secondary[0].get_text(strip=True) if len(secondary) > 0 else ''
+                        weight_class = secondary[1].get_text(strip=True) if len(secondary) > 1 else ''
+                        
+                        # Parse date using the year from URL
+                        try:
+                            date_with_year = f"{date_text} {year}"
+                            parsed_date = datetime.strptime(date_with_year, "%A %d %B %Y")
+                            date_formatted = parsed_date.strftime("%Y-%m-%d")
+                        except:
+                            date_formatted = ''
+                        
+                        fights.append({
+                            'fighter1': fighter1,
+                            'fighter2': fighter2,
+                            'date': date_formatted,
+                            'time': time_str,
+                            'venue': venue,
+                            'location': venue,
+                            'sport': 'Boxing',
+                            'event_name': f'{fighter1} vs {fighter2}',
+                            'weight_class': weight_class
+                        })
+                        
+                        print(f"BBC Sport: Added {fighter1} vs {fighter2} ({date_formatted})")
+                        
+                    except Exception as e:
+                        print(f"Error parsing BBC card: {e}")
+                        continue
                 
-                # Extract venue
-                venue_elem = card.find('li', class_='ssrcss-1sjq6ac-VenueName')
-                venue = venue_elem.get_text(strip=True) if venue_elem else 'TBA'
-                
-                # Extract time and weight class
-                secondary = card.find_all('li', class_='ssrcss-8blldk-Secondary')
-                time_str = secondary[0].get_text(strip=True) if len(secondary) > 0 else ''
-                weight_class = secondary[1].get_text(strip=True) if len(secondary) > 1 else ''
-                
-                # Parse date (BBC format: "Saturday 22 November")
-                try:
-                    date_with_year = f"{date_text} {current_year}"
-                    parsed_date = datetime.strptime(date_with_year, "%A %d %B %Y")
-                    
-                    # If date is in the past, assume next year
-                    if parsed_date < datetime.now():
-                        parsed_date = datetime.strptime(f"{date_text} {current_year + 1}", "%A %d %B %Y")
-                    
-                    date_formatted = parsed_date.strftime("%Y-%m-%d")
-                except:
-                    date_formatted = ''
-                
-                fights.append({
-                    'fighter1': fighter1,
-                    'fighter2': fighter2,
-                    'date': date_formatted,
-                    'time': time_str,
-                    'venue': venue,
-                    'location': venue,
-                    'sport': 'Boxing',
-                    'event_name': f'{fighter1} vs {fighter2}',
-                    'weight_class': weight_class
-                })
-                
-                print(f"BBC Sport: Added {fighter1} vs {fighter2}")
+                print(f"BBC Sport {month}: Found {len([f for f in fights if f['date'].startswith(month)])} fights")
                 
             except Exception as e:
-                print(f"Error parsing BBC card: {e}")
+                print(f"Error scraping BBC Sport for {month}: {e}")
                 continue
         
-        print(f"BBC Sport Boxing: Found {len(fights)} fights")
+        print(f"BBC Sport Boxing Total: Found {len(fights)} fights across all months")
         
     except Exception as e:
-        print(f"Error scraping BBC Sport: {e}")
+        print(f"Error in BBC Sport scraper: {e}")
     
     return fights
 
