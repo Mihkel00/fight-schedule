@@ -14,13 +14,43 @@ API_KEY = '891686'
 CACHE_FILE = 'fights_cache.json'
 CACHE_DURATION = timedelta(hours=6)  # Refresh every 6 hours
 
+def load_fighter_database():
+    """Load fighters.json and fighters_ufc.json if they exist"""
+    fighters_db = {}
+    
+    # Load general fighter database (from TheSportsDB)
+    try:
+        with open('fighters.json', 'r', encoding='utf-8') as f:
+            fighters_db.update(json.load(f))
+    except:
+        pass
+    
+    # Load UFC-specific database (from UFC.com scraper)
+    try:
+        with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+            ufc_db = json.load(f)
+            # UFC database takes priority for UFC fighters
+            fighters_db.update(ufc_db)
+    except:
+        pass
+    
+    return fighters_db
+
 def get_fighter_image(fighter_name):
     """Search for fighter by name and return their image URL"""
     if not fighter_name or fighter_name == 'TBA':
         return None
+    
+    # Check local database first
+    fighters_db = load_fighter_database()
+    if fighter_name in fighters_db:
+        cached_url = fighters_db[fighter_name]
+        if cached_url:
+            print(f"Using cached image for {fighter_name}")
+            return cached_url
         
     try:
-        # Search for player by name
+        # Fallback to API search
         url = f'https://www.thesportsdb.com/api/v1/json/{API_KEY}/searchplayers.php?p={fighter_name}'
         response = requests.get(url, timeout=10)
         
@@ -33,6 +63,7 @@ def get_fighter_image(fighter_name):
                 player = players[0]
                 # Try different image fields (cutout is best, thumb is backup)
                 return player.get('strCutout') or player.get('strThumb') or player.get('strFanart1')
+                    
     except Exception as e:
         print(f"Error fetching image for {fighter_name}: {e}")
     

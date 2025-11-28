@@ -48,12 +48,12 @@ Added 11 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 44 additional fighter images
+Fetched 75 additional fighter images
 
 ============================================================
-Filtered out 64 past fights
-Filtered to 24 title fights (removed 14 non-title bouts)
-FINAL RESULT: 24 upcoming championship fights
+Filtered out 65 past fights
+Filtered to 23 title fights (removed 14 non-title bouts)
+FINAL RESULT: 23 upcoming championship fights
 ============================================================
-Fights with at least one image: 6 (25%)
+Fights with at least one image: 13 (56%)
 
