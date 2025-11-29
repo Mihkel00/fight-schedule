@@ -14,17 +14,16 @@ BBC Sport Boxing found: 77 fights
   ... and 72 more
 
 
---- THESPORTSDB UFC ---
-TheSportsDB UFC found: 4 fights
+--- MMA FIGHTING UFC ---
+MMA Fighting UFC found: 32 fights
 
-  • Dvalishvili vs Yan - 2025-12-06 - T-Mobile Arena
-    ✓ Has fighter images
-  • UFC Fight Night 266 Royval vs Kape - 2025-12-13 - UFC APEX
-    ✓ Has fighter images
-  • Gaethje vs Pimblett - 2026-01-24 - T-Mobile Arena
-    ✓ Has fighter images
-  • Volkanovski vs Lopes - 2026-01-31 - Qudos Bank Arena
-    ✓ Has fighter images
+  • Merab Dvalishvili vs Petr Yan - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
+  • Alexandre Pantoja vs Joshua Van - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
+  • Henry Cejudo vs Payton Talbott - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
+  • Brandon Moreno vs Tatsuro Taira - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
+  • Jan Blachowicz vs Bogdan Guskov - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
+  ... and 27 more
+
 
 --- THESPORTSDB BOXING ---
 TheSportsDB Boxing found: 11 fights
@@ -44,16 +43,16 @@ MERGING DATA...
 ============================================================
 
 Merged images for 4 fights
-Added 11 new fights from TheSportsDB
+Added 7 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 90 additional fighter images
+Fetched 139 additional fighter images
 
 ============================================================
 Filtered out 65 past fights
-Filtered to 23 title fights (removed 14 non-title bouts)
-FINAL RESULT: 23 upcoming championship fights
+Filtered to 51 title fights (removed 14 non-title bouts)
+FINAL RESULT: 51 upcoming championship fights
 ============================================================
-Fights with at least one image: 17 (73%)
+Fights with at least one image: 43 (84%)
 
