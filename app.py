@@ -1012,6 +1012,42 @@ def home():
     fights = fetch_fights()
     return render_template('index.html', fights=fights, fights_json=json.dumps(fights))
 
+@app.route('/event/<event_slug>')
+def event_detail(event_slug):
+    """Show detailed page for a specific event with full card"""
+    fights = fetch_fights()
+    
+    # Find all fights for this event
+    # For now, use dummy data - we'll connect real data later
+    
+    # Dummy UFC 326 data for testing
+    event_fights = {
+        'event_name': 'UFC 326: Volkanovski vs. Lopes',
+        'date': '2025-01-25',
+        'venue': 'T-Mobile Arena, Las Vegas',
+        'main_event': {
+            'fighter1': 'Alexander Volkanovski',
+            'fighter2': 'Diego Lopes',
+            'fighter1_image': '/static/placeholder-fighter-mma.png',
+            'fighter2_image': '/static/placeholder-fighter-mma.png',
+            'weight_class': 'Featherweight Championship',
+            'time': '05:00'
+        },
+        'main_card': [
+            {'fighter1': 'Volkanovski', 'fighter2': 'Lopes', 'is_title': True},
+            {'fighter1': "O'Malley", 'fighter2': 'Yadong', 'is_title': False},
+            {'fighter1': 'Grasso', 'fighter2': 'Namajunas', 'is_title': False},
+            {'fighter1': 'Nurmagomedov', 'fighter2': 'Figueiredo', 'is_title': False}
+        ],
+        'prelims': [
+            {'fighter1': 'Cortes-Acosta', 'fighter2': 'Lewis'},
+            {'fighter1': 'Allen', 'fighter2': 'Silva'},
+            {'fighter1': 'Gautier', 'fighter2': 'Pulyaev'}
+        ]
+    }
+    
+    return render_template('event_detail.html', event=event_fights)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)

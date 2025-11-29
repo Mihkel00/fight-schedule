@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ event.event_name }} - Fight Schedule</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'staatliches': ['"Staatliches"', 'Impact', 'sans-serif'],
+                        'work': ['"Work Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        'dark-bg': '#0f0f0f',
+                        'dark-card': '#121212',
+                        'dark-elevated': '#242424',
+                        'dark-border': '#2a2a2a',
+                        'text-primary': '#ffffff',
+                        'text-secondary': '#a3a3a3',
+                        'text-tertiary': '#6b6b6b',
+                        'accent-blue': '#3b82f6',
+                        'accent-red': '#dc2626',
+                        'accent-red-custom': '#C00000',
+                        'accent-orange': '#f59e0b',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-dark-bg text-text-primary">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Back Button -->
+        <a href="/" class="inline-flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors mb-8">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            <span class="font-work text-sm">Back to Schedule</span>
+        </a>
+
+        <!-- Event Header -->
+        <div class="mb-8">
+            <h1 class="font-staatliches text-4xl md:text-5xl uppercase mb-2">
+                {{ event.event_name }}
+            </h1>
+            <p class="text-accent-red-custom font-work font-semibold text-lg">
+                {{ event.main_event.weight_class }}
+            </p>
+        </div>
+
+        <!-- Date & Location Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-dark-card border border-dark-border flex items-center justify-center">
+                    <svg class="w-5 h-5 text-accent-red-custom" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-text-tertiary font-work">Date & Time</p>
+                    <p class="text-text-primary font-work">Sun, Jan 25, 2025 • {{ event.main_event.time }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-dark-card border border-dark-border flex items-center justify-center">
+                    <svg class="w-5 h-5 text-accent-red-custom" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs text-text-tertiary font-work">Location</p>
+                    <p class="text-text-primary font-work">{{ event.venue }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Event Fighters -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Fighter 1 -->
+            <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
+                <div class="flex flex-col items-center">
+                    <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
+                        <img src="{{ event.main_event.fighter1_image }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover opacity-40">
+                    </div>
+                    <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
+                        {{ event.main_event.fighter1.split()[-1] }}
+                    </h2>
+                    <p class="text-text-secondary font-work text-sm">
+                        {{ event.main_event.fighter1 }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- VS Badge -->
+            <div class="hidden md:flex absolute left-1/2 transform -translate-x-1/2 mt-32">
+                <div class="bg-dark-bg border-2 border-dark-border rounded-full w-20 h-20 flex items-center justify-center">
+                    <span class="font-work font-bold text-2xl text-text-secondary">VS</span>
+                    <span class="absolute -bottom-8 bg-dark-elevated px-3 py-1 rounded-full text-xs text-text-tertiary font-work whitespace-nowrap">
+                        MAIN EVENT
+                    </span>
+                </div>
+            </div>
+
+            <!-- Fighter 2 -->
+            <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
+                <div class="flex flex-col items-center">
+                    <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
+                        <img src="{{ event.main_event.fighter2_image }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover opacity-40">
+                    </div>
+                    <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
+                        {{ event.main_event.fighter2.split()[-1] }}
+                    </h2>
+                    <p class="text-text-secondary font-work text-sm">
+                        {{ event.main_event.fighter2 }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Streaming Links -->
+        <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-12">
+            <div class="flex items-center justify-center gap-4">
+                <svg class="w-5 h-5 text-accent-red-custom" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <span class="font-work text-text-primary">Watch on:</span>
+                <a href="https://plus.espn.com" target="_blank" class="font-work font-semibold text-text-primary hover:text-accent-red-custom transition-colors">
+                    ESPN+
+                </a>
+                <span class="text-text-tertiary">|</span>
+                <a href="https://ufcfightpass.com" target="_blank" class="font-work font-semibold text-text-primary hover:text-accent-red-custom transition-colors">
+                    UFC FIGHT PASS
+                </a>
+            </div>
+        </div>
+
+        <!-- Full Fight Card -->
+        <div class="mb-8">
+            <h2 class="font-staatliches text-3xl uppercase mb-6">Full Fight Card</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Main Card Column -->
+                <div>
+                    <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
+                        Main Card ({{ event.main_event.time }})
+                    </h3>
+                    <div class="space-y-3">
+                        {% for fight in event.main_card %}
+                        <div class="bg-dark-card rounded-lg p-4 border border-dark-border hover:bg-dark-elevated transition-colors">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-accent-red-custom flex-shrink-0"></span>
+                                <span class="font-work text-text-primary">
+                                    {{ fight.fighter1 }} vs {{ fight.fighter2 }}
+                                    {% if fight.is_title %}
+                                    <span class="text-accent-red-custom text-xs ml-2">(TITLE)</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Prelims Column -->
+                <div>
+                    <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
+                        Prelims (03:00 AM)
+                    </h3>
+                    <div class="space-y-3">
+                        {% for fight in event.prelims %}
+                        <div class="bg-dark-card rounded-lg p-4 border border-dark-border hover:bg-dark-elevated transition-colors">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-accent-red-custom flex-shrink-0"></span>
+                                <span class="font-work text-text-primary">
+                                    {{ fight.fighter1 }} vs {{ fight.fighter2 }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

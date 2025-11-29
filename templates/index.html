@@ -193,7 +193,7 @@
             const opacity2 = fight.fighter2_image ? '' : 'opacity-40';
             
             return `
-                <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:bg-dark-elevated hover:border-dark-elevated transition-all cursor-pointer" data-sport="${fight.sport}">
+                <div onclick="window.location.href='/event/test'" class="bg-dark-card rounded-xl p-6 border border-dark-border hover:bg-dark-elevated hover:border-dark-elevated transition-all cursor-pointer" data-sport="${fight.sport}">
                     <div class="flex items-center justify-center gap-6 mb-6">
                         <div class="text-center w-40">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
