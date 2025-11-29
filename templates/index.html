@@ -107,38 +107,75 @@
         // Fights data from backend
         const allFights = {{ fights_json|safe }};
         
+        // Timezone detection
+        let userTimezone = 'Europe/London'; // Default fallback
+        let timezoneOffset = 0;
+        let timezoneCity = 'London';
+        
+        try {
+            userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            timezoneOffset = new Date().getTimezoneOffset() / -60;
+            timezoneCity = userTimezone.split('/').pop().replace(/_/g, ' ');
+        } catch (e) {
+            console.error('Timezone detection failed:', e);
+        }
+        
         // Current filter state
         let currentFilter = localStorage.getItem('fightScheduleFilter') || 'ALL';
         let currentSearchTerm = '';
         
-        // Format date helper (replicates Python filter)
+        // Convert UK time to user's local time
+        function convertToUserTime(dateStr, timeStr) {
+            if (!timeStr || timeStr === 'TBA') return { time: 'TBA', date: dateStr };
+            
+            try {
+                // Parse UK time as UTC (UK times stored as UTC in winter, close enough)
+                const [hours, minutes] = timeStr.split(':');
+                const utcDateTime = new Date(`${dateStr}T${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00Z`);
+                
+                // Convert to user's timezone
+                const localDate = new Date(utcDateTime.toLocaleString('en-US', { timeZone: userTimezone }));
+                
+                // Format time
+                const localTime = localDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+                
+                // Format date (in case it changed due to timezone)
+                const localDateStr = localDate.toISOString().split('T')[0];
+                
+                return {
+                    time: localTime,
+                    date: localDateStr,
+                    dateChanged: localDateStr !== dateStr
+                };
+            } catch (e) {
+                console.error('Time conversion error:', e);
+                return { time: timeStr, date: dateStr };
+            }
+        }
+        
+        // Format date helper
         function formatDate(dateStr) {
             if (!dateStr) return '';
-            const date = new Date(dateStr);
+            const date = new Date(dateStr + 'T00:00:00');
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             return `${days[date.getDay()]}, ${months[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}`;
         }
         
-        // Format time helper (replicates Python filter)
-        function formatTime(timeStr) {
-            if (!timeStr) return '';
-            if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
-            
-            const [hours, minutes] = timeStr.split(':');
-            const hour = parseInt(hours);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const displayHour = hour % 12 || 12;
-            return `${displayHour}:${minutes} ${ampm}`;
-        }
-        
         // Render fight card
         function renderCard(fight) {
+            const converted = convertToUserTime(fight.date, fight.time);
+            const displayDate = converted.dateChanged ? converted.date : fight.date;
+            
             const cardType = fight.card_type ? `${fight.card_type}: ` : '';
-            const timeDisplay = fight.time ? 
+            const timeDisplay = converted.time !== 'TBA' ? 
                 (fight.sport === 'UFC' && fight.card_type ? 
-                    ` • ${cardType}${formatTime(fight.time)} UK` : 
-                    ` • ${formatTime(fight.time)} UK`) : '';
+                    ` • ${cardType}${converted.time} ${timezoneCity}` : 
+                    ` • ${converted.time} ${timezoneCity}`) : '';
             
             const sportDot = fight.sport === 'UFC' ? 
                 `<span class="w-2 h-2 rounded-full bg-accent-red"></span>` :
@@ -174,7 +211,7 @@
                     </div>
                     <div class="border-t border-dark-border pt-4">
                         <p class="text-accent-red-light font-work font-semibold mb-2">
-                            ${formatDate(fight.date)}${timeDisplay}
+                            ${formatDate(displayDate)}${timeDisplay}
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary">${fight.venue}</span>
@@ -190,11 +227,14 @@
         
         // Render list item
         function renderListItem(fight) {
+            const converted = convertToUserTime(fight.date, fight.time);
+            const displayDate = converted.dateChanged ? converted.date : fight.date;
+            
             const cardType = fight.card_type ? `${fight.card_type}: ` : '';
-            const timeDisplay = fight.time ? 
+            const timeDisplay = converted.time !== 'TBA' ? 
                 (fight.sport === 'UFC' && fight.card_type ? 
-                    ` • ${cardType}${formatTime(fight.time)} UK` : 
-                    ` • ${formatTime(fight.time)} UK`) : '';
+                    ` • ${cardType}${converted.time} ${timezoneCity}` : 
+                    ` • ${converted.time} ${timezoneCity}`) : '';
             
             const sportDot = fight.sport === 'UFC' ? 
                 `<span class="w-2 h-2 rounded-full bg-accent-red"></span>` :
@@ -213,7 +253,7 @@
                     </div>
                     <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
                         <span class="text-accent-red-light font-work font-semibold whitespace-nowrap text-sm md:text-base">
-                            ${formatDate(fight.date)}${timeDisplay}
+                            ${formatDate(displayDate)}${timeDisplay}
                         </span>
                         <span class="font-work text-text-tertiary text-xs">${fight.venue}</span>
                     </div>
@@ -300,7 +340,7 @@
             searchTimeout = setTimeout(() => {
                 currentSearchTerm = e.target.value.trim();
                 applyFiltersAndRender();
-            }, 300); // 300ms debounce
+            }, 300);
         });
         
         // Filter functionality
