@@ -582,6 +582,42 @@ def scrape_mma_fighting():
     
     return fights
 
+def load_time_overrides():
+    """Load manual time overrides from time_overrides.json"""
+    try:
+        with open('time_overrides.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+    except Exception as e:
+        print(f"Error loading time overrides: {e}")
+        return {}
+
+def get_fight_key(fight):
+    """Generate unique key for a fight (used for time overrides)"""
+    return f"{fight['fighter1']} vs {fight['fighter2']}|{fight['date']}"
+
+def apply_time_overrides(fights):
+    """Apply manual time overrides to fights"""
+    overrides = load_time_overrides()
+    
+    if not overrides:
+        return fights
+    
+    applied_count = 0
+    for fight in fights:
+        fight_key = get_fight_key(fight)
+        if fight_key in overrides:
+            old_time = fight.get('time', 'TBA')
+            fight['time'] = overrides[fight_key]
+            print(f"Time override applied: {fight['fighter1']} vs {fight['fighter2']}: {old_time} → {fight['time']}")
+            applied_count += 1
+    
+    if applied_count > 0:
+        print(f"\n✓ Applied {applied_count} manual time override(s)\n")
+    
+    return fights
+
 def load_cache():
     """Load cached fight data if it exists and is fresh"""
     if not os.path.exists(CACHE_FILE):
@@ -595,7 +631,12 @@ def load_cache():
         cache_time = datetime.fromisoformat(cache_data['timestamp'])
         if datetime.now() - cache_time < CACHE_DURATION:
             print(f"Using cached data from {cache_time}")
-            return cache_data['fights']
+            
+            # Apply time overrides to cached data
+            fights = cache_data['fights']
+            fights = apply_time_overrides(fights)
+            
+            return fights
         else:
             print("Cache expired, fetching new data...")
             return None
@@ -957,6 +998,9 @@ def fetch_fights():
     debug_log.close()
     print("\n✓ Debug comparison saved to: data_sources_comparison.txt\n")
     
+    # Apply manual time overrides
+    fights = apply_time_overrides(fights)
+    
     # Save to cache
     if fights:
         save_cache(fights)
@@ -966,7 +1010,7 @@ def fetch_fights():
 @app.route('/')
 def home():
     fights = fetch_fights()
-    return render_template('index.html', fights=fights)
+    return render_template('index.html', fights=fights, fights_json=json.dumps(fights))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

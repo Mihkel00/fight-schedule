@@ -59,116 +59,294 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
-                        <input type="text" placeholder="Search fighter or event" class="block w-full pl-10 pr-3 py-3 border border-dark-border rounded-lg bg-dark-bg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent">
+                        <input 
+                            id="search-input" 
+                            type="text" 
+                            placeholder="Search fighter or event" 
+                            class="block w-full pl-10 pr-3 py-3 border border-dark-border rounded-lg bg-dark-bg text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-accent-blue focus:border-transparent"
+                        >
                     </div>
                 </div>
 
                 <!-- Filter Pills -->
                 <div class="flex gap-3">
-                    <button class="px-6 py-2.5 bg-text-primary text-dark-bg rounded-full font-medium text-sm">All</button>
-                    <button class="px-6 py-2.5 bg-dark-card text-text-secondary rounded-full font-medium text-sm hover:bg-dark-elevated transition-colors">UFC</button>
-                    <button class="px-6 py-2.5 bg-dark-card text-text-secondary rounded-full font-medium text-sm hover:bg-dark-elevated transition-colors">Boxing</button>
+                    <button id="filter-all" class="px-6 py-2.5 bg-text-primary text-dark-bg rounded-full font-medium text-sm filter-btn active">All</button>
+                    <button id="filter-ufc" class="px-6 py-2.5 bg-dark-card text-text-secondary rounded-full font-medium text-sm hover:bg-dark-elevated transition-colors filter-btn">UFC</button>
+                    <button id="filter-boxing" class="px-6 py-2.5 bg-dark-card text-text-secondary rounded-full font-medium text-sm hover:bg-dark-elevated transition-colors filter-btn">Boxing</button>
                 </div>
             </div>
         </div>
+
+        <!-- Results count -->
+        <div id="results-count" class="mb-4 text-text-secondary text-sm"></div>
 
         <!-- Upcoming Fights Section -->
         <h2 class="font-work text-lg font-semibold mb-4">Upcoming Fights</h2>
         
-        {% if fights %}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-            {% for fight in fights[:8] %}
-            <!-- Fight Card -->
-            <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors">
-                <div class="flex items-center justify-center gap-6 mb-6">
-                    <div class="text-center w-40">
-                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                            {% if fight.fighter1_image %}
-                            <img src="{{ fight.fighter1_image }}" alt="{{ fight.fighter1 }}" class="w-full h-full object-cover">
-                            {% elif fight.sport == 'UFC' %}
-                            <img src="{{ url_for('static', filename='placeholder-fighter-mma.png') }}" alt="{{ fight.fighter1 }}" class="w-full h-full object-cover opacity-40">
-                            {% else %}
-                            <img src="{{ url_for('static', filename='placeholder-fighter-boxing.png') }}" alt="{{ fight.fighter1 }}" class="w-full h-full object-cover opacity-40">
-                            {% endif %}
-                        </div>
-                        <p class="font-bebas text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">{{ fight.fighter1 }}</p>
-                    </div>
-                    <div class="font-work font-semibold text-base italic uppercase text-text-secondary">VS</div>
-                    <div class="text-center w-40">
-                        <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                            {% if fight.fighter2_image %}
-                            <img src="{{ fight.fighter2_image }}" alt="{{ fight.fighter2 }}" class="w-full h-full object-cover">
-                            {% elif fight.sport == 'UFC' %}
-                            <img src="{{ url_for('static', filename='placeholder-fighter-mma.png') }}" alt="{{ fight.fighter2 }}" class="w-full h-full object-cover opacity-40">
-                            {% else %}
-                            <img src="{{ url_for('static', filename='placeholder-fighter-boxing.png') }}" alt="{{ fight.fighter2 }}" class="w-full h-full object-cover opacity-40">
-                            {% endif %}
-                        </div>
-                        <p class="font-bebas text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">{{ fight.fighter2 }}</p>
-                    </div>
-                </div>
-                <div class="border-t border-dark-border pt-4">
-                    <p class="text-accent-red-light font-work font-semibold mb-2">
-                        {{ fight.date|format_date }}{% if fight.time %}{% if fight.sport == 'UFC' and fight.get('card_type') %} • {{ fight.card_type }}: {{ fight.time|format_time }} UK{% else %} • {{ fight.time|format_time }} UK{% endif %}{% endif %}
-                    </p>
-                    <div class="flex items-center justify-between">
-                        <span class="font-work text-xs text-text-tertiary">{{ fight.venue }}</span>
-                        {% if fight.sport == 'UFC' %}
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-accent-red"></span>
-                            <span class="font-work text-[11px] uppercase tracking-wider text-text-secondary">UFC</span>
-                        </span>
-                        {% else %}
-                        <span class="flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-accent-orange"></span>
-                            <span class="font-work text-[11px] uppercase tracking-wider text-text-secondary">Boxing</span>
-                        </span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+        <!-- Card Grid Container -->
+        <div id="card-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            <!-- Cards rendered by JavaScript -->
         </div>
 
         <!-- More Upcoming Fights Section -->
-        {% if fights|length > 8 %}
-        <h2 class="font-work text-lg font-semibold mb-4">More Upcoming Fights</h2>
-        
-        <div class="bg-dark-card rounded-xl border border-dark-border divide-y divide-dark-border">
-            {% for fight in fights[8:] %}
-            <!-- Compact List Item -->
-            <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors">
-                <div class="flex items-center gap-3 flex-wrap">
-                    <span class="font-work font-medium text-text-primary">{{ fight.fighter1 }} vs {{ fight.fighter2 }}</span>
-                    {% if fight.sport == 'UFC' %}
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-accent-red"></span>
-                        <span class="font-work text-[11px] uppercase tracking-wider text-text-secondary">UFC</span>
-                    </span>
-                    {% else %}
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-2 h-2 rounded-full bg-accent-orange"></span>
-                        <span class="font-work text-[11px] uppercase tracking-wider text-text-secondary">Boxing</span>
-                    </span>
-                    {% endif %}
-                </div>
-                <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
-                    <span class="text-accent-red-light font-work font-semibold whitespace-nowrap text-sm md:text-base">
-                        {{ fight.date|format_date }}{% if fight.time %}{% if fight.sport == 'UFC' and fight.get('card_type') %} • {{ fight.card_type }}: {{ fight.time|format_time }} UK{% else %} • {{ fight.time|format_time }} UK{% endif %}{% endif %}
-                    </span>
-                    <span class="font-work text-text-tertiary text-xs">{{ fight.venue }}</span>
-                </div>
+        <div id="list-section-wrapper" style="display: none;">
+            <h2 class="font-work text-lg font-semibold mb-4">More Upcoming Fights</h2>
+            
+            <div id="list-container" class="bg-dark-card rounded-xl border border-dark-border divide-y divide-dark-border">
+                <!-- List items rendered by JavaScript -->
             </div>
-            {% endfor %}
         </div>
-        {% endif %}
-        
-        {% else %}
-        <!-- No Fights Available -->
-        <div class="bg-dark-card rounded-xl p-8 border border-dark-border text-center">
-            <p class="text-text-secondary">No upcoming fights found. Check back later!</p>
+
+        <!-- No fights message -->
+        <div id="no-fights" class="bg-dark-card rounded-xl p-8 border border-dark-border text-center" style="display: none;">
+            <p class="text-text-secondary">No fights found.</p>
         </div>
-        {% endif %}
     </div>
+
+    <script>
+        // Fights data from backend
+        const allFights = {{ fights_json|safe }};
+        
+        // Current filter state
+        let currentFilter = localStorage.getItem('fightScheduleFilter') || 'ALL';
+        let currentSearchTerm = '';
+        
+        // Format date helper (replicates Python filter)
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${days[date.getDay()]}, ${months[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}`;
+        }
+        
+        // Format time helper (replicates Python filter)
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+            
+            const [hours, minutes] = timeStr.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${minutes} ${ampm}`;
+        }
+        
+        // Render fight card
+        function renderCard(fight) {
+            const cardType = fight.card_type ? `${fight.card_type}: ` : '';
+            const timeDisplay = fight.time ? 
+                (fight.sport === 'UFC' && fight.card_type ? 
+                    ` • ${cardType}${formatTime(fight.time)} UK` : 
+                    ` • ${formatTime(fight.time)} UK`) : '';
+            
+            const sportDot = fight.sport === 'UFC' ? 
+                `<span class="w-2 h-2 rounded-full bg-accent-red"></span>` :
+                `<span class="w-2 h-2 rounded-full bg-accent-orange"></span>`;
+            
+            const sportLabel = fight.sport === 'UFC' ? 'UFC' : 'Boxing';
+            
+            const placeholder = fight.sport === 'UFC' ? 
+                '/static/placeholder-fighter-mma.png' :
+                '/static/placeholder-fighter-boxing.png';
+            
+            const img1 = fight.fighter1_image || placeholder;
+            const img2 = fight.fighter2_image || placeholder;
+            const opacity1 = fight.fighter1_image ? '' : 'opacity-40';
+            const opacity2 = fight.fighter2_image ? '' : 'opacity-40';
+            
+            return `
+                <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors" data-sport="${fight.sport}">
+                    <div class="flex items-center justify-center gap-6 mb-6">
+                        <div class="text-center w-40">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="${img1}" alt="${fight.fighter1}" class="w-full h-full object-cover ${opacity1}">
+                            </div>
+                            <p class="font-bebas text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">${fight.fighter1}</p>
+                        </div>
+                        <div class="font-work font-semibold text-base italic uppercase text-text-secondary">VS</div>
+                        <div class="text-center w-40">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="${img2}" alt="${fight.fighter2}" class="w-full h-full object-cover ${opacity2}">
+                            </div>
+                            <p class="font-bebas text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">${fight.fighter2}</p>
+                        </div>
+                    </div>
+                    <div class="border-t border-dark-border pt-4">
+                        <p class="text-accent-red-light font-work font-semibold mb-2">
+                            ${formatDate(fight.date)}${timeDisplay}
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="font-work text-xs text-text-tertiary">${fight.venue}</span>
+                            <span class="flex items-center gap-1.5">
+                                ${sportDot}
+                                <span class="font-work text-[11px] uppercase tracking-wider text-text-secondary">${sportLabel}</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Render list item
+        function renderListItem(fight) {
+            const cardType = fight.card_type ? `${fight.card_type}: ` : '';
+            const timeDisplay = fight.time ? 
+                (fight.sport === 'UFC' && fight.card_type ? 
+                    ` • ${cardType}${formatTime(fight.time)} UK` : 
+                    ` • ${formatTime(fight.time)} UK`) : '';
+            
+            const sportDot = fight.sport === 'UFC' ? 
+                `<span class="w-2 h-2 rounded-full bg-accent-red"></span>` :
+                `<span class="w-2 h-2 rounded-full bg-accent-orange"></span>`;
+            
+            const sportLabel = fight.sport === 'UFC' ? 'UFC' : 'Boxing';
+            
+            return `
+                <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors" data-sport="${fight.sport}">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span class="font-work font-medium text-text-primary">${fight.fighter1} vs ${fight.fighter2}</span>
+                        <span class="flex items-center gap-1.5">
+                            ${sportDot}
+                            <span class="font-work text-[11px] uppercase tracking-wider text-text-secondary">${sportLabel}</span>
+                        </span>
+                    </div>
+                    <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
+                        <span class="text-accent-red-light font-work font-semibold whitespace-nowrap text-sm md:text-base">
+                            ${formatDate(fight.date)}${timeDisplay}
+                        </span>
+                        <span class="font-work text-text-tertiary text-xs">${fight.venue}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Filter fights by current search and sport filter
+        function getFilteredFights() {
+            let filtered = allFights;
+            
+            // Apply sport filter
+            if (currentFilter !== 'ALL') {
+                filtered = filtered.filter(f => f.sport.toUpperCase() === currentFilter);
+            }
+            
+            // Apply search filter
+            if (currentSearchTerm) {
+                const term = currentSearchTerm.toLowerCase();
+                filtered = filtered.filter(f => 
+                    f.fighter1.toLowerCase().includes(term) ||
+                    f.fighter2.toLowerCase().includes(term) ||
+                    (f.event_name && f.event_name.toLowerCase().includes(term)) ||
+                    (f.venue && f.venue.toLowerCase().includes(term))
+                );
+            }
+            
+            return filtered;
+        }
+        
+        // Update results count
+        function updateResultsCount(count) {
+            const resultsCount = document.getElementById('results-count');
+            if (currentSearchTerm || currentFilter !== 'ALL') {
+                resultsCount.textContent = `Showing ${count} fight${count !== 1 ? 's' : ''}`;
+                resultsCount.style.display = 'block';
+            } else {
+                resultsCount.style.display = 'none';
+            }
+        }
+        
+        // Main render function
+        function renderFights(fights) {
+            const cardGrid = document.getElementById('card-grid');
+            const listContainer = document.getElementById('list-container');
+            const listWrapper = document.getElementById('list-section-wrapper');
+            const noFights = document.getElementById('no-fights');
+            
+            updateResultsCount(fights.length);
+            
+            if (fights.length === 0) {
+                cardGrid.innerHTML = '';
+                listWrapper.style.display = 'none';
+                noFights.style.display = 'block';
+                return;
+            }
+            
+            noFights.style.display = 'none';
+            
+            // First 8 as cards
+            cardGrid.innerHTML = fights.slice(0, 8).map(renderCard).join('');
+            
+            // Rest as list
+            if (fights.length > 8) {
+                listContainer.innerHTML = fights.slice(8).map(renderListItem).join('');
+                listWrapper.style.display = 'block';
+            } else {
+                listWrapper.style.display = 'none';
+            }
+        }
+        
+        // Apply current filters and render
+        function applyFiltersAndRender() {
+            const filtered = getFilteredFights();
+            renderFights(filtered);
+        }
+        
+        // Search functionality with debouncing
+        let searchTimeout;
+        const searchInput = document.getElementById('search-input');
+        
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentSearchTerm = e.target.value.trim();
+                applyFiltersAndRender();
+            }, 300); // 300ms debounce
+        });
+        
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update button states
+                filterButtons.forEach(btn => {
+                    btn.classList.remove('active', 'bg-text-primary', 'text-dark-bg');
+                    btn.classList.add('bg-dark-card', 'text-text-secondary');
+                });
+                
+                button.classList.add('active', 'bg-text-primary', 'text-dark-bg');
+                button.classList.remove('bg-dark-card', 'text-text-secondary');
+                
+                // Update filter and save to localStorage
+                currentFilter = button.id.replace('filter-', '').toUpperCase();
+                localStorage.setItem('fightScheduleFilter', currentFilter);
+                
+                // Apply filters and render
+                applyFiltersAndRender();
+            });
+        });
+        
+        // Restore saved filter on page load
+        function restoreSavedFilter() {
+            const savedFilter = localStorage.getItem('fightScheduleFilter') || 'ALL';
+            currentFilter = savedFilter;
+            
+            // Update button states to match saved filter
+            filterButtons.forEach(btn => {
+                const btnFilter = btn.id.replace('filter-', '').toUpperCase();
+                if (btnFilter === savedFilter) {
+                    btn.classList.add('active', 'bg-text-primary', 'text-dark-bg');
+                    btn.classList.remove('bg-dark-card', 'text-text-secondary');
+                } else {
+                    btn.classList.remove('active', 'bg-text-primary', 'text-dark-bg');
+                    btn.classList.add('bg-dark-card', 'text-text-secondary');
+                }
+            });
+        }
+        
+        // Initialize
+        restoreSavedFilter();
+        applyFiltersAndRender();
+    </script>
 </body>
 </html>
