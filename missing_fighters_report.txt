@@ -48,79 +48,83 @@ Thammanoon Niyomtrong
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-04: Carlos Canizales vs Thammanoon Niyomtrong
-  COMMAND: python add_fighter_image.py "Thammanoon Niyomtrong" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Thammanoon Niyomtrong" "https://boxrec.com/images/thumb/0/0d/Niyomtrong_Thammanoon.jpg/200px-Niyomtrong_Thammanoon.jpg" boxing
 
 Jai Tapu Opetaia
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-06: Jai Tapu Opetaia vs Huseyin Cinkara
-  COMMAND: python add_fighter_image.py "Jai Tapu Opetaia" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Jai Tapu Opetaia" "https://cdn.proboxtv.com/uploads/jai_opetaia_aac40672e0.jpg" boxing
 
 Huseyin Cinkara
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-06: Jai Tapu Opetaia vs Huseyin Cinkara
-  COMMAND: python add_fighter_image.py "Huseyin Cinkara" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Huseyin Cinkara" "https://boxrec.com/images/thumb/e/e7/764909.jpg/200px-764909.jpg" boxing
 
 Cristian Zara
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-06: Cristian Zara vs Elie Konki
-  COMMAND: python add_fighter_image.py "Cristian Zara" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Cristian Zara" "https://www.espabox.com/wp-content/uploads/2025/05/Zara-Cristian-1.jpg" boxing
 
 Elif Nur Turhan
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-06: Beatriz Ferreira vs Elif Nur Turhan
-  COMMAND: python add_fighter_image.py "Elif Nur Turhan" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Elif Nur Turhan" "https://images.tapology.com/letterbox_images/346581/default/Screenshot_20220804_151621.jpg?1659622596" boxing
 
 Diego Natchoo
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-06: Diego Natchoo vs Bilel Jkitou
-  COMMAND: python add_fighter_image.py "Diego Natchoo" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Diego Natchoo" "https://boxrec.com/wiki/thumb.php?f=725002_2025.jpg&width=250" boxing
 
 Bilel Jkitou
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-06: Diego Natchoo vs Bilel Jkitou
-  COMMAND: python add_fighter_image.py "Bilel Jkitou" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Bilel Jkitou" "https://boxrec.com/wiki/thumb.php?f=709711a.jpg&width=250" boxing
 
 Shabaz Masoud
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-06: Shabaz Masoud vs Peter McGrail
-  COMMAND: python add_fighter_image.py "Shabaz Masoud" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Shabaz Masoud" "https://boxrec.com/wiki/thumb.php?f=834795.jpg&width=250" boxing
+
+.......
 
 Dvalishvili
   Sport: UFC
   Appears in: 1 fight(s)
   - 2025-12-06: Dvalishvili vs Yan
-  COMMAND: python add_fighter_image.py "Dvalishvili" "IMAGE_URL" ufc
+  COMMAND: python add_fighter_image.py "Dvalishvili" "https://www.ufc.com/images/2025-10/DVALISHVILI_MERAB_BELT_10-04.png" ufc
 
 Yan
   Sport: UFC
   Appears in: 1 fight(s)
   - 2025-12-06: Dvalishvili vs Yan
-  COMMAND: python add_fighter_image.py "Yan" "IMAGE_URL" ufc
+  COMMAND: python add_fighter_image.py "Yan" "https://www.ufc.com/images/2025-07/YAN_PETR_07-26.png" ufc
 
 Zhanibek Alimkhanuly
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-07: Erislandy Lara vs Zhanibek Alimkhanuly
-  COMMAND: python add_fighter_image.py "Zhanibek Alimkhanuly" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Zhanibek Alimkhanuly" "https://boxrec.com/wiki/thumb.php?f=ZhanibekAlimkhanuly1.jpeg&width=250" boxing
 
 Bree Burbeary
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-07: Bree Burbeary vs Geetika Prem Singh
-  COMMAND: python add_fighter_image.py "Bree Burbeary" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Bree Burbeary" "https://boxrec.com/images/thumb/8/86/1083087.jpeg/200px-1083087.jpeg" boxing
 
 Geetika Prem Singh
   Sport: Boxing
   Appears in: 1 fight(s)
   - 2025-12-07: Bree Burbeary vs Geetika Prem Singh
-  COMMAND: python add_fighter_image.py "Geetika Prem Singh" "IMAGE_URL" boxing
+  COMMAND: python add_fighter_image.py "Geetika Prem Singh" "https://boxrec.com/images/commission_photos/9/96/1231353_e0fb54b2106cfc6e8b650297694ea1f2.jpg" boxing
+
+....
 
 Vadim Musaev
   Sport: Boxing
