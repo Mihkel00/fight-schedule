@@ -14,6 +14,41 @@ API_KEY = '891686'
 CACHE_FILE = 'fights_cache.json'
 CACHE_DURATION = timedelta(hours=6)  # Refresh every 6 hours
 
+def format_fight_date(date_str):
+    """Format date from YYYY-MM-DD to 'Sat, Dec 06'"""
+    if not date_str:
+        return ''
+    try:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+        return date_obj.strftime('%a, %b %d')
+    except:
+        return date_str
+
+def format_fight_time(time_str):
+    """Format time from 24h to 12h with AM/PM"""
+    if not time_str:
+        return ''
+    try:
+        # Handle various time formats
+        time_str = time_str.strip()
+        
+        # If already has AM/PM, return as is
+        if 'AM' in time_str.upper() or 'PM' in time_str.upper():
+            return time_str
+        
+        # Parse 24-hour format (e.g., "13:00" or "1:00")
+        if ':' in time_str:
+            time_obj = datetime.strptime(time_str, '%H:%M')
+            return time_obj.strftime('%I:%M %p').lstrip('0')  # Remove leading zero
+        
+        return time_str
+    except:
+        return time_str
+
+# Register Jinja2 filters
+app.jinja_env.filters['format_date'] = format_fight_date
+app.jinja_env.filters['format_time'] = format_fight_time
+
 def load_fighter_database():
     """Load fighters.json and fighters_ufc.json if they exist"""
     fighters_db = {}
