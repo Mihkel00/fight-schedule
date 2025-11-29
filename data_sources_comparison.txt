@@ -48,7 +48,7 @@ Added 11 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 68 additional fighter images
+Fetched 75 additional fighter images
 
 ============================================================
 Filtered out 65 past fights
