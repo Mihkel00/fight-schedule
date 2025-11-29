@@ -6,14 +6,14 @@
     <title>Fight Schedule</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        'bebas': ['"Bebas Neue"', 'Impact', 'sans-serif'],
+                        'staatliches': ['"Staatliches"', 'Impact', 'sans-serif'],
                         'work': ['"Work Sans"', 'sans-serif'],
                     },
                     colors: {
@@ -26,7 +26,7 @@
                         'text-tertiary': '#6b6b6b',
                         'accent-blue': '#3b82f6',
                         'accent-red': '#dc2626',
-                        'accent-red-light': '#EF4444',
+                        'accent-red-custom': '#C00000',
                         'accent-orange': '#f59e0b',
                     }
                 }
@@ -193,24 +193,24 @@
             const opacity2 = fight.fighter2_image ? '' : 'opacity-40';
             
             return `
-                <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:border-dark-elevated transition-colors" data-sport="${fight.sport}">
+                <div class="bg-dark-card rounded-xl p-6 border border-dark-border hover:bg-dark-elevated hover:border-dark-elevated transition-all cursor-pointer" data-sport="${fight.sport}">
                     <div class="flex items-center justify-center gap-6 mb-6">
                         <div class="text-center w-40">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="${img1}" alt="${fight.fighter1}" class="w-full h-full object-cover ${opacity1}">
                             </div>
-                            <p class="font-bebas text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">${fight.fighter1}</p>
+                            <p class="font-staatliches text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">${fight.fighter1}</p>
                         </div>
                         <div class="font-work font-semibold text-base italic uppercase text-text-secondary">VS</div>
                         <div class="text-center w-40">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="${img2}" alt="${fight.fighter2}" class="w-full h-full object-cover ${opacity2}">
                             </div>
-                            <p class="font-bebas text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">${fight.fighter2}</p>
+                            <p class="font-staatliches text-[20px] leading-tight tracking-wide line-clamp-2 uppercase h-12 flex items-center justify-center">${fight.fighter2}</p>
                         </div>
                     </div>
                     <div class="border-t border-dark-border pt-4">
-                        <p class="text-accent-red-light font-work font-semibold mb-2">
+                        <p class="text-accent-red-custom font-work font-semibold mb-2">
                             ${formatDate(displayDate)}${timeDisplay}
                         </p>
                         <div class="flex items-center justify-between">
@@ -243,7 +243,7 @@
             const sportLabel = fight.sport === 'UFC' ? 'UFC' : 'Boxing';
             
             return `
-                <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors" data-sport="${fight.sport}">
+                <div class="px-6 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-6 hover:bg-dark-elevated transition-colors cursor-pointer" data-sport="${fight.sport}">
                     <div class="flex items-center gap-3 flex-wrap">
                         <span class="font-work font-medium text-text-primary">${fight.fighter1} vs ${fight.fighter2}</span>
                         <span class="flex items-center gap-1.5">
@@ -252,7 +252,7 @@
                         </span>
                     </div>
                     <div class="flex flex-col md:flex-row md:items-center gap-1 md:gap-6">
-                        <span class="text-accent-red-light font-work font-semibold whitespace-nowrap text-sm md:text-base">
+                        <span class="text-accent-red-custom font-work font-normal whitespace-nowrap text-sm md:text-base">
                             ${formatDate(displayDate)}${timeDisplay}
                         </span>
                         <span class="font-work text-text-tertiary text-xs">${fight.venue}</span>
