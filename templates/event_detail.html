@@ -88,7 +88,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter1_image }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover opacity-40">
+                        <img src="{{ event.main_event.fighter1_image }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter1.split()[-1] }}
@@ -113,7 +113,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter2_image }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover opacity-40">
+                        <img src="{{ event.main_event.fighter2_image }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter2.split()[-1] }}
@@ -150,7 +150,7 @@
                 <!-- Main Card Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Main Card ({{ event.main_event.time }})
+                        Main Card ({{ event.main_card_time if event.main_card_time != 'TBA' else 'TBA' }})
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.main_card %}
@@ -172,7 +172,7 @@
                 <!-- Prelims Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Prelims (03:00 AM)
+                        Prelims ({{ event.prelim_time if event.prelim_time != 'TBA' else 'TBA' }})
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.prelims %}

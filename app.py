@@ -1017,36 +1017,90 @@ def event_detail(event_slug):
     """Show detailed page for a specific event with full card"""
     fights = fetch_fights()
     
-    # Find all fights for this event
-    # For now, use dummy data - we'll connect real data later
+    # Decode slug back to event name (basic version)
+    # event_slug comes from URL like "ufc-323-dvalishvili-vs-yan-2"
     
-    # Dummy UFC 326 data for testing
-    event_fights = {
-        'event_name': 'UFC 326: Volkanovski vs. Lopes',
-        'date': '2025-01-25',
-        'venue': 'T-Mobile Arena, Las Vegas',
+    # For now, just find the first UFC event (we'll improve slug matching later)
+    # Group fights by event
+    ufc_events = {}
+    for fight in fights:
+        if fight['sport'] == 'UFC':
+            event_name = fight.get('event_name', '')
+            if event_name not in ufc_events:
+                ufc_events[event_name] = []
+            ufc_events[event_name].append(fight)
+    
+    # Get the first UFC event (for testing)
+    if not ufc_events:
+        # Fallback to dummy data if no UFC events
+        event_fights = {
+            'event_name': 'No UFC Events Found',
+            'date': '2025-01-01',
+            'venue': 'TBA',
+            'main_event': {
+                'fighter1': 'TBA',
+                'fighter2': 'TBA',
+                'fighter1_image': '/static/placeholder-fighter-mma.png',
+                'fighter2_image': '/static/placeholder-fighter-mma.png',
+                'weight_class': 'TBA',
+                'time': '00:00'
+            },
+            'main_card': [],
+            'prelims': []
+        }
+        return render_template('event_detail.html', event=event_fights)
+    
+    # Get first event
+    event_name = list(ufc_events.keys())[0]
+    event_fights_list = ufc_events[event_name]
+    
+    # Separate main card and prelims
+    main_card_fights = [f for f in event_fights_list if f.get('card_type') == 'Main Card']
+    prelim_fights = [f for f in event_fights_list if f.get('card_type') == 'Prelims']
+    
+    # Get main event (first fight in main card)
+    main_event_fight = main_card_fights[0] if main_card_fights else event_fights_list[0]
+    
+    # Get weight class from first title fight
+    weight_class = ''
+    for fight in main_card_fights:
+        if fight.get('weight_class') == 'Title':
+            weight_class = 'Championship'
+            break
+    
+    # Build event data structure
+    event_data = {
+        'event_name': event_name,
+        'date': main_event_fight['date'],
+        'venue': main_event_fight['venue'],
         'main_event': {
-            'fighter1': 'Alexander Volkanovski',
-            'fighter2': 'Diego Lopes',
-            'fighter1_image': '/static/placeholder-fighter-mma.png',
-            'fighter2_image': '/static/placeholder-fighter-mma.png',
-            'weight_class': 'Featherweight Championship',
-            'time': '05:00'
+            'fighter1': main_event_fight['fighter1'],
+            'fighter2': main_event_fight['fighter2'],
+            'fighter1_image': main_event_fight.get('fighter1_image') or '/static/placeholder-fighter-mma.png',
+            'fighter2_image': main_event_fight.get('fighter2_image') or '/static/placeholder-fighter-mma.png',
+            'weight_class': weight_class,
+            'time': main_event_fight.get('time', 'TBA')
         },
         'main_card': [
-            {'fighter1': 'Volkanovski', 'fighter2': 'Lopes', 'is_title': True},
-            {'fighter1': "O'Malley", 'fighter2': 'Yadong', 'is_title': False},
-            {'fighter1': 'Grasso', 'fighter2': 'Namajunas', 'is_title': False},
-            {'fighter1': 'Nurmagomedov', 'fighter2': 'Figueiredo', 'is_title': False}
+            {
+                'fighter1': f['fighter1'],
+                'fighter2': f['fighter2'],
+                'is_title': f.get('weight_class') == 'Title'
+            }
+            for f in main_card_fights
         ],
         'prelims': [
-            {'fighter1': 'Cortes-Acosta', 'fighter2': 'Lewis'},
-            {'fighter1': 'Allen', 'fighter2': 'Silva'},
-            {'fighter1': 'Gautier', 'fighter2': 'Pulyaev'}
-        ]
+            {
+                'fighter1': f['fighter1'],
+                'fighter2': f['fighter2']
+            }
+            for f in prelim_fights
+        ],
+        'main_card_time': main_card_fights[0].get('time', 'TBA') if main_card_fights else 'TBA',
+        'prelim_time': prelim_fights[0].get('time', 'TBA') if prelim_fights else 'TBA'
     }
     
-    return render_template('event_detail.html', event=event_fights)
+    return render_template('event_detail.html', event=event_data)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
