@@ -45,6 +45,73 @@ logger.info("="*70)
 # Your Premium API Key
 API_KEY = '891686'
 
+# Big-name fighters - always show their fights (even non-title)
+BIG_NAME_FIGHTERS = [
+    # Top-ranked boxers
+    'Naoya Inoue',
+    'Terence Crawford',
+    'Junto Nakatani',
+    'Jaron Ennis',
+    'Saul Alvarez',
+    'Canelo Alvarez',  # Alternative name for Saul Alvarez
+    'Shakur Stevenson',
+    'David Benavidez',
+    'Dmitrii Bivol',
+    'Jesse Rodriguez',
+    'Artur Beterbiev',
+    'Devin Haney',
+    'Gervonta Davis',
+    'Teofimo Lopez',
+    'Oleksandr Usyk',
+    'Vergil Ortiz Jr',
+    'Raymond Muratalla',
+    'Zhanbek Alimkhanuly',
+    'Rafael Espinoza',
+    'Hamzah Sheeraz',
+    'Nick Ball',
+    'Xander Zayas',
+    'Gilberto Ramirez',
+    'Jermall Charlo',
+    'Masamichi Yabuki',
+    'Fabio Wardley',
+    'Anthony Cacace',
+    'Emanuel Navarrete',
+    'Osleys Iglesias',
+    'Jai Opetaia',
+    'Subriel Matias',
+    'Christian Mbilli',
+    'Agit Kabayel',
+    'Richardson Hitchins',
+    'Oscar Collazo',
+    'Liam Paro',
+    'Jaime Munguia',
+    'Brian Norman Jr',
+    'Keyshawn Davis',
+    'Eduardo Nunez',
+    'Ricardo Rafael Sandoval',
+    'Adam Azim',
+    'Kenshiro Teraji',
+    'Daniel Dubois',
+    'Arnold Barboza Jr',
+    'Ricardo Majika',
+    'Diego Pacheco',
+    'Luis Nery',
+    'Stephen Fulton',
+    'Callum Smith',
+    'Sebastian Fundora',
+    
+    # Popular/celebrity boxers
+    'Jake Paul',
+    'Logan Paul',
+    'Tommy Fury',
+    'KSI',
+    
+    # Legends still fighting
+    'Tyson Fury',
+    'Anthony Joshua',
+    'Manny Pacquiao',
+]
+
 # Cache file path
 CACHE_FILE = 'fights_cache.json'
 CACHE_DURATION = timedelta(hours=6)  # Refresh every 6 hours
@@ -653,6 +720,17 @@ def apply_time_overrides(fights):
     
     return fights
 
+def is_big_name_fight(fight):
+    """Check if fight involves a big-name fighter"""
+    fighter1 = fight.get('fighter1', '').lower()
+    fighter2 = fight.get('fighter2', '').lower()
+    
+    for big_name in BIG_NAME_FIGHTERS:
+        big_name_lower = big_name.lower()
+        if big_name_lower in fighter1 or big_name_lower in fighter2:
+            return True
+    return False
+
 def load_cache():
     """Load cached fight data if it exists and is fresh"""
     if not os.path.exists(CACHE_FILE):
@@ -1020,14 +1098,26 @@ def fetch_fights():
     fights_before_filter = len(fights)
     fights = [f for f in fights if f.get('date', '') >= today]
     
-    # Filter to title fights only (championship bouts)
+    # Filter to title fights OR big-name fighters OR UFC
     fights_before_title_filter = len(fights)
-    fights = [f for f in fights if 'Title' in f.get('weight_class', '') or f.get('sport') == 'UFC']
+    fights = [f for f in fights if 
+              'Title' in f.get('weight_class', '') or 
+              f.get('sport') == 'UFC' or 
+              is_big_name_fight(f)]
+    
+    # Log which big-name fights were kept
+    big_name_fights = [f for f in fights if f.get('sport') == 'Boxing' and 'Title' not in f.get('weight_class', '') and is_big_name_fight(f)]
+    if big_name_fights:
+        log(f"\n[OK] Kept {len(big_name_fights)} big-name boxing fights (non-title):")
+        for fight in big_name_fights[:5]:
+            log(f"  • {fight['fighter1']} vs {fight['fighter2']} - {fight['date']}")
+        if len(big_name_fights) > 5:
+            log(f"  ... and {len(big_name_fights) - 5} more")
     
     log("\n" + "="*60)
     log(f"Filtered out {fights_before_filter - len(fights)} past fights")
-    log(f"Filtered to {len(fights)} title fights (removed {fights_before_title_filter - len(fights)} non-title bouts)")
-    log(f"FINAL RESULT: {len(fights)} upcoming championship fights")
+    log(f"Filtered to {len(fights)} fights (removed {fights_before_title_filter - len(fights)} non-title/non-big-name bouts)")
+    log(f"FINAL RESULT: {len(fights)} upcoming fights (titles + big names + UFC)")
     log("="*60)
     
     # Count fights with images
