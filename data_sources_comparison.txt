@@ -4,14 +4,14 @@ FIGHT DATA SOURCES COMPARISON
 ============================================================
 
 --- BBC SPORT BOXING ---
-BBC Sport Boxing found: 77 fights
+BBC Sport Boxing found: 19 fights
 
-  • Bradley Casey vs Antonio Borovina - 2025-11-01 - Co-op Live Arena, England
-  • Leon Hughes vs Pavol Garaj - 2025-11-01 - Co-op Live Arena, England
-  • Leighton Birchall vs Wilbert Panttin - 2025-11-01 - Co-op Live Arena, England
-  • Jermaine Dhliwayo vs Cesar Paredes - 2025-11-01 - Co-op Live Arena, England
-  • John Tom Varey vs Brandon Gallardo - 2025-11-01 - Co-op Live Arena, England
-  ... and 72 more
+  • Carlos Canizales vs Thammanoon Niyomtrong - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
+  • Jai Tapu Opetaia vs Huseyin Cinkara - 2025-12-06 - Gold Coast Convention Centre, Australia
+  • Cristian Zara vs Elie Konki - 2025-12-06 - TBA
+  • Beatriz Ferreira vs Elif Nur Turhan - 2025-12-06 - Salle des Etoiles, Monaco
+  • Diego Natchoo vs Bilel Jkitou - 2025-12-06 - TBA
+  ... and 14 more
 
 
 --- MMA FIGHTING UFC ---
@@ -47,12 +47,18 @@ Added 7 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 139 additional fighter images
+Fetched 88 additional fighter images
+
+[OK] Kept 4 big-name boxing fights (non-title):
+  • Diego Pacheco vs Kévin Lele Sadjo - 2025-12-13
+  • Jake Paul vs Anthony Joshua - 2025-12-20
+  • Subriel Matias vs Dalton Smith - 2026-01-10
+  • Sebastian Fundora vs Keith Thurman - 2026-01-24
 
 ============================================================
-Filtered out 65 past fights
-Filtered to 51 title fights (removed 14 non-title bouts)
-FINAL RESULT: 51 upcoming championship fights
+Filtered out 3 past fights
+Filtered to 55 fights (removed 3 non-title/non-big-name bouts)
+FINAL RESULT: 55 upcoming fights (titles + big names + UFC)
 ============================================================
-Fights with at least one image: 43 (84%)
+Fights with at least one image: 49 (89%)
 

@@ -1,0 +1,62 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<div class="container">
+    <h1>Fight Schedule Admin</h1>
+    
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Big Name Fighters</h5>
+                    <p class="card-text display-4">{{ big_names }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Image Overrides</h5>
+                    <p class="card-text display-4">{{ overrides }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Manual Events</h5>
+                    <p class="card-text display-4">{{ manual_events }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Time Overrides</h5>
+                    <p class="card-text display-4">{{ time_overrides }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-info mt-4">
+        <h5>Quick Guide:</h5>
+        <ul>
+            <li>Click <strong>"Data Files"</strong> in the menu to edit JSON files directly</li>
+            <li>Files are in <code>data/</code> directory</li>
+            <li>Edit and save - changes apply immediately (clear cache if needed)</li>
+        </ul>
+    </div>
+    
+    <h3 class="mt-4">JSON Files:</h3>
+    <ul>
+        <li><code>big_name_fighters.json</code> - Add/remove big-name fighters</li>
+        <li><code>fighter_image_overrides.json</code> - Override fighter images</li>
+        <li><code>manual_events.json</code> - Add manual events</li>
+        <li><code>time_overrides.json</code> - Fix fight times</li>
+    </ul>
+</div>
+{% endblock %}

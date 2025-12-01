@@ -1,0 +1,573 @@
+[2025-12-01 20:38:50] INFO: ======================================================================
+[2025-12-01 20:38:50] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 20:38:50] INFO: ======================================================================
+[2025-12-01 20:38:50] INFO: Starting Flask server on port 5000
+[2025-12-01 20:38:50] INFO: Debug mode: False
+[2025-12-01 20:38:50] INFO: Cache duration: 6 hours
+[2025-12-01 20:38:54] DEBUG: No cache file found
+[2025-12-01 20:39:20] INFO:   Rendering 51 fights
+[2025-12-01 20:40:03] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:03] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:40:03] DEBUG:   Found 3 UFC events
+[2025-12-01 20:40:05] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:05] INFO:   Rendering 51 fights
+[2025-12-01 20:40:06] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:06] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:40:06] DEBUG:   Found 3 UFC events
+[2025-12-01 20:40:15] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:15] INFO:   Rendering 51 fights
+[2025-12-01 20:40:17] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:17] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:40:17] DEBUG:   Found 3 UFC events
+[2025-12-01 20:40:18] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:18] INFO:   Rendering 51 fights
+[2025-12-01 20:40:20] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:20] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:40:20] DEBUG:   Found 3 UFC events
+[2025-12-01 20:40:52] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:40:52] INFO:   Rendering 51 fights
+[2025-12-01 20:41:00] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:41:00] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:41:00] DEBUG:   Found 3 UFC events
+[2025-12-01 20:41:12] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:41:12] INFO:   Rendering 51 fights
+[2025-12-01 20:42:50] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:42:50] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:42:50] DEBUG:   Found 3 UFC events
+[2025-12-01 20:44:04] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:04] INFO:   Rendering 51 fights
+[2025-12-01 20:44:05] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:05] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:44:05] DEBUG:   Found 3 UFC events
+[2025-12-01 20:44:10] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:10] INFO:   Rendering 51 fights
+[2025-12-01 20:44:43] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:43] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:44:43] DEBUG:   Found 3 UFC events
+[2025-12-01 20:44:48] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:48] INFO:   Rendering 51 fights
+[2025-12-01 20:44:49] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:49] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:44:49] DEBUG:   Found 3 UFC events
+[2025-12-01 20:44:51] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:51] INFO:   Rendering 51 fights
+[2025-12-01 20:44:53] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:44:53] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:44:53] DEBUG:   Found 3 UFC events
+[2025-12-01 20:47:04] INFO: ======================================================================
+[2025-12-01 20:47:04] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 20:47:04] INFO: ======================================================================
+[2025-12-01 20:47:04] INFO: Starting Flask server on port 5000
+[2025-12-01 20:47:04] INFO: Debug mode: False
+[2025-12-01 20:47:04] INFO: Cache duration: 6 hours
+[2025-12-01 20:47:09] DEBUG: No cache file found
+[2025-12-01 20:47:33] INFO:   Rendering 51 fights
+[2025-12-01 20:47:33] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:47:33] INFO:   Rendering 51 fights
+[2025-12-01 20:47:36] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:47:36] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:47:36] DEBUG:   Found 3 UFC events
+[2025-12-01 20:47:36] DEBUG:   Searching through 3 events
+[2025-12-01 20:47:40] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:47:40] INFO:   Rendering 51 fights
+[2025-12-01 20:47:41] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:47:41] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:47:41] DEBUG:   Found 3 UFC events
+[2025-12-01 20:47:41] DEBUG:   Searching through 3 events
+[2025-12-01 20:47:43] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:47:43] INFO:   Rendering 51 fights
+[2025-12-01 20:47:45] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:47:45] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:47:45] DEBUG:   Found 3 UFC events
+[2025-12-01 20:47:45] DEBUG:   Searching through 3 events
+[2025-12-01 20:48:02] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:48:02] INFO:   Rendering 51 fights
+[2025-12-01 20:48:03] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:48:03] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:48:03] DEBUG:   Found 3 UFC events
+[2025-12-01 20:48:03] DEBUG:   Searching through 3 events
+[2025-12-01 20:48:50] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:48:50] INFO:   Rendering 51 fights
+[2025-12-01 20:49:06] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:49:06] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:49:06] DEBUG:   Found 3 UFC events
+[2025-12-01 20:49:06] DEBUG:   Searching through 3 events
+[2025-12-01 20:50:12] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:50:12] INFO:   Rendering 51 fights
+[2025-12-01 20:50:19] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:50:19] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:50:19] DEBUG:   Found 3 UFC events
+[2025-12-01 20:50:19] DEBUG:   Searching through 3 events
+[2025-12-01 20:50:25] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:50:25] INFO:   Rendering 51 fights
+[2025-12-01 20:50:29] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:50:29] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 20:50:29] DEBUG:   Found 3 UFC events
+[2025-12-01 20:50:29] DEBUG:   Searching through 3 events
+[2025-12-01 20:50:32] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:50:32] INFO:   Rendering 51 fights
+[2025-12-01 20:50:42] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:50:42] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:50:42] DEBUG:   Found 3 UFC events
+[2025-12-01 20:50:42] DEBUG:   Searching through 3 events
+[2025-12-01 20:53:10] INFO: ======================================================================
+[2025-12-01 20:53:10] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 20:53:10] INFO: ======================================================================
+[2025-12-01 20:53:10] INFO: Starting Flask server on port 5000
+[2025-12-01 20:53:10] INFO: Debug mode: False
+[2025-12-01 20:53:10] INFO: Cache duration: 6 hours
+[2025-12-01 20:53:15] DEBUG: No cache file found
+[2025-12-01 20:53:40] INFO:   Rendering 51 fights
+[2025-12-01 20:54:54] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:54:54] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:54:54] DEBUG:   Found 3 UFC events
+[2025-12-01 20:54:54] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: 2025-12-07 (14 fights)
+[2025-12-01 20:54:54] DEBUG:     - UFC Vegas 112: Royval vs. Kape: 2025-12-13 (9 fights)
+[2025-12-01 20:54:54] DEBUG:     - UFC 324: Gaethje vs. Pimblett: 2026-01-24 (9 fights)
+[2025-12-01 20:54:54] DEBUG:   Searching through 3 events
+[2025-12-01 20:54:54] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 20:54:54] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 20:54:54] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 20:54:54] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 20:54:56] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:54:56] INFO:   Rendering 51 fights
+[2025-12-01 20:56:20] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:56:20] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 20:56:20] DEBUG:   Found 3 UFC events
+[2025-12-01 20:56:20] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: 2025-12-07 (14 fights)
+[2025-12-01 20:56:20] DEBUG:     - UFC Vegas 112: Royval vs. Kape: 2025-12-13 (9 fights)
+[2025-12-01 20:56:20] DEBUG:     - UFC 324: Gaethje vs. Pimblett: 2026-01-24 (9 fights)
+[2025-12-01 20:56:20] DEBUG:   Searching through 3 events
+[2025-12-01 20:56:20] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 20:56:20] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 20:56:20] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 20:56:20] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 20:56:22] INFO:   Loaded 51 fights from cache
+[2025-12-01 20:56:22] INFO:   Rendering 51 fights
+[2025-12-01 21:01:25] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:01:25] INFO:   Rendering 51 fights
+[2025-12-01 21:04:29] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:04:29] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 21:04:29] DEBUG:   Found 3 UFC events
+[2025-12-01 21:04:29] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: 2025-12-07 (14 fights)
+[2025-12-01 21:04:29] DEBUG:     - UFC Vegas 112: Royval vs. Kape: 2025-12-13 (9 fights)
+[2025-12-01 21:04:29] DEBUG:     - UFC 324: Gaethje vs. Pimblett: 2026-01-24 (9 fights)
+[2025-12-01 21:04:29] DEBUG:   Searching through 3 events
+[2025-12-01 21:04:29] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 21:04:29] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 21:04:29] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 21:04:29] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 21:05:26] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:05:26] INFO:   Rendering 51 fights
+[2025-12-01 21:05:31] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:05:31] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 21:05:31] DEBUG:   Found 3 UFC events
+[2025-12-01 21:05:31] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: 2025-12-07 (14 fights)
+[2025-12-01 21:05:31] DEBUG:     - UFC Vegas 112: Royval vs. Kape: 2025-12-13 (9 fights)
+[2025-12-01 21:05:31] DEBUG:     - UFC 324: Gaethje vs. Pimblett: 2026-01-24 (9 fights)
+[2025-12-01 21:05:31] DEBUG:   Searching through 3 events
+[2025-12-01 21:05:31] DEBUG:   Main card fights: 5, Prelims: 4
+[2025-12-01 21:05:31] INFO:   Main event: Brandon Royval vs Manel Kape
+[2025-12-01 21:05:31] INFO:   Event date: 2025-12-13, Time: 00:00
+[2025-12-01 21:05:31] INFO:   Venue: UFC APEX in Las Vegas
+[2025-12-01 21:07:24] INFO: ======================================================================
+[2025-12-01 21:07:24] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 21:07:24] INFO: ======================================================================
+[2025-12-01 21:07:24] INFO: Starting Flask server on port 5000
+[2025-12-01 21:07:24] INFO: Debug mode: False
+[2025-12-01 21:07:24] INFO: Cache duration: 6 hours
+[2025-12-01 21:07:27] INFO: --> Home page accessed
+[2025-12-01 21:07:27] DEBUG: No cache file found
+[2025-12-01 21:07:50] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-01 21:07:50] DEBUG: No cache file found
+[2025-12-01 21:07:52] INFO: [OK] Cache saved: 51 fights at 2025-12-01 21:07:52
+[2025-12-01 21:07:52] INFO:   Rendering 51 fights
+[2025-12-01 21:08:03] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-01 21:08:03] INFO: [OK] Using cached data from 2025-12-01 21:07:52 (age: 0 minutes)
+[2025-12-01 21:08:03] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:08:03] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 21:08:03] DEBUG:   Found 3 UFC events
+[2025-12-01 21:08:03] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-01 21:08:03] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-01 21:08:03] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-01 21:08:03] DEBUG:   Searching through 3 events
+[2025-12-01 21:08:03] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-01 21:08:03] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 21:08:03] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 21:08:03] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 21:08:03] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 21:08:08] INFO: --> Home page accessed
+[2025-12-01 21:08:08] INFO: [OK] Using cached data from 2025-12-01 21:07:52 (age: 0 minutes)
+[2025-12-01 21:08:08] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:08:08] INFO:   Rendering 51 fights
+[2025-12-01 21:08:12] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-01 21:08:12] INFO: [OK] Using cached data from 2025-12-01 21:07:52 (age: 0 minutes)
+[2025-12-01 21:08:12] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:08:12] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 21:08:12] DEBUG:   Found 3 UFC events
+[2025-12-01 21:08:12] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-01 21:08:12] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-01 21:08:12] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-01 21:08:12] DEBUG:   Searching through 3 events
+[2025-12-01 21:08:12] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-01 21:08:12] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 21:08:12] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 21:08:12] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 21:08:12] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 21:08:14] INFO: --> Home page accessed
+[2025-12-01 21:08:14] INFO: [OK] Using cached data from 2025-12-01 21:07:52 (age: 0 minutes)
+[2025-12-01 21:08:14] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:08:14] INFO:   Rendering 51 fights
+[2025-12-01 21:08:15] INFO: [OK] Cache saved: 51 fights at 2025-12-01 21:08:15
+[2025-12-01 21:08:15] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 21:08:15] DEBUG:   Found 3 UFC events
+[2025-12-01 21:08:15] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-01 21:08:15] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-01 21:08:15] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-01 21:08:15] DEBUG:   Searching through 3 events
+[2025-12-01 21:08:15] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-01 21:08:15] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 21:08:15] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 21:08:15] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 21:08:15] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 21:08:23] INFO: --> Event detail accessed: ufc-vegas-112-royval-vs-kape-2025-12-13
+[2025-12-01 21:08:23] INFO: [OK] Using cached data from 2025-12-01 21:08:15 (age: 0 minutes)
+[2025-12-01 21:08:23] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:08:23] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 21:08:23] DEBUG:   Found 3 UFC events
+[2025-12-01 21:08:23] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-01 21:08:23] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-01 21:08:23] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-01 21:08:23] DEBUG:   Searching through 3 events
+[2025-12-01 21:08:23] INFO:   [OK] Matched by DATE: UFC Vegas 112: Royval vs. Kape (9 fights)
+[2025-12-01 21:08:23] DEBUG:   Main card fights: 5, Prelims: 4
+[2025-12-01 21:08:23] INFO:   Main event: Brandon Royval vs Manel Kape
+[2025-12-01 21:08:23] INFO:   Event date: 2025-12-13, Time: 00:00
+[2025-12-01 21:08:23] INFO:   Venue: UFC APEX in Las Vegas
+[2025-12-01 21:08:31] INFO: --> Home page accessed
+[2025-12-01 21:08:31] INFO: [OK] Using cached data from 2025-12-01 21:08:15 (age: 0 minutes)
+[2025-12-01 21:08:31] INFO:   Loaded 51 fights from cache
+[2025-12-01 21:08:31] INFO:   Rendering 51 fights
+[2025-12-01 21:36:47] INFO: ======================================================================
+[2025-12-01 21:36:47] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 21:36:47] INFO: ======================================================================
+[2025-12-01 21:36:47] INFO: Starting Flask server on port 5000
+[2025-12-01 21:36:47] INFO: Debug mode: False
+[2025-12-01 21:36:47] INFO: Cache duration: 6 hours
+[2025-12-01 21:36:51] INFO: --> Home page accessed
+[2025-12-01 21:36:51] DEBUG: No cache file found
+[2025-12-01 21:37:17] INFO: [OK] Cache saved: 55 fights at 2025-12-01 21:37:17
+[2025-12-01 21:37:17] INFO:   Rendering 55 fights
+[2025-12-01 21:37:59] INFO: --> Home page accessed
+[2025-12-01 21:37:59] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 0 minutes)
+[2025-12-01 21:37:59] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:37:59] INFO:   Rendering 55 fights
+[2025-12-01 21:38:00] INFO: --> Home page accessed
+[2025-12-01 21:38:00] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 0 minutes)
+[2025-12-01 21:38:00] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:38:00] INFO:   Rendering 55 fights
+[2025-12-01 21:38:03] INFO: --> Home page accessed
+[2025-12-01 21:38:03] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 0 minutes)
+[2025-12-01 21:38:03] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:38:03] INFO:   Rendering 55 fights
+[2025-12-01 21:38:13] INFO: --> Home page accessed
+[2025-12-01 21:38:13] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 0 minutes)
+[2025-12-01 21:38:13] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:38:13] INFO:   Rendering 55 fights
+[2025-12-01 21:38:16] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-01 21:38:16] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 0 minutes)
+[2025-12-01 21:38:16] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:38:16] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 21:38:16] DEBUG:   Found 3 UFC events
+[2025-12-01 21:38:16] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-01 21:38:16] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-01 21:38:16] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-01 21:38:16] DEBUG:   Searching through 3 events
+[2025-12-01 21:38:16] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-01 21:38:16] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 21:38:16] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 21:38:16] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 21:38:16] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 21:38:20] INFO: --> Home page accessed
+[2025-12-01 21:38:20] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 1 minutes)
+[2025-12-01 21:38:20] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:38:20] INFO:   Rendering 55 fights
+[2025-12-01 21:38:22] INFO: --> Event detail accessed: ufc-vegas-112-royval-vs-kape-2025-12-13
+[2025-12-01 21:38:22] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 1 minutes)
+[2025-12-01 21:38:22] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:38:22] DEBUG:   Parsed slug - date: 2025-12-13, name: ufc-vegas-112-royval-vs-kape
+[2025-12-01 21:38:22] DEBUG:   Found 3 UFC events
+[2025-12-01 21:38:22] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-01 21:38:22] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-01 21:38:22] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-01 21:38:22] DEBUG:   Searching through 3 events
+[2025-12-01 21:38:22] INFO:   [OK] Matched by DATE: UFC Vegas 112: Royval vs. Kape (9 fights)
+[2025-12-01 21:38:22] DEBUG:   Main card fights: 5, Prelims: 4
+[2025-12-01 21:38:22] INFO:   Main event: Brandon Royval vs Manel Kape
+[2025-12-01 21:38:22] INFO:   Event date: 2025-12-13, Time: 00:00
+[2025-12-01 21:38:22] INFO:   Venue: UFC APEX in Las Vegas
+[2025-12-01 21:38:27] INFO: --> Home page accessed
+[2025-12-01 21:38:27] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 1 minutes)
+[2025-12-01 21:38:27] INFO:   Loaded 55 fights from cache
+[2025-12-01 21:38:27] INFO:   Rendering 55 fights
+[2025-12-01 22:09:17] INFO: ======================================================================
+[2025-12-01 22:09:17] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 22:09:17] INFO: ======================================================================
+[2025-12-01 22:09:17] INFO: Starting Flask server on port 5000
+[2025-12-01 22:09:17] INFO: Debug mode: False
+[2025-12-01 22:09:17] INFO: Cache duration: 6 hours
+[2025-12-01 22:09:24] INFO: --> Home page accessed
+[2025-12-01 22:09:24] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 32 minutes)
+[2025-12-01 22:09:24] INFO:   Loaded 55 fights from cache
+[2025-12-01 22:09:24] INFO:   Rendering 55 fights
+[2025-12-01 22:11:53] INFO: ======================================================================
+[2025-12-01 22:11:53] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 22:11:53] INFO: ======================================================================
+[2025-12-01 22:11:53] INFO: Starting Flask server on port 5000
+[2025-12-01 22:11:53] INFO: Debug mode: False
+[2025-12-01 22:11:53] INFO: Cache duration: 6 hours
+[2025-12-01 22:11:56] INFO: --> Home page accessed
+[2025-12-01 22:11:56] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 34 minutes)
+[2025-12-01 22:11:56] INFO:   Loaded 55 fights from cache
+[2025-12-01 22:11:56] INFO:   Rendering 55 fights
+[2025-12-01 22:25:21] INFO: ======================================================================
+[2025-12-01 22:25:21] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 22:25:21] INFO: ======================================================================
+[2025-12-01 22:25:21] INFO: Starting Flask server on port 5000
+[2025-12-01 22:25:21] INFO: Debug mode: False
+[2025-12-01 22:25:21] INFO: Cache duration: 6 hours
+[2025-12-01 22:25:24] INFO: --> Home page accessed
+[2025-12-01 22:25:24] INFO: [OK] Using cached data from 2025-12-01 21:37:17 (age: 48 minutes)
+[2025-12-01 22:25:24] INFO:   Loaded 55 fights from cache
+[2025-12-01 22:25:24] INFO:   Rendering 55 fights
+[2025-12-01 22:28:14] INFO: ======================================================================
+[2025-12-01 22:28:14] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 22:28:14] INFO: ======================================================================
+[2025-12-01 22:28:14] INFO: Starting Flask server on port 5000
+[2025-12-01 22:28:14] INFO: Debug mode: False
+[2025-12-01 22:28:14] INFO: Cache duration: 6 hours
+[2025-12-01 22:28:16] INFO: --> Home page accessed
+[2025-12-01 22:28:16] DEBUG: No cache file found
+[2025-12-01 22:28:41] INFO: [OK] Cache saved: 55 fights at 2025-12-01 22:28:41
+[2025-12-01 22:28:41] INFO:   Rendering 55 fights
+[2025-12-01 22:42:43] INFO: ======================================================================
+[2025-12-01 22:42:43] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-01 22:42:43] INFO: ======================================================================
+[2025-12-01 22:42:43] INFO: Starting Flask server on port 5000
+[2025-12-01 22:42:43] INFO: Debug mode: False
+[2025-12-01 22:42:43] INFO: Cache duration: 6 hours
+[2025-12-01 22:42:46] INFO: --> Home page accessed
+[2025-12-01 22:42:46] INFO: [OK] Using cached data from 2025-12-01 22:28:41 (age: 14 minutes)
+[2025-12-01 22:42:46] INFO:   Loaded 55 fights from cache
+[2025-12-01 22:42:46] INFO:   Rendering 55 fights
+[2025-12-01 22:47:45] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-01 22:47:45] INFO: [OK] Using cached data from 2025-12-01 22:28:41 (age: 19 minutes)
+[2025-12-01 22:47:45] INFO:   Loaded 55 fights from cache
+[2025-12-01 22:47:45] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-01 22:47:45] DEBUG:   Found 3 UFC events
+[2025-12-01 22:47:45] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-01 22:47:45] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-01 22:47:45] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-01 22:47:45] DEBUG:   Searching through 3 events
+[2025-12-01 22:47:45] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-01 22:47:45] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-01 22:47:45] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-01 22:47:45] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-01 22:47:45] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-01 22:51:57] INFO: --> Home page accessed
+[2025-12-01 22:51:57] INFO: [OK] Using cached data from 2025-12-01 22:28:41 (age: 23 minutes)
+[2025-12-01 22:51:57] INFO:   Loaded 55 fights from cache
+[2025-12-01 22:51:57] INFO:   Rendering 55 fights
+[2025-12-01 23:07:38] INFO: --> Home page accessed
+[2025-12-01 23:07:38] INFO: [OK] Using cached data from 2025-12-01 22:28:41 (age: 38 minutes)
+[2025-12-01 23:07:38] INFO:   Loaded 55 fights from cache
+[2025-12-01 23:07:38] INFO:   Rendering 55 fights
+[2025-12-01 23:58:33] INFO: --> Home page accessed
+[2025-12-01 23:58:33] INFO: [OK] Using cached data from 2025-12-01 22:28:41 (age: 89 minutes)
+[2025-12-01 23:58:33] INFO:   Loaded 55 fights from cache
+[2025-12-01 23:58:33] INFO:   Rendering 55 fights
+[2025-12-02 00:08:49] INFO: ======================================================================
+[2025-12-02 00:08:49] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-02 00:08:49] INFO: ======================================================================
+[2025-12-02 00:08:49] INFO: Starting Flask server on port 5000
+[2025-12-02 00:08:49] INFO: Debug mode: False
+[2025-12-02 00:08:49] INFO: Cache duration: 6 hours
+[2025-12-02 00:08:52] INFO: --> Home page accessed
+[2025-12-02 00:08:52] DEBUG: No cache file found
+[2025-12-02 00:09:17] INFO: [OK] Cache saved: 55 fights at 2025-12-02 00:09:17
+[2025-12-02 00:09:17] INFO:   Rendering 55 fights
+[2025-12-02 00:09:48] INFO: Boxing event accessed: the-imperial-queens-2025-12-04
+[2025-12-02 00:09:55] INFO: Boxing event accessed: gold-coast-convention-2025-12-06
+[2025-12-02 00:09:58] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-02 00:09:58] INFO: [OK] Using cached data from 2025-12-02 00:09:17 (age: 0 minutes)
+[2025-12-02 00:09:58] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:09:58] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-02 00:09:58] DEBUG:   Found 3 UFC events
+[2025-12-02 00:09:58] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-02 00:09:58] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-02 00:09:58] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-02 00:09:58] DEBUG:   Searching through 3 events
+[2025-12-02 00:09:58] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-02 00:09:58] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-02 00:09:58] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-02 00:09:58] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-02 00:09:58] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-02 00:10:00] INFO: --> Home page accessed
+[2025-12-02 00:10:00] INFO: [OK] Using cached data from 2025-12-02 00:09:17 (age: 0 minutes)
+[2025-12-02 00:10:00] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:10:00] INFO:   Rendering 55 fights
+[2025-12-02 00:10:03] INFO: Boxing event accessed: the-imperial-queens-2025-12-04
+[2025-12-02 00:10:06] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-02 00:10:06] INFO: [OK] Using cached data from 2025-12-02 00:09:17 (age: 0 minutes)
+[2025-12-02 00:10:06] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:10:06] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-02 00:10:06] DEBUG:   Found 3 UFC events
+[2025-12-02 00:10:06] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-02 00:10:06] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-02 00:10:06] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (9 fights)
+[2025-12-02 00:10:06] DEBUG:   Searching through 3 events
+[2025-12-02 00:10:06] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-02 00:10:06] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-02 00:10:06] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-02 00:10:06] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-02 00:10:06] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-02 00:10:08] INFO: --> Home page accessed
+[2025-12-02 00:10:08] INFO: [OK] Using cached data from 2025-12-02 00:09:17 (age: 0 minutes)
+[2025-12-02 00:10:08] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:10:08] INFO:   Rendering 55 fights
+[2025-12-02 00:10:10] INFO: Boxing event accessed: salle-des-etoiles-2025-12-06
+[2025-12-02 00:10:12] INFO: Boxing event accessed: tba-2025-12-06
+[2025-12-02 00:10:14] INFO: Boxing event accessed: frost-bank-center-2025-12-07
+[2025-12-02 00:10:47] INFO: Boxing event accessed: tba-2025-12-06
+[2025-12-02 00:10:50] INFO: Boxing event accessed: the-imperial-queens-2025-12-04
+[2025-12-02 00:14:18] INFO: ======================================================================
+[2025-12-02 00:14:18] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-02 00:14:18] INFO: ======================================================================
+[2025-12-02 00:14:18] INFO: Starting Flask server on port 5000
+[2025-12-02 00:14:18] INFO: Debug mode: False
+[2025-12-02 00:14:18] INFO: Cache duration: 6 hours
+[2025-12-02 00:14:22] INFO: --> Home page accessed
+[2025-12-02 00:14:22] DEBUG: No cache file found
+[2025-12-02 00:14:45] INFO: [OK] Cache saved: 55 fights at 2025-12-02 00:14:45
+[2025-12-02 00:14:45] INFO:   Rendering 55 fights
+[2025-12-02 00:14:58] INFO: --> Home page accessed
+[2025-12-02 00:14:58] INFO: [OK] Using cached data from 2025-12-02 00:14:45 (age: 0 minutes)
+[2025-12-02 00:14:58] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:14:58] INFO:   Rendering 55 fights
+[2025-12-02 00:15:03] INFO: Boxing event accessed: the-imperial-queens-2025-12-04
+[2025-12-02 00:15:24] INFO: Boxing event accessed: gold-coast-convention-2025-12-06
+[2025-12-02 00:15:27] INFO: Boxing event accessed: tba-2025-12-06
+[2025-12-02 00:15:29] INFO: Boxing event accessed: salle-des-etoiles-2025-12-06
+[2025-12-02 00:15:31] INFO: Boxing event accessed: tba-2025-12-06
+[2025-12-02 00:15:33] INFO: Boxing event accessed: salle-des-etoiles-2025-12-06
+[2025-12-02 00:15:35] INFO: Boxing event accessed: frost-bank-center-2025-12-07
+[2025-12-02 00:15:36] INFO: Boxing event accessed: frost-bank-center-2025-12-07
+[2025-12-02 00:19:13] INFO: ======================================================================
+[2025-12-02 00:19:13] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-02 00:19:13] INFO: ======================================================================
+[2025-12-02 00:19:13] INFO: Starting Flask server on port 5000
+[2025-12-02 00:19:13] INFO: Debug mode: False
+[2025-12-02 00:19:13] INFO: Cache duration: 6 hours
+[2025-12-02 00:19:16] INFO: --> Home page accessed
+[2025-12-02 00:19:16] DEBUG: No cache file found
+[2025-12-02 00:19:41] INFO: [OK] Cache saved: 55 fights at 2025-12-02 00:19:41
+[2025-12-02 00:19:41] INFO:   Rendering 55 fights
+[2025-12-02 00:19:43] INFO: Boxing event accessed: the-imperial-queens-2025-12-04
+[2025-12-02 00:19:43] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:19:43] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:19:43] INFO: Found 1 fights for this event
+[2025-12-02 00:19:43] INFO: Main event: Carlos Canizales vs Thammanoon Niyomtrong
+[2025-12-02 00:19:48] INFO: --> Home page accessed
+[2025-12-02 00:19:48] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:19:48] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:19:48] INFO:   Rendering 55 fights
+[2025-12-02 00:19:49] INFO: Boxing event accessed: gold-coast-convention-2025-12-06
+[2025-12-02 00:19:49] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:19:49] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:19:49] INFO: Found 1 fights for this event
+[2025-12-02 00:19:49] INFO: Main event: Jai Tapu Opetaia vs Huseyin Cinkara
+[2025-12-02 00:19:51] INFO: --> Home page accessed
+[2025-12-02 00:19:51] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:19:51] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:19:51] INFO:   Rendering 55 fights
+[2025-12-02 00:19:52] INFO: Boxing event accessed: tba-2025-12-06
+[2025-12-02 00:19:52] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:19:52] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:19:52] INFO: Found 2 fights for this event
+[2025-12-02 00:19:52] INFO: Main event: Cristian Zara vs Elie Konki
+[2025-12-02 00:19:57] INFO: --> Home page accessed
+[2025-12-02 00:19:57] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:19:57] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:19:57] INFO:   Rendering 55 fights
+[2025-12-02 00:19:58] INFO: Boxing event accessed: salle-des-etoiles-2025-12-06
+[2025-12-02 00:19:58] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:19:58] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:19:58] INFO: Found 2 fights for this event
+[2025-12-02 00:19:58] INFO: Main event: Beatriz Ferreira vs Elif Nur Turhan
+[2025-12-02 00:20:01] INFO: --> Home page accessed
+[2025-12-02 00:20:01] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:01] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:01] INFO:   Rendering 55 fights
+[2025-12-02 00:20:02] INFO: Boxing event accessed: tba-2025-12-06
+[2025-12-02 00:20:02] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:02] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:02] INFO: Found 2 fights for this event
+[2025-12-02 00:20:02] INFO: Main event: Cristian Zara vs Elie Konki
+[2025-12-02 00:20:05] INFO: --> Home page accessed
+[2025-12-02 00:20:05] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:05] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:05] INFO:   Rendering 55 fights
+[2025-12-02 00:20:07] INFO: Boxing event accessed: salle-des-etoiles-2025-12-06
+[2025-12-02 00:20:07] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:07] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:07] INFO: Found 2 fights for this event
+[2025-12-02 00:20:07] INFO: Main event: Beatriz Ferreira vs Elif Nur Turhan
+[2025-12-02 00:20:08] INFO: --> Home page accessed
+[2025-12-02 00:20:08] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:08] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:08] INFO:   Rendering 55 fights
+[2025-12-02 00:20:10] INFO: Boxing event accessed: frost-bank-center-2025-12-07
+[2025-12-02 00:20:10] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:10] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:10] INFO: Found 2 fights for this event
+[2025-12-02 00:20:10] INFO: Main event: Stephen Fulton vs O'Shaquie Foster
+[2025-12-02 00:20:13] INFO: --> Home page accessed
+[2025-12-02 00:20:13] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:13] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:13] INFO:   Rendering 55 fights
+[2025-12-02 00:20:14] INFO: Boxing event accessed: salle-des-etoiles-2025-12-06
+[2025-12-02 00:20:14] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:14] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:14] INFO: Found 2 fights for this event
+[2025-12-02 00:20:14] INFO: Main event: Beatriz Ferreira vs Elif Nur Turhan
+[2025-12-02 00:20:16] INFO: --> Home page accessed
+[2025-12-02 00:20:16] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:16] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:16] INFO:   Rendering 55 fights
+[2025-12-02 00:20:18] INFO: Boxing event accessed: frost-bank-center-2025-12-07
+[2025-12-02 00:20:18] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:18] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:18] INFO: Found 2 fights for this event
+[2025-12-02 00:20:18] INFO: Main event: Stephen Fulton vs O'Shaquie Foster
+[2025-12-02 00:20:19] INFO: --> Home page accessed
+[2025-12-02 00:20:19] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:19] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:19] INFO:   Rendering 55 fights
+[2025-12-02 00:20:21] INFO: Boxing event accessed: salle-des-etoiles-2025-12-06
+[2025-12-02 00:20:21] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:21] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:21] INFO: Found 2 fights for this event
+[2025-12-02 00:20:21] INFO: Main event: Beatriz Ferreira vs Elif Nur Turhan
+[2025-12-02 00:20:24] INFO: --> Home page accessed
+[2025-12-02 00:20:24] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:24] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:24] INFO:   Rendering 55 fights
+[2025-12-02 00:20:32] INFO: Boxing event accessed: kaseya-center-2025-12-20
+[2025-12-02 00:20:32] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:32] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:32] INFO: Found 1 fights for this event
+[2025-12-02 00:20:32] INFO: Main event: Jake Paul vs Anthony Joshua
+[2025-12-02 00:20:36] INFO: --> Home page accessed
+[2025-12-02 00:20:36] INFO: [OK] Using cached data from 2025-12-02 00:19:41 (age: 0 minutes)
+[2025-12-02 00:20:36] INFO:   Loaded 55 fights from cache
+[2025-12-02 00:20:36] INFO:   Rendering 55 fights

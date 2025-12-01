@@ -6,8 +6,13 @@ import json
 import re
 import logging
 from logging.handlers import RotatingFileHandler
+from admin_setup_simple import setup_admin
+from admin_models import BigNameFighter
 
 app = Flask(__name__)
+
+# Setup Flask-Admin
+admin = setup_admin(app)
 
 # ============================================================================
 # LOGGING SETUP
@@ -722,14 +727,11 @@ def apply_time_overrides(fights):
 
 def is_big_name_fight(fight):
     """Check if fight involves a big-name fighter"""
-    fighter1 = fight.get('fighter1', '').lower()
-    fighter2 = fight.get('fighter2', '').lower()
+    model = BigNameFighter()
+    fighter1 = fight.get('fighter1', '')
+    fighter2 = fight.get('fighter2', '')
     
-    for big_name in BIG_NAME_FIGHTERS:
-        big_name_lower = big_name.lower()
-        if big_name_lower in fighter1 or big_name_lower in fighter2:
-            return True
-    return False
+    return model.is_big_name(fighter1) or model.is_big_name(fighter2)
 
 def load_cache():
     """Load cached fight data if it exists and is fresh"""
@@ -1286,6 +1288,93 @@ def event_detail(event_slug):
     }
     
     return render_template('event_detail.html', event=event_data)
+
+@app.route('/boxing-event/<event_slug>')
+def boxing_event_detail(event_slug):
+    """Show boxing event details grouped by venue and date"""
+    logger.info(f"Boxing event accessed: {event_slug}")
+    
+    # Load all fights using fetch_fights
+    all_fights = fetch_fights()
+    
+    # Filter to boxing only
+    boxing_fights = [f for f in all_fights if f.get('sport') == 'Boxing']
+    
+    # Parse slug (format: venue-slug-YYYY-MM-DD)
+    parts = event_slug.rsplit('-', 3)
+    if len(parts) >= 3:
+        date_str = f"{parts[-3]}-{parts[-2]}-{parts[-1]}"
+    else:
+        date_str = ''
+    
+    # Group fights by venue + date (with 1-day tolerance)
+    from datetime import datetime, timedelta
+    target_date = datetime.strptime(date_str, '%Y-%m-%d') if date_str else None
+    
+    # Find all fights at same venue within 1 day
+    event_fights = []
+    for fight in boxing_fights:
+        if not target_date:
+            continue
+        
+        fight_date = datetime.strptime(fight['date'], '%Y-%m-%d')
+        date_diff = abs((fight_date - target_date).days)
+        
+        # Check if same venue and within 1 day
+        venue_matches = False
+        fight_venue_clean = fight.get('venue', '').lower().replace(',', '').replace('.', '')
+        
+        for part in event_slug.split('-'):
+            if len(part) > 2 and part in fight_venue_clean:
+                venue_matches = True
+                break
+        
+        if venue_matches and date_diff <= 1:
+            event_fights.append(fight)
+    
+    if not event_fights:
+        logger.warning(f"No boxing fights found for {event_slug}")
+        return "Event not found", 404
+    
+    logger.info(f"Found {len(event_fights)} fights for this event")
+    
+    # Sort fights - main event first (check big-name list)
+    def is_big_name_in_fight(fight):
+        model = BigNameFighter()
+        return model.is_big_name(fight['fighter1']) or model.is_big_name(fight['fighter2'])
+    
+    # Separate big-name and regular fights
+    big_name_fights = [f for f in event_fights if is_big_name_in_fight(f)]
+    other_fights = [f for f in event_fights if not is_big_name_in_fight(f)]
+    
+    # Main event is first big-name fight, or first fight alphabetically
+    if big_name_fights:
+        main_event_fight = big_name_fights[0]
+        undercard = big_name_fights[1:] + other_fights
+    else:
+        event_fights_sorted = sorted(event_fights, key=lambda x: x['fighter1'])
+        main_event_fight = event_fights_sorted[0]
+        undercard = event_fights_sorted[1:]
+    
+    logger.info(f"Main event: {main_event_fight['fighter1']} vs {main_event_fight['fighter2']}")
+    
+    # Build event data
+    event_data = {
+        'venue': main_event_fight['venue'],
+        'location': main_event_fight['location'],
+        'date': main_event_fight['date'],
+        'time': main_event_fight.get('time', 'TBA'),
+        'fight_count': len(event_fights),
+        'main_event': {
+            'fighter1': main_event_fight['fighter1'],
+            'fighter2': main_event_fight['fighter2'],
+            'fighter1_image': main_event_fight.get('fighter1_image') or 'https://a.espncdn.com/combiner/i?img=/i/headshots/boxing/players/full/default.png',
+            'fighter2_image': main_event_fight.get('fighter2_image') or 'https://a.espncdn.com/combiner/i?img=/i/headshots/boxing/players/full/default.png',
+        },
+        'fights': [main_event_fight] + undercard
+    }
+    
+    return render_template('boxing_event.html', event=event_data)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
