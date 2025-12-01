@@ -4,8 +4,43 @@ import requests
 from datetime import datetime, timedelta
 import json
 import re
+import logging
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
+
+# ============================================================================
+# LOGGING SETUP
+# ============================================================================
+# Create logs directory if it doesn't exist
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+# Set up logging to both file and console
+logger = logging.getLogger('fight_schedule')
+logger.setLevel(logging.DEBUG)
+
+# File handler (rotates at 10MB, keeps 3 backup files)
+file_handler = RotatingFileHandler('logs/app.log', maxBytes=10*1024*1024, backupCount=3)
+file_handler.setLevel(logging.DEBUG)
+
+# Console handler (shows in terminal)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)  # Only show INFO+ in console
+
+# Format: [2025-01-15 14:30:45] INFO: Message here
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Add handlers to logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
+
+logger.info("="*70)
+logger.info("FIGHT SCHEDULE APP STARTING")
+logger.info("="*70)
+# ============================================================================
 
 # Your Premium API Key
 API_KEY = '891686'
@@ -621,6 +656,7 @@ def apply_time_overrides(fights):
 def load_cache():
     """Load cached fight data if it exists and is fresh"""
     if not os.path.exists(CACHE_FILE):
+        logger.debug("No cache file found")
         return None
     
     try:
@@ -629,19 +665,22 @@ def load_cache():
             
         # Check if cache is still fresh
         cache_time = datetime.fromisoformat(cache_data['timestamp'])
-        if datetime.now() - cache_time < CACHE_DURATION:
-            print(f"Using cached data from {cache_time}")
+        age = datetime.now() - cache_time
+        
+        if age < CACHE_DURATION:
+            logger.info(f"[OK] Using cached data from {cache_time.strftime('%Y-%m-%d %H:%M:%S')} (age: {age.seconds//60} minutes)")
             
             # Apply time overrides to cached data
             fights = cache_data['fights']
             fights = apply_time_overrides(fights)
             
+            logger.info(f"  Loaded {len(fights)} fights from cache")
             return fights
         else:
-            print("Cache expired, fetching new data...")
+            logger.info(f"[X] Cache expired (age: {age.seconds//3600} hours), fetching new data...")
             return None
     except Exception as e:
-        print(f"Error loading cache: {e}")
+        logger.error(f"Error loading cache: {e}")
         return None
 
 def save_cache(fights):
@@ -653,9 +692,9 @@ def save_cache(fights):
         }
         with open(CACHE_FILE, 'w') as f:
             json.dump(cache_data, f)
-        print(f"Cache updated at {datetime.now()}")
+        logger.info(f"[OK] Cache saved: {len(fights)} fights at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
-        print(f"Error saving cache: {e}")
+        logger.error(f"Error saving cache: {e}")
 
 def fetch_ufc_events():
     """Fetch upcoming UFC events using TheSportsDB Premium API v1"""
@@ -1009,18 +1048,28 @@ def fetch_fights():
 
 @app.route('/')
 def home():
+    logger.info("--> Home page accessed")
     fights = fetch_fights()
+    logger.info(f"  Rendering {len(fights)} fights")
     return render_template('index.html', fights=fights, fights_json=json.dumps(fights))
 
 @app.route('/event/<event_slug>')
 def event_detail(event_slug):
     """Show detailed page for a specific event with full card"""
+    logger.info(f"--> Event detail accessed: {event_slug}")
     fights = fetch_fights()
     
-    # Decode slug back to event name (basic version)
-    # event_slug comes from URL like "ufc-323-dvalishvili-vs-yan-2"
+    # Extract date from slug (last 10 chars: YYYY-MM-DD)
+    # Slug format: "ufc-323-dvalishvili-vs-yan-2-2025-01-25"
+    try:
+        event_date = event_slug[-10:]  # Get last 10 characters (date)
+        event_name_slug = event_slug[:-11]  # Everything except date and last hyphen
+        logger.debug(f"  Parsed slug - date: {event_date}, name: {event_name_slug}")
+    except:
+        event_date = None
+        event_name_slug = event_slug
+        logger.debug(f"  Could not parse slug, using full: {event_slug}")
     
-    # For now, just find the first UFC event (we'll improve slug matching later)
     # Group fights by event
     ufc_events = {}
     for fight in fights:
@@ -1030,7 +1079,51 @@ def event_detail(event_slug):
                 ufc_events[event_name] = []
             ufc_events[event_name].append(fight)
     
-    # Get the first UFC event (for testing)
+    logger.debug(f"  Found {len(ufc_events)} UFC events")
+    for name, fights_list in ufc_events.items():
+        first_fight = fights_list[0] if fights_list else None
+        if first_fight:
+            logger.debug(f"    - {name}: DATE={first_fight['date']} ({len(fights_list)} fights)")
+    
+    # Find matching event by slug and date
+    event_fights_list = None
+    matched_event_name = None
+    
+    logger.debug(f"  Searching through {len(ufc_events)} events")
+    
+    # PRIORITY 1: Match by date (most reliable)
+    if event_date:
+        for event_name, fights_list in ufc_events.items():
+            # Check if any fight in this event has matching date
+            for fight in fights_list:
+                if fight.get('date') == event_date:
+                    event_fights_list = fights_list
+                    matched_event_name = event_name
+                    logger.info(f"  [OK] Matched by DATE: {matched_event_name} ({len(fights_list)} fights)")
+                    break
+            if event_fights_list:
+                break
+    
+    # PRIORITY 2: Match by event name slug (fallback)
+    if not event_fights_list:
+        for event_name, fights_list in ufc_events.items():
+            # Create slug from this event name
+            test_slug = event_name.lower().replace(' ', '-').replace(':', '').replace(',', '')
+            test_slug = re.sub(r'[^a-z0-9-]', '', test_slug)
+            
+            # Check if slug matches
+            if test_slug in event_name_slug or event_name_slug in test_slug:
+                event_fights_list = fights_list
+                matched_event_name = event_name
+                logger.info(f"  [OK] Matched by NAME: {matched_event_name}")
+                break
+    
+    # PRIORITY 3: Fallback to first event (last resort)
+    if not event_fights_list and ufc_events:
+        matched_event_name = list(ufc_events.keys())[0]
+        event_fights_list = ufc_events[matched_event_name]
+        logger.warning(f"  [!] No match found, using first event: {matched_event_name}")
+    
     if not ufc_events:
         # Fallback to dummy data if no UFC events
         event_fights = {
@@ -1050,16 +1143,18 @@ def event_detail(event_slug):
         }
         return render_template('event_detail.html', event=event_fights)
     
-    # Get first event
-    event_name = list(ufc_events.keys())[0]
-    event_fights_list = ufc_events[event_name]
-    
     # Separate main card and prelims
     main_card_fights = [f for f in event_fights_list if f.get('card_type') == 'Main Card']
     prelim_fights = [f for f in event_fights_list if f.get('card_type') == 'Prelims']
     
+    logger.debug(f"  Main card fights: {len(main_card_fights)}, Prelims: {len(prelim_fights)}")
+    
     # Get main event (first fight in main card)
     main_event_fight = main_card_fights[0] if main_card_fights else event_fights_list[0]
+    
+    logger.info(f"  Main event: {main_event_fight['fighter1']} vs {main_event_fight['fighter2']}")
+    logger.info(f"  Event date: {main_event_fight['date']}, Time: {main_event_fight.get('time', 'TBA')}")
+    logger.info(f"  Venue: {main_event_fight['venue']}")
     
     # Get weight class from first title fight
     weight_class = ''
@@ -1070,7 +1165,7 @@ def event_detail(event_slug):
     
     # Build event data structure
     event_data = {
-        'event_name': event_name,
+        'event_name': matched_event_name,
         'date': main_event_fight['date'],
         'venue': main_event_fight['venue'],
         'main_event': {
@@ -1104,4 +1199,7 @@ def event_detail(event_slug):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    logger.info(f"Starting Flask server on port {port}")
+    logger.info(f"Debug mode: {app.debug}")
+    logger.info(f"Cache duration: {CACHE_DURATION.seconds//3600} hours")
     app.run(host='0.0.0.0', port=port, debug=False)

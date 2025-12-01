@@ -166,6 +166,14 @@
             return `${days[date.getDay()]}, ${months[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}`;
         }
         
+        // Create event slug from fight data
+        function createEventSlug(fight) {
+            if (fight.sport !== 'UFC') return null;
+            // Create slug from event_name and date: "ufc-323-dvalishvili-vs-yan-2025-01-25"
+            const eventSlug = fight.event_name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            return `${eventSlug}-${fight.date}`;
+        }
+        
         // Render fight card
         function renderCard(fight) {
             const converted = convertToUserTime(fight.date, fight.time);
@@ -192,8 +200,13 @@
             const opacity1 = fight.fighter1_image ? '' : 'opacity-40';
             const opacity2 = fight.fighter2_image ? '' : 'opacity-40';
             
+            // Create event link (only for UFC events)
+            const eventSlug = createEventSlug(fight);
+            const clickHandler = eventSlug ? `onclick="window.location.href='/event/${eventSlug}'"` : '';
+            const cursorClass = eventSlug ? 'cursor-pointer' : '';
+            
             return `
-                <div onclick="window.location.href='/event/test'" class="bg-dark-card rounded-xl p-6 border border-dark-border hover:bg-dark-elevated hover:border-dark-elevated transition-all cursor-pointer" data-sport="${fight.sport}">
+                <div ${clickHandler} class="bg-dark-card rounded-xl p-6 border border-dark-border hover:bg-dark-elevated hover:border-dark-elevated transition-all ${cursorClass}" data-sport="${fight.sport}">
                     <div class="flex items-center justify-center gap-6 mb-6">
                         <div class="text-center w-40">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
@@ -313,12 +326,15 @@
             
             noFights.style.display = 'none';
             
+            // Filter to Main Card only (remove prelims from main page)
+            const mainCardFights = fights.filter(f => f.card_type !== 'Prelims');
+            
             // First 8 as cards
-            cardGrid.innerHTML = fights.slice(0, 8).map(renderCard).join('');
+            cardGrid.innerHTML = mainCardFights.slice(0, 8).map(renderCard).join('');
             
             // Rest as list
-            if (fights.length > 8) {
-                listContainer.innerHTML = fights.slice(8).map(renderListItem).join('');
+            if (mainCardFights.length > 8) {
+                listContainer.innerHTML = mainCardFights.slice(8).map(renderListItem).join('');
                 listWrapper.style.display = 'block';
             } else {
                 listWrapper.style.display = 'none';
