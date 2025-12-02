@@ -234,9 +234,14 @@ def load_previews():
 def save_preview(preview_id, preview_data):
     """Save a fight preview to cache"""
     try:
-        # Convert markdown to HTML
+        # Parse JSON if text contains structured data
         if 'text' in preview_data:
-            preview_data['text_html'] = markdown.markdown(preview_data['text'])
+            try:
+                parsed = json.loads(preview_data['text'])
+                preview_data['parsed'] = parsed
+            except:
+                # Fallback if not valid JSON
+                pass
         
         previews = load_previews()
         previews[preview_id] = preview_data
@@ -257,23 +262,20 @@ def generate_fight_preview(fighter1, fighter2, sport, is_title, weight_class=Non
     title_context = "Title Fight: Yes" if is_title else "Title Fight: No"
     weight_info = f"Weight Class: {weight_class}" if weight_class else "Weight Class: Unknown"
     
-    prompt = f"""Generate a fight preview with these EXACT sections:
+    prompt = f"""Generate a brief fight preview in JSON format with this EXACT structure:
 
-CONTEXT: (1-2 sentences, max 150 chars)
-Why this fight matters - title fight? grudge match? rankings?
-
-{fighter1.upper()}'S PATH TO VICTORY:
-• Strength 1 (max 60 chars)
-• Strength 2 (max 60 chars)  
-• Strength 3 (max 60 chars)
-
-{fighter2.upper()}'S PATH TO VICTORY:
-• Strength 1 (max 60 chars)
-• Strength 2 (max 60 chars)
-• Strength 3 (max 60 chars)
-
-THE MATCHUP: (2-3 sentences, max 200 chars)
-Who has the edge and WHY. Make it exciting - what should fans watch for?
+{{
+  "context": "One punchy sentence (15 words max) - why this fight matters",
+  "fighter1_edge": [
+    "First key strength (10 words max)",
+    "Second key strength (10 words max)"
+  ],
+  "fighter2_edge": [
+    "First key strength (10 words max)",
+    "Second key strength (10 words max)"
+  ],
+  "what_to_watch": "Two sentences max (25 words total) - key moments, rounds, or factors that will decide the fight. NO predictions."
+}}
 
 Fighter 1: {fighter1}
 Fighter 2: {fighter2}
@@ -281,9 +283,26 @@ Sport: {sport}
 {title_context}
 {weight_info}
 
-TONE: Punchy, hype, like explaining to a friend at a bar.
-NO generic phrases like "both fighters are skilled" or "it will be interesting."
-Be specific and decisive."""
+CRITICAL RULES:
+- Total output under 100 words
+- Respond ONLY with valid JSON, no other text
+- Be specific and punchy
+- No predictions or calling the winner
+- Focus on what makes this fight interesting
+
+Example good output:
+{{
+  "context": "Bantamweight title rematch after controversial decision",
+  "fighter1_edge": [
+    "Relentless wrestling pressure breaks opponents late",
+    "Superior cardio outlasts elite competition"
+  ],
+  "fighter2_edge": [
+    "Surgical striking slices through aggressive pressure",
+    "Elite takedown defense neutralizes wrestling attacks"
+  ],
+  "what_to_watch": "Watch the opening two rounds—whoever controls distance there wins the mental battle. If Merab clinches early, it's a grind. If Yan stays at range, it's a striking clinic."
+}}"""
 
     try:
         logger.info(f"Generating preview for {fighter1} vs {fighter2}...")
@@ -305,6 +324,8 @@ Be specific and decisive."""
         
         if response.status_code == 200:
             preview_text = response.json()['content'][0]['text']
+            # Strip markdown code blocks if present
+            preview_text = preview_text.replace('```json', '').replace('```', '').strip()
             logger.info("Preview generated successfully")
             return preview_text
         else:

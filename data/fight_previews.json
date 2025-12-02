@@ -1,10 +1,40 @@
 {
-  "ufc-323-dvalishvili-vs-yan-2-2025-12-07": {
-    "fighter1": "Merab Dvalishvili",
-    "fighter2": "Petr Yan",
-    "text": "# MERAB DVALISHVILI VS PETR YAN\n\n**CONTEXT:**\nMerab's on a tear and wants gold. Yan's the former champ looking to reclaim his throne.\n\n**MERAB DVALISHVILI'S PATH TO VICTORY:**\n• Wrestle Yan into oblivion for five rounds straight\n• Gas tank built different—outlast the legend's cardio\n• Ground control keeps Yan's hands too busy to counter\n\n**PETR YAN'S PATH TO VICTORY:**\n• Precision striking and footwork to avoid the takedown grind\n• Body shots break Merab's pace and slow his wrestling urgency\n• Clinch dominance to neutralize grappling exchanges\n\n**THE MATCHUP:**\nMerab's a relentless wrestling machine who'll suffocate you with pressure—Yan needs to keep this standing or get caught in endless scrambles. Watch if Petr's technique can stuff the takedowns early; if Merab gets rolling, it's over. This is peak UFC: raw wrestling dominance versus surgical striking mastery.",
-    "generated_at": "2025-12-02T23:06:58.828827",
+  "boxing_junior-leandro-zarate_thammanoon-niyomtrong_2025-12-04": {
+    "fighter1": "Thammanoon Niyomtrong",
+    "fighter2": "Junior Leandro Zarate",
+    "text": "{\n  \"context\": \"WBC lightweight title defense between Thai ring general and hungry challenger\",\n  \"fighter1_edge\": [\n    \"Exceptional footwork and distance management skills\",\n    \"Proven title-holding experience at elite level\"\n  ],\n  \"fighter2_edge\": [\n    \"Aggressive forward pressure and relentless pace\",\n    \"Strong power and knockout punching ability\"\n  ],\n  \"what_to_watch\": \"Monitor Niyomtrong's ring control and lateral movement in early rounds. Zarate's ability to cut the ring and land clean combinations will determine if this becomes competitive.\"\n}",
+    "generated_at": "2025-12-03T00:21:56.386374",
     "manual_override": false,
-    "text_html": "<h1>MERAB DVALISHVILI VS PETR YAN</h1>\n<p><strong>CONTEXT:</strong>\nMerab's on a tear and wants gold. Yan's the former champ looking to reclaim his throne.</p>\n<p><strong>MERAB DVALISHVILI'S PATH TO VICTORY:</strong>\n• Wrestle Yan into oblivion for five rounds straight\n• Gas tank built different—outlast the legend's cardio\n• Ground control keeps Yan's hands too busy to counter</p>\n<p><strong>PETR YAN'S PATH TO VICTORY:</strong>\n• Precision striking and footwork to avoid the takedown grind\n• Body shots break Merab's pace and slow his wrestling urgency\n• Clinch dominance to neutralize grappling exchanges</p>\n<p><strong>THE MATCHUP:</strong>\nMerab's a relentless wrestling machine who'll suffocate you with pressure—Yan needs to keep this standing or get caught in endless scrambles. Watch if Petr's technique can stuff the takedowns early; if Merab gets rolling, it's over. This is peak UFC: raw wrestling dominance versus surgical striking mastery.</p>"
+    "parsed": {
+      "context": "WBC lightweight title defense between Thai ring general and hungry challenger",
+      "fighter1_edge": [
+        "Exceptional footwork and distance management skills",
+        "Proven title-holding experience at elite level"
+      ],
+      "fighter2_edge": [
+        "Aggressive forward pressure and relentless pace",
+        "Strong power and knockout punching ability"
+      ],
+      "what_to_watch": "Monitor Niyomtrong's ring control and lateral movement in early rounds. Zarate's ability to cut the ring and land clean combinations will determine if this becomes competitive."
+    }
+  },
+  "boxing_beatriz-ferreira_elif-nur-turhan_2025-12-06": {
+    "fighter1": "Beatriz Ferreira",
+    "fighter2": "Elif Nur Turhan",
+    "text": "{\n  \"context\": \"Ferreira defends IBF lightweight title against Turhan in crucial title bout\",\n  \"fighter1_edge\": [\n    \"Proven world-class technical boxing at elite level\",\n    \"Experience in high-pressure championship environments\"\n  ],\n  \"fighter2_edge\": [\n    \"Aggressive forward pressure disrupts established opponents\",\n    \"Power punching threatens at any moment\"\n  ],\n  \"what_to_watch\": \"Monitor how Ferreira's footwork handles Turhan's relentless pace early. Watch for Turhan's ability to close distance and whether Ferreira's boxing IQ keeps her safe.\"\n}",
+    "generated_at": "2025-12-03T00:22:22.360649",
+    "manual_override": false,
+    "parsed": {
+      "context": "Ferreira defends IBF lightweight title against Turhan in crucial title bout",
+      "fighter1_edge": [
+        "Proven world-class technical boxing at elite level",
+        "Experience in high-pressure championship environments"
+      ],
+      "fighter2_edge": [
+        "Aggressive forward pressure disrupts established opponents",
+        "Power punching threatens at any moment"
+      ],
+      "what_to_watch": "Monitor how Ferreira's footwork handles Turhan's relentless pace early. Watch for Turhan's ability to close distance and whether Ferreira's boxing IQ keeps her safe."
+    }
   }
 }

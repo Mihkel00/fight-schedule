@@ -143,11 +143,43 @@
         </div>
 
         <!-- AI Fight Preview -->
-        {% if event.preview %}
+        {% if event.preview and event.preview.parsed %}
         <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-8">
             <h2 class="font-staatliches text-2xl uppercase mb-4 text-accent-red-custom">Fight Preview</h2>
-            <div class="font-work text-text-secondary leading-relaxed prose prose-invert max-w-none">
-                {{ event.preview.text_html|safe }}
+            <div class="space-y-4">
+                <!-- Context -->
+                <h3 class="font-work font-semibold text-accent-red-custom text-lg uppercase tracking-wide">
+                    {{ event.preview.parsed.context }}
+                </h3>
+                
+                <!-- Fighter 1 Edge -->
+                <div>
+                    <h4 class="font-work font-semibold text-text-primary text-base mb-2">{{ event.main_event.fighter1 }}'s Edge</h4>
+                    <ul class="space-y-1 ml-4 text-text-secondary text-sm">
+                        {% for point in event.preview.parsed.fighter1_edge %}
+                        <li>• {{ point }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <!-- Fighter 2 Edge -->
+                <div>
+                    <h4 class="font-work font-semibold text-text-primary text-base mb-2">{{ event.main_event.fighter2 }}'s Edge</h4>
+                    <ul class="space-y-1 ml-4 text-text-secondary text-sm">
+                        {% for point in event.preview.parsed.fighter2_edge %}
+                        <li>• {{ point }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <!-- Divider -->
+                <hr class="border-dark-border">
+                
+                <!-- What to Watch -->
+                <div>
+                    <h4 class="font-work font-semibold text-accent-red-custom text-base uppercase mb-2">What to Watch</h4>
+                    <p class="text-text-secondary text-sm leading-relaxed">{{ event.preview.parsed.what_to_watch }}</p>
+                </div>
             </div>
         </div>
         {% endif %}

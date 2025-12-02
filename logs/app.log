@@ -683,3 +683,123 @@
 [2025-12-02 23:06:58] INFO: Preview generated successfully
 [2025-12-02 23:06:58] WARNING: Could not load previews: [Errno 2] No such file or directory: 'data/fight_previews.json'
 [2025-12-02 23:06:58] INFO: Saved preview: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-03 00:14:37] INFO: ======================================================================
+[2025-12-03 00:14:37] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-03 00:14:37] INFO: ======================================================================
+[2025-12-03 00:14:37] INFO: Starting Flask server on port 5000
+[2025-12-03 00:14:37] INFO: Debug mode: False
+[2025-12-03 00:14:37] INFO: Cache duration: 6 hours
+[2025-12-03 00:14:42] INFO: --> Home page accessed
+[2025-12-03 00:14:42] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 88 minutes)
+[2025-12-03 00:14:42] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:14:42] INFO:   Rendering 58 fights
+[2025-12-03 00:14:45] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-03 00:14:45] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 88 minutes)
+[2025-12-03 00:14:45] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:14:45] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-03 00:14:45] DEBUG:   Found 3 UFC events
+[2025-12-03 00:14:45] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-03 00:14:45] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-03 00:14:45] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-03 00:14:45] DEBUG:   Searching through 3 events
+[2025-12-03 00:14:45] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-03 00:14:45] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-03 00:14:45] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-03 00:14:45] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-03 00:14:45] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-03 00:14:45] WARNING: Could not load previews: [Errno 2] No such file or directory: 'data/fight_previews.json'
+[2025-12-03 00:14:45] INFO: Generating preview for Merab Dvalishvili vs Petr Yan...
+[2025-12-03 00:14:48] INFO: Preview generated successfully
+[2025-12-03 00:14:48] WARNING: Could not load previews: [Errno 2] No such file or directory: 'data/fight_previews.json'
+[2025-12-03 00:14:48] INFO: Saved preview: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-03 00:15:01] INFO: --> Home page accessed
+[2025-12-03 00:15:01] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 88 minutes)
+[2025-12-03 00:15:01] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:15:01] INFO:   Rendering 58 fights
+[2025-12-03 00:15:02] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-03 00:15:02] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 88 minutes)
+[2025-12-03 00:15:02] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:15:02] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs-yan-2
+[2025-12-03 00:15:02] DEBUG:   Found 3 UFC events
+[2025-12-03 00:15:02] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-03 00:15:02] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-03 00:15:02] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-03 00:15:02] DEBUG:   Searching through 3 events
+[2025-12-03 00:15:02] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-03 00:15:02] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-03 00:15:02] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-03 00:15:02] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-03 00:15:02] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-03 00:15:02] INFO: Using cached preview for ufc-323-dvalishvili-vs-yan-2-2025-12-07
+[2025-12-03 00:15:15] INFO: --> Home page accessed
+[2025-12-03 00:15:15] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 88 minutes)
+[2025-12-03 00:15:15] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:15:15] INFO:   Rendering 58 fights
+[2025-12-03 00:15:17] INFO: Boxing event accessed: the-imperial-queens-2025-12-04
+[2025-12-03 00:15:17] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 88 minutes)
+[2025-12-03 00:15:17] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:15:17] INFO: Found 1 fights for this event
+[2025-12-03 00:15:17] INFO: Main event: Thammanoon Niyomtrong vs Junior Leandro Zarate
+[2025-12-03 00:15:17] INFO: Generating preview for Thammanoon Niyomtrong vs Junior Leandro Zarate...
+[2025-12-03 00:15:22] INFO: Preview generated successfully
+[2025-12-03 00:15:22] INFO: Saved preview: boxing_junior-leandro-zarate_thammanoon-niyomtrong_2025-12-04
+[2025-12-03 00:16:48] INFO: --> Home page accessed
+[2025-12-03 00:16:48] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 90 minutes)
+[2025-12-03 00:16:48] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:16:48] INFO:   Rendering 58 fights
+[2025-12-03 00:16:49] INFO: Boxing event accessed: gold-coast-convention-2025-12-06
+[2025-12-03 00:16:49] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 90 minutes)
+[2025-12-03 00:16:49] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:16:49] INFO: Found 1 fights for this event
+[2025-12-03 00:16:49] INFO: Main event: Jai Tapu Opetaia vs Huseyin Cinkara
+[2025-12-03 00:16:49] INFO: Generating preview for Jai Tapu Opetaia vs Huseyin Cinkara...
+[2025-12-03 00:16:53] INFO: Preview generated successfully
+[2025-12-03 00:16:53] INFO: Saved preview: boxing_huseyin-cinkara_jai-tapu-opetaia_2025-12-06
+[2025-12-03 00:17:40] INFO: --> Home page accessed
+[2025-12-03 00:17:40] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 91 minutes)
+[2025-12-03 00:17:40] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:17:40] INFO:   Rendering 58 fights
+[2025-12-03 00:17:43] INFO: Boxing event accessed: kaseya-center-2025-12-20
+[2025-12-03 00:17:43] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 91 minutes)
+[2025-12-03 00:17:43] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:17:43] INFO: Found 3 fights for this event
+[2025-12-03 00:17:43] INFO: Main event: Jake Paul vs Anthony Joshua
+[2025-12-03 00:17:43] INFO: Generating preview for Jake Paul vs Anthony Joshua...
+[2025-12-03 00:17:47] INFO: Preview generated successfully
+[2025-12-03 00:17:47] INFO: Saved preview: boxing_anthony-joshua_jake-paul_2025-12-20
+[2025-12-03 00:21:49] INFO: ======================================================================
+[2025-12-03 00:21:49] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-03 00:21:49] INFO: ======================================================================
+[2025-12-03 00:21:49] INFO: Starting Flask server on port 5000
+[2025-12-03 00:21:49] INFO: Debug mode: False
+[2025-12-03 00:21:49] INFO: Cache duration: 6 hours
+[2025-12-03 00:21:51] INFO: --> Home page accessed
+[2025-12-03 00:21:51] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 95 minutes)
+[2025-12-03 00:21:51] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:21:51] INFO:   Rendering 58 fights
+[2025-12-03 00:21:53] INFO: Boxing event accessed: the-imperial-queens-2025-12-04
+[2025-12-03 00:21:53] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 95 minutes)
+[2025-12-03 00:21:53] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:21:53] INFO: Found 1 fights for this event
+[2025-12-03 00:21:53] INFO: Main event: Thammanoon Niyomtrong vs Junior Leandro Zarate
+[2025-12-03 00:21:53] WARNING: Could not load previews: [Errno 2] No such file or directory: 'data/fight_previews.json'
+[2025-12-03 00:21:53] INFO: Generating preview for Thammanoon Niyomtrong vs Junior Leandro Zarate...
+[2025-12-03 00:21:56] INFO: Preview generated successfully
+[2025-12-03 00:21:56] WARNING: Could not load previews: [Errno 2] No such file or directory: 'data/fight_previews.json'
+[2025-12-03 00:21:56] INFO: Saved preview: boxing_junior-leandro-zarate_thammanoon-niyomtrong_2025-12-04
+[2025-12-03 00:22:17] INFO: --> Home page accessed
+[2025-12-03 00:22:17] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 95 minutes)
+[2025-12-03 00:22:17] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:22:17] INFO:   Rendering 58 fights
+[2025-12-03 00:22:19] INFO: Boxing event accessed: palais-des-sports-2025-12-06
+[2025-12-03 00:22:19] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 95 minutes)
+[2025-12-03 00:22:19] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:22:19] INFO: Found 3 fights for this event
+[2025-12-03 00:22:19] INFO: Main event: Beatriz Ferreira vs Elif Nur Turhan
+[2025-12-03 00:22:19] INFO: Generating preview for Beatriz Ferreira vs Elif Nur Turhan...
+[2025-12-03 00:22:22] INFO: Preview generated successfully
+[2025-12-03 00:22:22] INFO: Saved preview: boxing_beatriz-ferreira_elif-nur-turhan_2025-12-06
+[2025-12-03 00:22:35] INFO: --> Home page accessed
+[2025-12-03 00:22:35] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 95 minutes)
+[2025-12-03 00:22:35] INFO:   Loaded 58 fights from cache
+[2025-12-03 00:22:35] INFO:   Rendering 58 fights
