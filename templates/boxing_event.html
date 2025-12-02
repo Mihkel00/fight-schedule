@@ -122,6 +122,16 @@
             </div>
         </div>
 
+        <!-- AI Fight Preview -->
+        {% if event.preview %}
+        <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-8">
+            <h2 class="font-staatliches text-2xl uppercase mb-4 text-accent-orange">Fight Preview</h2>
+            <div class="font-work text-text-secondary leading-relaxed prose prose-invert max-w-none">
+                {{ event.preview.text_html|safe }}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Full Fight Card -->
         <div class="mb-8">
             <h2 class="font-staatliches text-3xl uppercase mb-6">Full Fight Card</h2>

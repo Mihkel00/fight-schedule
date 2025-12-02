@@ -1,4 +1,6 @@
 from flask import Flask, render_template
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 import os
 import requests
 from datetime import datetime, timedelta
@@ -8,6 +10,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from admin_setup_simple import setup_admin
 from admin_models import BigNameFighter
+import markdown
 
 app = Flask(__name__)
 
@@ -49,6 +52,10 @@ logger.info("="*70)
 
 # Your Premium API Key
 API_KEY = '891686'
+
+# Anthropic API Key for fight previews
+# ⚠️ ADD YOUR NEW API KEY HERE (after creating it in console.anthropic.com)
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')  # Will load from environment variable
 
 # Big-name fighters - always show their fights (even non-title)
 BIG_NAME_FIGHTERS = [
@@ -210,6 +217,131 @@ def get_fighter_image(fighter_name):
         print(f"Error fetching image for {fighter_name}: {e}")
     
     return None
+
+# ============================================================================
+# AI FIGHT PREVIEW FUNCTIONS
+# ============================================================================
+
+def load_previews():
+    """Load cached fight previews from JSON file"""
+    try:
+        with open('data/fight_previews.json', 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Could not load previews: {e}")
+        return {}
+
+def save_preview(preview_id, preview_data):
+    """Save a fight preview to cache"""
+    try:
+        # Convert markdown to HTML
+        if 'text' in preview_data:
+            preview_data['text_html'] = markdown.markdown(preview_data['text'])
+        
+        previews = load_previews()
+        previews[preview_id] = preview_data
+        with open('data/fight_previews.json', 'w', encoding='utf-8') as f:
+            json.dump(previews, f, indent=2, ensure_ascii=False)
+        logger.info(f"Saved preview: {preview_id}")
+    except Exception as e:
+        logger.error(f"Failed to save preview: {e}")
+
+def generate_fight_preview(fighter1, fighter2, sport, is_title, weight_class=None):
+    """Generate AI preview using Claude API"""
+    
+    if not ANTHROPIC_API_KEY:
+        logger.warning("No Anthropic API key set - skipping preview generation")
+        return None
+    
+    # Build the prompt
+    title_context = "Title Fight: Yes" if is_title else "Title Fight: No"
+    weight_info = f"Weight Class: {weight_class}" if weight_class else "Weight Class: Unknown"
+    
+    prompt = f"""Generate a fight preview with these EXACT sections:
+
+CONTEXT: (1-2 sentences, max 150 chars)
+Why this fight matters - title fight? grudge match? rankings?
+
+{fighter1.upper()}'S PATH TO VICTORY:
+• Strength 1 (max 60 chars)
+• Strength 2 (max 60 chars)  
+• Strength 3 (max 60 chars)
+
+{fighter2.upper()}'S PATH TO VICTORY:
+• Strength 1 (max 60 chars)
+• Strength 2 (max 60 chars)
+• Strength 3 (max 60 chars)
+
+THE MATCHUP: (2-3 sentences, max 200 chars)
+Who has the edge and WHY. Make it exciting - what should fans watch for?
+
+Fighter 1: {fighter1}
+Fighter 2: {fighter2}
+Sport: {sport}
+{title_context}
+{weight_info}
+
+TONE: Punchy, hype, like explaining to a friend at a bar.
+NO generic phrases like "both fighters are skilled" or "it will be interesting."
+Be specific and decisive."""
+
+    try:
+        logger.info(f"Generating preview for {fighter1} vs {fighter2}...")
+        
+        response = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01"
+            },
+            json={
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": 500,
+                "messages": [{"role": "user", "content": prompt}]
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            preview_text = response.json()['content'][0]['text']
+            logger.info("Preview generated successfully")
+            return preview_text
+        else:
+            logger.error(f"API request failed: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Preview generation error: {e}")
+        return None
+
+def get_or_generate_preview(preview_id, fighter1, fighter2, sport, is_title, weight_class=None):
+    """Get cached preview or generate new one"""
+    
+    # Check cache first
+    previews = load_previews()
+    
+    if preview_id in previews:
+        logger.info(f"Using cached preview for {preview_id}")
+        return previews[preview_id]
+    
+    # Generate new preview
+    preview_text = generate_fight_preview(fighter1, fighter2, sport, is_title, weight_class)
+    
+    if preview_text:
+        preview_data = {
+            'fighter1': fighter1,
+            'fighter2': fighter2,
+            'text': preview_text,
+            'generated_at': datetime.now().isoformat(),
+            'manual_override': False
+        }
+        save_preview(preview_id, preview_data)
+        return preview_data
+    
+    return None
+
+# ============================================================================
 
 def scrape_boxlive_boxing():
     """Scrape Box.Live for complete boxing schedule"""
@@ -1287,6 +1419,18 @@ def event_detail(event_slug):
         'prelim_time': prelim_fights[0].get('time', 'TBA') if prelim_fights else 'TBA'
     }
     
+    # Generate AI preview for main event
+    preview = get_or_generate_preview(
+        preview_id=event_slug,
+        fighter1=main_event_fight['fighter1'],
+        fighter2=main_event_fight['fighter2'],
+        sport='UFC',
+        is_title=(main_event_fight.get('weight_class') == 'Title'),
+        weight_class=None  # UFC doesn't extract weight classes
+    )
+    
+    event_data['preview'] = preview
+    
     return render_template('event_detail.html', event=event_data)
 
 @app.route('/boxing-event/<event_slug>')
@@ -1373,6 +1517,24 @@ def boxing_event_detail(event_slug):
         },
         'fights': [main_event_fight] + undercard
     }
+    
+    # Generate AI preview for main event
+    # Create preview ID from sorted fighter names + date for consistency
+    fighters_sorted = sorted([main_event_fight['fighter1'], main_event_fight['fighter2']])
+    fighter1_slug = fighters_sorted[0].lower().replace(' ', '-').replace("'", '')
+    fighter2_slug = fighters_sorted[1].lower().replace(' ', '-').replace("'", '')
+    preview_id = f"boxing_{fighter1_slug}_{fighter2_slug}_{main_event_fight['date']}"
+    
+    preview = get_or_generate_preview(
+        preview_id=preview_id,
+        fighter1=main_event_fight['fighter1'],
+        fighter2=main_event_fight['fighter2'],
+        sport='Boxing',
+        is_title=('Title' in main_event_fight.get('weight_class', '')),
+        weight_class=main_event_fight.get('weight_class')
+    )
+    
+    event_data['preview'] = preview
     
     return render_template('boxing_event.html', event=event_data)
 

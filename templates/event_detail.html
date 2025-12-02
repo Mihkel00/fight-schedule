@@ -64,7 +64,7 @@
                 </div>
                 <div>
                     <p class="text-xs text-text-tertiary font-work">Date & Time</p>
-                    <p class="text-text-primary font-work">{{ event.date|format_date }} • {{ event.main_event.time }}</p>
+                    <p class="text-text-primary font-work">Sun, Jan 25, 2025 • {{ event.main_event.time }}</p>
                 </div>
             </div>
 
@@ -141,6 +141,16 @@
                 </a>
             </div>
         </div>
+
+        <!-- AI Fight Preview -->
+        {% if event.preview %}
+        <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-8">
+            <h2 class="font-staatliches text-2xl uppercase mb-4 text-accent-red-custom">Fight Preview</h2>
+            <div class="font-work text-text-secondary leading-relaxed prose prose-invert max-w-none">
+                {{ event.preview.text_html|safe }}
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Full Fight Card -->
         <div class="mb-8">

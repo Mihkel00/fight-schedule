@@ -4,25 +4,25 @@ FIGHT DATA SOURCES COMPARISON
 ============================================================
 
 --- BBC SPORT BOXING ---
-BBC Sport Boxing found: 19 fights
+BBC Sport Boxing found: 44 fights
 
-  • Carlos Canizales vs Thammanoon Niyomtrong - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
-  • Jai Tapu Opetaia vs Huseyin Cinkara - 2025-12-06 - Gold Coast Convention Centre, Australia
-  • Cristian Zara vs Elie Konki - 2025-12-06 - TBA
-  • Beatriz Ferreira vs Elif Nur Turhan - 2025-12-06 - Salle des Etoiles, Monaco
-  • Diego Natchoo vs Bilel Jkitou - 2025-12-06 - TBA
-  ... and 14 more
+  • Ellie Bouttell vs Chisakan Ariphipat - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
+  • Lite Dawuxi vs Saensuk Ketsamphao - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
+  • Ryutaro Nakagaki vs Kitidech Hirunsuk - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
+  • Victor Nagbe vs Tonghui Li - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
+  • Thammanoon Niyomtrong vs Junior Leandro Zarate - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
+  ... and 39 more
 
 
 --- MMA FIGHTING UFC ---
-MMA Fighting UFC found: 32 fights
+MMA Fighting UFC found: 33 fights
 
   • Merab Dvalishvili vs Petr Yan - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   • Alexandre Pantoja vs Joshua Van - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   • Henry Cejudo vs Payton Talbott - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   • Brandon Moreno vs Tatsuro Taira - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   • Jan Blachowicz vs Bogdan Guskov - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
-  ... and 27 more
+  ... and 28 more
 
 
 --- THESPORTSDB BOXING ---
@@ -47,7 +47,7 @@ Added 7 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 88 additional fighter images
+Fetched 115 additional fighter images
 
 [OK] Kept 4 big-name boxing fights (non-title):
   • Diego Pacheco vs Kévin Lele Sadjo - 2025-12-13
@@ -56,9 +56,9 @@ Fetched 88 additional fighter images
   • Sebastian Fundora vs Keith Thurman - 2026-01-24
 
 ============================================================
-Filtered out 3 past fights
-Filtered to 55 fights (removed 3 non-title/non-big-name bouts)
-FINAL RESULT: 55 upcoming fights (titles + big names + UFC)
+Filtered out 26 past fights
+Filtered to 58 fights (removed 26 non-title/non-big-name bouts)
+FINAL RESULT: 58 upcoming fights (titles + big names + UFC)
 ============================================================
-Fights with at least one image: 49 (89%)
+Fights with at least one image: 51 (87%)
 
