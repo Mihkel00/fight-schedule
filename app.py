@@ -1296,7 +1296,58 @@ def home():
     logger.info("--> Home page accessed")
     fights = fetch_fights()
     logger.info(f"  Rendering {len(fights)} fights")
-    return render_template('index.html', fights=fights, fights_json=json.dumps(fights))
+    
+    # Separate by sport
+    ufc_fights = [f for f in fights if f.get('sport') == 'UFC']
+    boxing_fights = [f for f in fights if f.get('sport') == 'Boxing']
+    
+    # FEATURED FIGHTS
+    featured_fights = []
+    
+    # UFC Featured: Next title fight OR first UFC event
+    ufc_featured = None
+    for fight in ufc_fights:
+        if fight.get('weight_class') == 'Title':
+            ufc_featured = fight
+            break
+    if not ufc_featured and ufc_fights:
+        ufc_featured = ufc_fights[0]
+    
+    if ufc_featured:
+        featured_fights.append(ufc_featured)
+        logger.info(f"  Featured UFC: {ufc_featured['fighter1']} vs {ufc_featured['fighter2']}")
+    
+    # Boxing Featured: Next big-name fight
+    boxing_featured = None
+    for fight in boxing_fights:
+        if is_big_name_fight(fight):
+            boxing_featured = fight
+            break
+    
+    if boxing_featured:
+        featured_fights.append(boxing_featured)
+        logger.info(f"  Featured Boxing: {boxing_featured['fighter1']} vs {boxing_featured['fighter2']}")
+    
+    # Remove featured from main lists
+    featured_ids = {id(f) for f in featured_fights}
+    ufc_fights = [f for f in ufc_fights if id(f) not in featured_ids]
+    boxing_fights = [f for f in boxing_fights if id(f) not in featured_ids]
+    
+    # Limit horizontal scroll sections (show 6-8 fights)
+    ufc_scroll = ufc_fights[:8]
+    boxing_scroll = boxing_fights[:8]
+    
+    # Coming up soon: Everything else
+    coming_soon = ufc_fights[8:] + boxing_fights[8:]
+    coming_soon = sorted(coming_soon, key=lambda x: x['date'])[:10]  # Show 10 max
+    
+    logger.info(f"  Sections: Featured={len(featured_fights)}, UFC={len(ufc_scroll)}, Boxing={len(boxing_scroll)}, Coming Soon={len(coming_soon)}")
+    
+    return render_template('index.html', 
+                         featured_fights=featured_fights,
+                         ufc_fights=ufc_scroll,
+                         boxing_fights=boxing_scroll,
+                         coming_soon=coming_soon)
 
 @app.route('/event/<event_slug>')
 def event_detail(event_slug):

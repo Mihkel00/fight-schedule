@@ -803,3 +803,143 @@
 [2025-12-03 00:22:35] INFO: [OK] Using cached data from 2025-12-02 22:46:37 (age: 95 minutes)
 [2025-12-03 00:22:35] INFO:   Loaded 58 fights from cache
 [2025-12-03 00:22:35] INFO:   Rendering 58 fights
+[2025-12-04 21:03:02] INFO: ======================================================================
+[2025-12-04 21:03:02] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-04 21:03:02] INFO: ======================================================================
+[2025-12-04 21:03:02] INFO: Starting Flask server on port 5000
+[2025-12-04 21:03:02] INFO: Debug mode: False
+[2025-12-04 21:03:02] INFO: Cache duration: 6 hours
+[2025-12-04 21:03:05] INFO: --> Home page accessed
+[2025-12-04 21:03:05] INFO: [X] Cache expired (age: 22 hours), fetching new data...
+[2025-12-04 21:04:04] INFO: [OK] Cache saved: 57 fights at 2025-12-04 21:04:04
+[2025-12-04 21:04:04] INFO:   Rendering 57 fights
+[2025-12-04 21:04:04] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:04] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:04] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10
+[2025-12-04 21:04:09] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs.-yan-2-2025-12-07
+[2025-12-04 21:04:09] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:09] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:09] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs.-yan-2
+[2025-12-04 21:04:09] DEBUG:   Found 3 UFC events
+[2025-12-04 21:04:09] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-04 21:04:09] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-04 21:04:09] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-04 21:04:09] DEBUG:   Searching through 3 events
+[2025-12-04 21:04:09] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-04 21:04:09] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-04 21:04:09] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:09] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-04 21:04:09] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-04 21:04:09] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:04:10] INFO: --> Home page accessed
+[2025-12-04 21:04:10] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:10] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:10] INFO:   Rendering 57 fights
+[2025-12-04 21:04:10] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:10] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:10] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10
+[2025-12-04 21:04:19] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs.-yan-2-2025-12-07
+[2025-12-04 21:04:19] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:19] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:19] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs.-yan-2
+[2025-12-04 21:04:19] DEBUG:   Found 3 UFC events
+[2025-12-04 21:04:19] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-04 21:04:19] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-04 21:04:19] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-04 21:04:19] DEBUG:   Searching through 3 events
+[2025-12-04 21:04:19] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-04 21:04:19] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-04 21:04:19] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:19] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-04 21:04:19] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-04 21:04:19] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:04:20] INFO: --> Home page accessed
+[2025-12-04 21:04:20] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:20] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:20] INFO:   Rendering 57 fights
+[2025-12-04 21:04:20] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:20] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:20] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10
+[2025-12-04 21:04:23] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs.-yan-2-2025-12-07
+[2025-12-04 21:04:23] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:23] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:23] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs.-yan-2
+[2025-12-04 21:04:23] DEBUG:   Found 3 UFC events
+[2025-12-04 21:04:23] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-04 21:04:23] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-04 21:04:23] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-04 21:04:23] DEBUG:   Searching through 3 events
+[2025-12-04 21:04:23] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-04 21:04:23] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-04 21:04:23] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:23] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-04 21:04:23] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-04 21:04:23] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:04:24] INFO: --> Home page accessed
+[2025-12-04 21:04:24] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:24] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:24] INFO:   Rendering 57 fights
+[2025-12-04 21:04:24] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:24] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:24] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10
+[2025-12-04 21:04:25] INFO: Boxing event accessed: frost-bank-center-usa-2025-12-07
+[2025-12-04 21:04:25] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:25] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:25] INFO: Found 1 fights for this event
+[2025-12-04 21:04:25] INFO: Main event: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:25] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:04:27] INFO: --> Home page accessed
+[2025-12-04 21:04:27] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:27] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:27] INFO:   Rendering 57 fights
+[2025-12-04 21:04:27] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:27] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:27] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10
+[2025-12-04 21:04:29] INFO: Boxing event accessed: the-imperial-queens-park-hotel-thailand-2025-12-04
+[2025-12-04 21:04:29] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:29] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:29] INFO: Found 1 fights for this event
+[2025-12-04 21:04:29] INFO: Main event: Thammanoon Niyomtrong vs Junior Leandro Zarate
+[2025-12-04 21:04:29] INFO: Using cached preview for boxing_junior-leandro-zarate_thammanoon-niyomtrong_2025-12-04
+[2025-12-04 21:04:30] INFO: --> Home page accessed
+[2025-12-04 21:04:30] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:30] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:30] INFO:   Rendering 57 fights
+[2025-12-04 21:04:30] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:30] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:30] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10
+[2025-12-04 21:04:32] INFO: Boxing event accessed: gold-coast-convention-centre-australia-2025-12-06
+[2025-12-04 21:04:32] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:32] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:32] INFO: Found 1 fights for this event
+[2025-12-04 21:04:32] INFO: Main event: Jai Tapu Opetaia vs Huseyin Cinkara
+[2025-12-04 21:04:32] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:04:34] INFO: --> Home page accessed
+[2025-12-04 21:04:34] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 0 minutes)
+[2025-12-04 21:04:34] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:04:34] INFO:   Rendering 57 fights
+[2025-12-04 21:04:34] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:04:34] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:04:34] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10
+[2025-12-04 21:05:19] INFO: --> Event detail accessed: ufc-323-dvalishvili-vs.-yan-2-2025-12-07
+[2025-12-04 21:05:19] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 1 minutes)
+[2025-12-04 21:05:19] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:05:19] DEBUG:   Parsed slug - date: 2025-12-07, name: ufc-323-dvalishvili-vs.-yan-2
+[2025-12-04 21:05:19] DEBUG:   Found 3 UFC events
+[2025-12-04 21:05:19] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-04 21:05:19] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-04 21:05:19] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-04 21:05:19] DEBUG:   Searching through 3 events
+[2025-12-04 21:05:19] INFO:   [OK] Matched by DATE: UFC 323: Dvalishvili vs. Yan 2 (14 fights)
+[2025-12-04 21:05:19] DEBUG:   Main card fights: 5, Prelims: 9
+[2025-12-04 21:05:19] INFO:   Main event: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:05:19] INFO:   Event date: 2025-12-07, Time: 03:00
+[2025-12-04 21:05:19] INFO:   Venue: T-Mobile Arena - Las Vegas, NV
+[2025-12-04 21:05:19] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:05:20] INFO: --> Home page accessed
+[2025-12-04 21:05:20] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 1 minutes)
+[2025-12-04 21:05:20] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:05:20] INFO:   Rendering 57 fights
+[2025-12-04 21:05:20] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:05:20] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:05:20] INFO:   Sections: Featured=2, UFC=8, Boxing=8, Coming Soon=10

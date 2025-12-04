@@ -4,14 +4,14 @@ FIGHT DATA SOURCES COMPARISON
 ============================================================
 
 --- BBC SPORT BOXING ---
-BBC Sport Boxing found: 44 fights
+BBC Sport Boxing found: 45 fights
 
+  • Atthachai Prasoetsri vs Wachirawit Sanpakorn - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
   • Ellie Bouttell vs Chisakan Ariphipat - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
   • Lite Dawuxi vs Saensuk Ketsamphao - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
   • Ryutaro Nakagaki vs Kitidech Hirunsuk - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
   • Victor Nagbe vs Tonghui Li - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
-  • Thammanoon Niyomtrong vs Junior Leandro Zarate - 2025-12-04 - The Imperial Queens Park Hotel, Thailand
-  ... and 39 more
+  ... and 40 more
 
 
 --- MMA FIGHTING UFC ---
@@ -47,7 +47,7 @@ Added 7 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 115 additional fighter images
+Fetched 112 additional fighter images
 
 [OK] Kept 4 big-name boxing fights (non-title):
   • Diego Pacheco vs Kévin Lele Sadjo - 2025-12-13
@@ -56,9 +56,9 @@ Fetched 115 additional fighter images
   • Sebastian Fundora vs Keith Thurman - 2026-01-24
 
 ============================================================
-Filtered out 26 past fights
-Filtered to 58 fights (removed 26 non-title/non-big-name bouts)
-FINAL RESULT: 58 upcoming fights (titles + big names + UFC)
+Filtered out 28 past fights
+Filtered to 57 fights (removed 28 non-title/non-big-name bouts)
+FINAL RESULT: 57 upcoming fights (titles + big names + UFC)
 ============================================================
-Fights with at least one image: 51 (87%)
+Fights with at least one image: 50 (87%)
 
