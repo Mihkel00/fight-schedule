@@ -102,15 +102,141 @@
                 behavior: 'smooth'
             });
         }
+
+        // Search functionality
+        let allFights = [];
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Collect all fights from sections
+            const featured = {{ featured_fights|tojson|safe }};
+            const ufc = {{ ufc_fights|tojson|safe }};
+            const boxing = {{ boxing_fights|tojson|safe }};
+            const upcoming = {{ coming_soon|tojson|safe }};
+            
+            allFights = [...featured, ...ufc, ...boxing, ...upcoming];
+            
+            const searchInput = document.getElementById('searchInput');
+            const sections = document.querySelectorAll('.mb-12');
+            
+            searchInput.addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase().trim();
+                
+                if (query.length === 0) {
+                    // Show all sections, hide results
+                    sections.forEach(s => s.style.display = 'block');
+                    document.getElementById('searchResults')?.remove();
+                    return;
+                }
+                
+                // Hide all sections
+                sections.forEach(s => s.style.display = 'none');
+                
+                // Filter fights
+                const results = allFights.filter(fight => 
+                    fight.fighter1.toLowerCase().includes(query) ||
+                    fight.fighter2.toLowerCase().includes(query) ||
+                    (fight.event_name && fight.event_name.toLowerCase().includes(query)) ||
+                    fight.venue.toLowerCase().includes(query)
+                );
+                
+                displaySearchResults(results, query);
+            });
+        });
+        
+        function displaySearchResults(results, query) {
+            // Remove existing results
+            document.getElementById('searchResults')?.remove();
+            
+            const container = document.querySelector('.max-w-7xl');
+            const resultsDiv = document.createElement('div');
+            resultsDiv.id = 'searchResults';
+            resultsDiv.className = 'mb-12';
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = `
+                    <h2 class="font-staatliches text-3xl uppercase mb-6">Search Results</h2>
+                    <div class="bg-dark-card rounded-xl p-8 border border-dark-border text-center">
+                        <p class="font-work text-text-secondary">No fights found for "${query}"</p>
+                    </div>
+                `;
+            } else {
+                resultsDiv.innerHTML = `
+                    <h2 class="font-staatliches text-3xl uppercase mb-6">Search Results <span class="text-text-secondary">${results.length}</span></h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${results.map(fight => createFightCard(fight)).join('')}
+                    </div>
+                `;
+            }
+            
+            // Insert after header (first child is header div)
+            const header = container.children[0];
+            container.insertBefore(resultsDiv, header.nextSibling);
+        }
+        
+        function createFightCard(fight) {
+            const isUFC = fight.sport === 'UFC';
+            const accentColor = isUFC ? 'accent-red' : 'accent-orange';
+            const placeholder = isUFC ? '/static/placeholder-fighter-mma.png' : '/static/placeholder-fighter-boxing.png';
+            const eventUrl = isUFC 
+                ? `/event/${fight.event_name.toLowerCase().replace(/ /g, '-').replace(/:/g, '').replace(/,/g, '')}-${fight.date}`
+                : `/boxing-event/${fight.venue.toLowerCase().replace(/ /g, '-').replace(/,/g, '').replace(/\./g, '').replace(/'/g, '')}-${fight.date}`;
+            
+            return `
+                <a href="${eventUrl}" class="block bg-dark-card rounded-xl p-6 border border-dark-border hover:border-${accentColor}/50 transition-all">
+                    <div class="flex items-center justify-center gap-6 mb-6">
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-40'}">
+                            </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter1.split(' ').pop()}</p>
+                        </div>
+                        <div class="font-work font-semibold text-base italic uppercase text-text-secondary">VS</div>
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-40'}">
+                            </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter2.split(' ').pop()}</p>
+                        </div>
+                    </div>
+                    <div class="border-t border-dark-border pt-4">
+                        <p class="text-${accentColor} font-work font-semibold mb-2 text-sm">
+                            ${fight.date} • ${fight.time || 'TBA'}
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="font-work text-xs text-text-tertiary truncate">${fight.venue}</span>
+                            <span class="flex items-center gap-1.5 flex-shrink-0">
+                                <span class="w-2 h-2 rounded-full bg-${accentColor}"></span>
+                                <span class="font-work text-xs uppercase text-text-secondary">${fight.sport}</span>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            `;
+        }
     </script>
 </head>
 <body class="bg-dark-bg text-text-primary">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
         <!-- Header -->
-        <div class="mb-8">
-            <div class="bg-accent-red px-4 py-2 font-staatliches text-2xl inline-block">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div class="bg-accent-red px-4 py-2 font-staatliches text-2xl inline-block self-start">
                 FIGHT SCHEDULE
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-md sm:ml-4">
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        placeholder="Search fighter or event"
+                        class="w-full bg-dark-elevated border border-dark-border rounded-lg px-4 py-2 pl-10 text-text-primary placeholder-text-tertiary font-work text-sm focus:outline-none focus:border-accent-red"
+                    >
+                    <svg class="absolute left-3 top-2.5 w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
             </div>
         </div>
 
@@ -316,10 +442,12 @@
                                 <span class="font-work text-xs uppercase text-text-secondary">{{ fight.sport }}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-4 text-sm ml-auto">
-                            <span class="font-work text-text-tertiary truncate">{{ fight.venue }}</span>
-                            <span class="font-work text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold flex-shrink-0">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+                            <span class="font-work text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold flex-shrink-0 order-1">
                                 {{ fight.date }} • {{ fight.time or 'TBA' }}
+                            </span>
+                            <span class="font-work text-text-tertiary truncate order-2">
+                                {{ fight.venue }}
                             </span>
                         </div>
                     </div>

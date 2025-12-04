@@ -1069,3 +1069,99 @@
 [2025-12-04 21:29:44] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
 [2025-12-04 21:29:44] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
 [2025-12-04 21:29:44] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=20
+[2025-12-04 21:36:48] INFO: ======================================================================
+[2025-12-04 21:36:48] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-04 21:36:48] INFO: ======================================================================
+[2025-12-04 21:36:48] INFO: Starting Flask server on port 5000
+[2025-12-04 21:36:48] INFO: Debug mode: False
+[2025-12-04 21:36:48] INFO: Cache duration: 6 hours
+[2025-12-04 21:36:52] INFO: --> Home page accessed
+[2025-12-04 21:36:52] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 32 minutes)
+[2025-12-04 21:36:52] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:36:52] INFO:   Rendering 57 fights
+[2025-12-04 21:36:52] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:36:52] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:36:52] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=20
+[2025-12-04 21:41:21] INFO: ======================================================================
+[2025-12-04 21:41:21] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-04 21:41:21] INFO: ======================================================================
+[2025-12-04 21:41:21] INFO: Starting Flask server on port 5000
+[2025-12-04 21:41:21] INFO: Debug mode: False
+[2025-12-04 21:41:21] INFO: Cache duration: 6 hours
+[2025-12-04 21:41:24] INFO: --> Home page accessed
+[2025-12-04 21:41:24] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 37 minutes)
+[2025-12-04 21:41:24] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:41:24] INFO:   Rendering 57 fights
+[2025-12-04 21:41:24] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:41:24] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:41:24] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=20
+[2025-12-04 21:44:00] INFO: ======================================================================
+[2025-12-04 21:44:00] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-04 21:44:00] INFO: ======================================================================
+[2025-12-04 21:44:00] INFO: Starting Flask server on port 5000
+[2025-12-04 21:44:00] INFO: Debug mode: False
+[2025-12-04 21:44:00] INFO: Cache duration: 6 hours
+[2025-12-04 21:44:02] INFO: --> Home page accessed
+[2025-12-04 21:44:02] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 39 minutes)
+[2025-12-04 21:44:02] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:44:02] INFO:   Rendering 57 fights
+[2025-12-04 21:44:02] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:44:02] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:44:02] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=20
+[2025-12-04 21:46:17] INFO: ======================================================================
+[2025-12-04 21:46:17] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-04 21:46:17] INFO: ======================================================================
+[2025-12-04 21:46:17] INFO: Starting Flask server on port 5000
+[2025-12-04 21:46:17] INFO: Debug mode: False
+[2025-12-04 21:46:17] INFO: Cache duration: 6 hours
+[2025-12-04 21:46:19] INFO: --> Home page accessed
+[2025-12-04 21:46:19] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 42 minutes)
+[2025-12-04 21:46:19] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:46:19] INFO:   Rendering 57 fights
+[2025-12-04 21:46:19] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:46:19] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:46:19] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=13
+[2025-12-04 21:46:40] INFO: --> Event detail accessed: ufc-324-gaethje-vs.-pimblett-2026-01-24
+[2025-12-04 21:46:40] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 42 minutes)
+[2025-12-04 21:46:40] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:46:40] DEBUG:   Parsed slug - date: 2026-01-24, name: ufc-324-gaethje-vs.-pimblett
+[2025-12-04 21:46:40] DEBUG:   Found 3 UFC events
+[2025-12-04 21:46:40] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-04 21:46:40] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-04 21:46:40] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-04 21:46:40] DEBUG:   Searching through 3 events
+[2025-12-04 21:46:40] INFO:   [OK] Matched by DATE: UFC 324: Gaethje vs. Pimblett (10 fights)
+[2025-12-04 21:46:40] DEBUG:   Main card fights: 5, Prelims: 5
+[2025-12-04 21:46:40] INFO:   Main event: Justin Gaethje vs Paddy Pimblett
+[2025-12-04 21:46:40] INFO:   Event date: 2026-01-24, Time: 02:00
+[2025-12-04 21:46:40] INFO:   Venue: T-Mobile Arena in Las Vegas
+[2025-12-04 21:46:40] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:46:45] INFO: --> Home page accessed
+[2025-12-04 21:46:45] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 42 minutes)
+[2025-12-04 21:46:45] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:46:45] INFO:   Rendering 57 fights
+[2025-12-04 21:46:45] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:46:45] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:46:45] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=13
+[2025-12-04 21:46:49] INFO: --> Event detail accessed: ufc-324-gaethje-vs.-pimblett-2026-01-24
+[2025-12-04 21:46:49] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 42 minutes)
+[2025-12-04 21:46:49] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:46:49] DEBUG:   Parsed slug - date: 2026-01-24, name: ufc-324-gaethje-vs.-pimblett
+[2025-12-04 21:46:49] DEBUG:   Found 3 UFC events
+[2025-12-04 21:46:49] DEBUG:     - UFC 323: Dvalishvili vs. Yan 2: DATE=2025-12-07 (14 fights)
+[2025-12-04 21:46:49] DEBUG:     - UFC Vegas 112: Royval vs. Kape: DATE=2025-12-13 (9 fights)
+[2025-12-04 21:46:49] DEBUG:     - UFC 324: Gaethje vs. Pimblett: DATE=2026-01-24 (10 fights)
+[2025-12-04 21:46:49] DEBUG:   Searching through 3 events
+[2025-12-04 21:46:49] INFO:   [OK] Matched by DATE: UFC 324: Gaethje vs. Pimblett (10 fights)
+[2025-12-04 21:46:49] DEBUG:   Main card fights: 5, Prelims: 5
+[2025-12-04 21:46:49] INFO:   Main event: Justin Gaethje vs Paddy Pimblett
+[2025-12-04 21:46:49] INFO:   Event date: 2026-01-24, Time: 02:00
+[2025-12-04 21:46:49] INFO:   Venue: T-Mobile Arena in Las Vegas
+[2025-12-04 21:46:49] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:46:55] INFO: --> Home page accessed
+[2025-12-04 21:46:55] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 42 minutes)
+[2025-12-04 21:46:55] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:46:55] INFO:   Rendering 57 fights
+[2025-12-04 21:46:55] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:46:55] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:46:55] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=13

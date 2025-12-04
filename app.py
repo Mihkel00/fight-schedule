@@ -1297,8 +1297,8 @@ def home():
     fights = fetch_fights()
     logger.info(f"  Rendering {len(fights)} fights")
     
-    # Separate by sport
-    ufc_fights = [f for f in fights if f.get('sport') == 'UFC']
+    # Separate by sport and filter out prelims
+    ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
     boxing_fights = [f for f in fights if f.get('sport') == 'Boxing']
     
     # FEATURED FIGHTS
