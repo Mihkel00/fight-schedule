@@ -1,0 +1,57 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<h1>Missing Fighter Images</h1>
+<p class="text-muted">Fighters appearing in current schedule without images. Updates every 6 hours.</p>
+
+{% if missing_fighters %}
+<div class="alert alert-info">
+    <strong>{{ missing_fighters|length }}</strong> fighters need images
+</div>
+
+<form method="POST" class="mt-4">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Fighter</th>
+                <th>Sport</th>
+                <th>Appears</th>
+                <th style="width: 400px;">Image URL</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fighter, info in missing_fighters.items() %}
+            <tr>
+                <td><strong>{{ fighter }}</strong><br><small class="text-muted">{{ info.example }}</small></td>
+                <td><span class="badge badge-{{ 'danger' if info.sport == 'UFC' else 'warning' }}">{{ info.sport }}</span></td>
+                <td>{{ info.count }}×</td>
+                <td>
+                    <input type="text" name="image_{{ fighter.replace(' ', '_') }}" class="form-control form-control-sm" placeholder="https://...">
+                    <input type="hidden" name="sport_{{ fighter.replace(' ', '_') }}" value="{{ info.sport }}">
+                </td>
+                <td><button type="submit" class="btn btn-sm btn-primary">Save</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-success">Save All</button>
+</form>
+
+{% else %}
+<div class="alert alert-success">All fighters have images!</div>
+{% endif %}
+
+<hr class="my-4">
+<h4>Finding Images</h4>
+<ol>
+    <li>Google: "[Fighter Name] official photo"</li>
+    <li>Right-click image → Copy image address</li>
+    <li>Paste URL above and click Save</li>
+</ol>
+
+<style>
+    .badge-danger { background-color: #dc2626; }
+    .badge-warning { background-color: #f59e0b; color: #000; }
+</style>
+{% endblock %}

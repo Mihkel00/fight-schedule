@@ -1610,6 +1610,52 @@ def boxing_event_detail(event_slug):
     
     return render_template('boxing_event.html', event=event_data)
 
+# SEO Routes
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate dynamic sitemap"""
+    from datetime import datetime
+    fights = fetch_fights()
+    
+    pages = []
+    pages.append({'loc': 'https://fightschedule.live/', 'lastmod': datetime.now().strftime('%Y-%m-%d'), 'changefreq': 'daily', 'priority': '1.0'})
+    
+    # UFC events
+    ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
+    seen = set()
+    for fight in ufc_fights:
+        slug = f"{fight['event_name'].lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
+        if slug not in seen:
+            pages.append({'loc': f"https://fightschedule.live/event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.8'})
+            seen.add(slug)
+    
+    # Boxing events
+    boxing_fights = [f for f in fights if f.get('sport') == 'Boxing']
+    seen = set()
+    for fight in boxing_fights[:20]:
+        venue_slug = fight['venue'].lower().replace(' ', '-').replace(',', '').replace('.', '').replace("'", '')
+        slug = f"{venue_slug}-{fight['date']}"
+        if slug not in seen:
+            pages.append({'loc': f"https://fightschedule.live/boxing-event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.7'})
+            seen.add(slug)
+    
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    for p in pages:
+        xml += f'  <url>\n    <loc>{p["loc"]}</loc>\n    <lastmod>{p["lastmod"]}</lastmod>\n    <changefreq>{p["changefreq"]}</changefreq>\n    <priority>{p["priority"]}</priority>\n  </url>\n'
+    xml += '</urlset>'
+    
+    response = make_response(xml)
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/robots.txt')
+def robots():
+    """Generate robots.txt"""
+    txt = "User-agent: *\nAllow: /\nSitemap: https://fightschedule.live/sitemap.xml\n"
+    response = make_response(txt)
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting Flask server on port {port}")

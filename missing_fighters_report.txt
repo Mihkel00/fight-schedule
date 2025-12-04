@@ -3,9 +3,9 @@ MISSING FIGHTER IMAGES REPORT
 ======================================================================
 
 Generated: 2025-12-04
-Total fights analyzed: 23
-Unique fighters missing images: 35
-Total missing image slots: 35
+Total fights analyzed: 57
+Unique fighters missing images: 44
+Total missing image slots: 44
 
 ======================================================================
 IMAGE REQUIREMENTS
@@ -37,94 +37,48 @@ python add_fighter_image.py "Jon Jones" "https://ufc.com/jones.png" ufc
 BREAKDOWN BY SPORT
 ======================================================================
 
-UFC fighters missing: 8
-Boxing fighters missing: 27
+UFC fighters missing: 11
+Boxing fighters missing: 33
 
 ======================================================================
 MISSING FIGHTERS (RANKED BY FREQUENCY)
 ======================================================================
 
-Thammanoon Niyomtrong
+Junior Leandro Zarate
   Sport: Boxing
   Appears in: 1 fight(s)
-  - 2025-12-04: Carlos Canizales vs Thammanoon Niyomtrong
-  COMMAND: python add_fighter_image.py "Thammanoon Niyomtrong" "https://boxrec.com/images/thumb/0/0d/Niyomtrong_Thammanoon.jpg/200px-Niyomtrong_Thammanoon.jpg" boxing
+  - 2025-12-04: Thammanoon Niyomtrong vs Junior Leandro Zarate
+  COMMAND: python add_fighter_image.py "Junior Leandro Zarate" "IMAGE_URL" boxing
 
-Jai Tapu Opetaia
-  Sport: Boxing
-  Appears in: 1 fight(s)
-  - 2025-12-06: Jai Tapu Opetaia vs Huseyin Cinkara
-  COMMAND: python add_fighter_image.py "Jai Tapu Opetaia" "https://cdn.proboxtv.com/uploads/jai_opetaia_aac40672e0.jpg" boxing
-
-Huseyin Cinkara
-  Sport: Boxing
-  Appears in: 1 fight(s)
-  - 2025-12-06: Jai Tapu Opetaia vs Huseyin Cinkara
-  COMMAND: python add_fighter_image.py "Huseyin Cinkara" "https://boxrec.com/images/thumb/e/e7/764909.jpg/200px-764909.jpg" boxing
-
-Cristian Zara
-  Sport: Boxing
-  Appears in: 1 fight(s)
-  - 2025-12-06: Cristian Zara vs Elie Konki
-  COMMAND: python add_fighter_image.py "Cristian Zara" "https://www.espabox.com/wp-content/uploads/2025/05/Zara-Cristian-1.jpg" boxing
-
-Elif Nur Turhan
-  Sport: Boxing
-  Appears in: 1 fight(s)
-  - 2025-12-06: Beatriz Ferreira vs Elif Nur Turhan
-  COMMAND: python add_fighter_image.py "Elif Nur Turhan" "https://images.tapology.com/letterbox_images/346581/default/Screenshot_20220804_151621.jpg?1659622596" boxing
-
-Diego Natchoo
-  Sport: Boxing
-  Appears in: 1 fight(s)
-  - 2025-12-06: Diego Natchoo vs Bilel Jkitou
-  COMMAND: python add_fighter_image.py "Diego Natchoo" "https://boxrec.com/wiki/thumb.php?f=725002_2025.jpg&width=250" boxing
-
-Bilel Jkitou
-  Sport: Boxing
-  Appears in: 1 fight(s)
-  - 2025-12-06: Diego Natchoo vs Bilel Jkitou
-  COMMAND: python add_fighter_image.py "Bilel Jkitou" "https://boxrec.com/wiki/thumb.php?f=709711a.jpg&width=250" boxing
-
-Shabaz Masoud
-  Sport: Boxing
-  Appears in: 1 fight(s)
-  - 2025-12-06: Shabaz Masoud vs Peter McGrail
-  COMMAND: python add_fighter_image.py "Shabaz Masoud" "https://boxrec.com/wiki/thumb.php?f=834795.jpg&width=250" boxing
-
-.......
-
-Dvalishvili
+Alexandre Pantoja
   Sport: UFC
   Appears in: 1 fight(s)
-  - 2025-12-06: Dvalishvili vs Yan
-  COMMAND: python add_fighter_image.py "Dvalishvili" "https://www.ufc.com/images/2025-10/DVALISHVILI_MERAB_BELT_10-04.png" ufc
+  - 2025-12-07: Alexandre Pantoja vs Joshua Van
+  COMMAND: python add_fighter_image.py "Alexandre Pantoja" "IMAGE_URL" ufc
 
-Yan
+Payton Talbott
   Sport: UFC
   Appears in: 1 fight(s)
-  - 2025-12-06: Dvalishvili vs Yan
-  COMMAND: python add_fighter_image.py "Yan" "https://www.ufc.com/images/2025-07/YAN_PETR_07-26.png" ufc
+  - 2025-12-07: Henry Cejudo vs Payton Talbott
+  COMMAND: python add_fighter_image.py "Payton Talbott" "IMAGE_URL" ufc
 
-Zhanibek Alimkhanuly
-  Sport: Boxing
+Jan Blachowicz
+  Sport: UFC
   Appears in: 1 fight(s)
-  - 2025-12-07: Erislandy Lara vs Zhanibek Alimkhanuly
-  COMMAND: python add_fighter_image.py "Zhanibek Alimkhanuly" "https://boxrec.com/wiki/thumb.php?f=ZhanibekAlimkhanuly1.jpeg&width=250" boxing
+  - 2025-12-07: Jan Blachowicz vs Bogdan Guskov
+  COMMAND: python add_fighter_image.py "Jan Blachowicz" "IMAGE_URL" ufc
 
-Bree Burbeary
-  Sport: Boxing
+Fares Ziam
+  Sport: UFC
   Appears in: 1 fight(s)
-  - 2025-12-07: Bree Burbeary vs Geetika Prem Singh
-  COMMAND: python add_fighter_image.py "Bree Burbeary" "https://boxrec.com/images/thumb/8/86/1083087.jpeg/200px-1083087.jpeg" boxing
+  - 2025-12-07: Nazim Sadykhov vs Fares Ziam
+  COMMAND: python add_fighter_image.py "Fares Ziam" "IMAGE_URL" ufc
 
-Geetika Prem Singh
-  Sport: Boxing
+Mansur Abdul-Malik
+  Sport: UFC
   Appears in: 1 fight(s)
-  - 2025-12-07: Bree Burbeary vs Geetika Prem Singh
-  COMMAND: python add_fighter_image.py "Geetika Prem Singh" "https://boxrec.com/images/commission_photos/9/96/1231353_e0fb54b2106cfc6e8b650297694ea1f2.jpg" boxing
-
-....
+  - 2025-12-07: Mansur Abdul-Malik vs Antonio Trocoli
+  COMMAND: python add_fighter_image.py "Mansur Abdul-Malik" "IMAGE_URL" ufc
 
 Vadim Musaev
   Sport: Boxing
@@ -138,17 +92,41 @@ Thulani Mbenge
   - 2025-12-12: Vadim Musaev vs Thulani Mbenge
   COMMAND: python add_fighter_image.py "Thulani Mbenge" "IMAGE_URL" boxing
 
-UFC Fight Night 266 Royval
-  Sport: UFC
+Jose Sanchez
+  Sport: Boxing
   Appears in: 1 fight(s)
-  - 2025-12-13: UFC Fight Night 266 Royval vs Kape
-  COMMAND: python add_fighter_image.py "UFC Fight Night 266 Royval" "IMAGE_URL" ufc
+  - 2025-12-13: Jose Sanchez vs Landi Ngxeke
+  COMMAND: python add_fighter_image.py "Jose Sanchez" "IMAGE_URL" boxing
 
-Kape
+Landi Ngxeke
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-13: Jose Sanchez vs Landi Ngxeke
+  COMMAND: python add_fighter_image.py "Landi Ngxeke" "IMAGE_URL" boxing
+
+Allen Frye (AJ)
   Sport: UFC
   Appears in: 1 fight(s)
-  - 2025-12-13: UFC Fight Night 266 Royval vs Kape
-  COMMAND: python add_fighter_image.py "Kape" "IMAGE_URL" ufc
+  - 2025-12-13: Allen Frye (AJ) vs Guilherme Pat (Kong)
+  COMMAND: python add_fighter_image.py "Allen Frye (AJ)" "IMAGE_URL" ufc
+
+Guilherme Pat (Kong)
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2025-12-13: Allen Frye (AJ) vs Guilherme Pat (Kong)
+  COMMAND: python add_fighter_image.py "Guilherme Pat (Kong)" "IMAGE_URL" ufc
+
+Diego Pacheco
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-13: Diego Pacheco vs Kévin Lele Sadjo
+  COMMAND: python add_fighter_image.py "Diego Pacheco" "IMAGE_URL" boxing
+
+Kévin Lele Sadjo
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-13: Diego Pacheco vs Kévin Lele Sadjo
+  COMMAND: python add_fighter_image.py "Kévin Lele Sadjo" "IMAGE_URL" boxing
 
 Badou Jack
   Sport: Boxing
@@ -162,6 +140,18 @@ Noel Mikaelyan
   - 2025-12-14: Badou Jack vs Noel Mikaelyan
   COMMAND: python add_fighter_image.py "Noel Mikaelyan" "IMAGE_URL" boxing
 
+Anthony Olascuaga
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-17: Anthony Olascuaga vs Taku Kuwahara
+  COMMAND: python add_fighter_image.py "Anthony Olascuaga" "IMAGE_URL" boxing
+
+Taku Kuwahara
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-17: Anthony Olascuaga vs Taku Kuwahara
+  COMMAND: python add_fighter_image.py "Taku Kuwahara" "IMAGE_URL" boxing
+
 Kyosuke Takami
   Sport: Boxing
   Appears in: 1 fight(s)
@@ -174,6 +164,30 @@ Rene Santiago
   - 2025-12-17: Kyosuke Takami vs Rene Santiago
   COMMAND: python add_fighter_image.py "Rene Santiago" "IMAGE_URL" boxing
 
+Cherneka Johnson
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-19: Cherneka Johnson vs Amanda Galle
+  COMMAND: python add_fighter_image.py "Cherneka Johnson" "IMAGE_URL" boxing
+
+Amanda Galle
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-19: Cherneka Johnson vs Amanda Galle
+  COMMAND: python add_fighter_image.py "Amanda Galle" "IMAGE_URL" boxing
+
+Alycia Baumgardner
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-19: Alycia Baumgardner vs Leila Beaudoin
+  COMMAND: python add_fighter_image.py "Alycia Baumgardner" "IMAGE_URL" boxing
+
+Leila Beaudoin
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-19: Alycia Baumgardner vs Leila Beaudoin
+  COMMAND: python add_fighter_image.py "Leila Beaudoin" "IMAGE_URL" boxing
+
 Callum Simpson
   Sport: Boxing
   Appears in: 1 fight(s)
@@ -185,6 +199,18 @@ Troy Williamson
   Appears in: 1 fight(s)
   - 2025-12-20: Callum Simpson vs Troy Williamson
   COMMAND: python add_fighter_image.py "Troy Williamson" "IMAGE_URL" boxing
+
+Jake Paul
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-20: Jake Paul vs Anthony Joshua
+  COMMAND: python add_fighter_image.py "Jake Paul" "IMAGE_URL" boxing
+
+Anthony Joshua
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2025-12-20: Jake Paul vs Anthony Joshua
+  COMMAND: python add_fighter_image.py "Anthony Joshua" "IMAGE_URL" boxing
 
 Olivia Curry
   Sport: Boxing
@@ -234,29 +260,53 @@ Erika Cruz
   - 2026-01-03: Amanda Serrano vs Erika Cruz
   COMMAND: python add_fighter_image.py "Erika Cruz" "IMAGE_URL" boxing
 
-Gaethje
-  Sport: UFC
+Subriel Matias
+  Sport: Boxing
   Appears in: 1 fight(s)
-  - 2026-01-24: Gaethje vs Pimblett
-  COMMAND: python add_fighter_image.py "Gaethje" "IMAGE_URL" ufc
+  - 2026-01-10: Subriel Matias vs Dalton Smith
+  COMMAND: python add_fighter_image.py "Subriel Matias" "IMAGE_URL" boxing
 
-Pimblett
-  Sport: UFC
+Dalton Smith
+  Sport: Boxing
   Appears in: 1 fight(s)
-  - 2026-01-24: Gaethje vs Pimblett
-  COMMAND: python add_fighter_image.py "Pimblett" "IMAGE_URL" ufc
+  - 2026-01-10: Subriel Matias vs Dalton Smith
+  COMMAND: python add_fighter_image.py "Dalton Smith" "IMAGE_URL" boxing
 
-Volkanovski
+Paddy Pimblett
   Sport: UFC
   Appears in: 1 fight(s)
-  - 2026-01-31: Volkanovski vs Lopes
-  COMMAND: python add_fighter_image.py "Volkanovski" "IMAGE_URL" ufc
+  - 2026-01-24: Justin Gaethje vs Paddy Pimblett
+  COMMAND: python add_fighter_image.py "Paddy Pimblett" "IMAGE_URL" ufc
 
-Lopes
+Amanda Nunes
   Sport: UFC
   Appears in: 1 fight(s)
-  - 2026-01-31: Volkanovski vs Lopes
-  COMMAND: python add_fighter_image.py "Lopes" "IMAGE_URL" ufc
+  - 2026-01-24: Kayla Harrison vs Amanda Nunes
+  COMMAND: python add_fighter_image.py "Amanda Nunes" "IMAGE_URL" ufc
+
+Sean O’Malley
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2026-01-24: Sean O’Malley vs Song Yadong
+  COMMAND: python add_fighter_image.py "Sean O’Malley" "IMAGE_URL" ufc
+
+Waldo Cortes-Acosta
+  Sport: UFC
+  Appears in: 1 fight(s)
+  - 2026-01-24: Waldo Cortes-Acosta vs Derrick Lewis
+  COMMAND: python add_fighter_image.py "Waldo Cortes-Acosta" "IMAGE_URL" ufc
+
+Sebastian Fundora
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2026-01-24: Sebastian Fundora vs Keith Thurman
+  COMMAND: python add_fighter_image.py "Sebastian Fundora" "IMAGE_URL" boxing
+
+Keith Thurman
+  Sport: Boxing
+  Appears in: 1 fight(s)
+  - 2026-01-24: Sebastian Fundora vs Keith Thurman
+  COMMAND: python add_fighter_image.py "Keith Thurman" "IMAGE_URL" boxing
 
 ======================================================================
 END OF REPORT
