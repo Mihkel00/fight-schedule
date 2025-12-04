@@ -39,6 +39,7 @@
             gap: 1rem;
             scrollbar-width: none;
             -ms-overflow-style: none;
+            scroll-behavior: smooth;
         }
         .scroll-container::-webkit-scrollbar {
             display: none;
@@ -47,7 +48,59 @@
             scroll-snap-align: start;
             flex: 0 0 auto;
         }
+        @media (max-width: 640px) {
+            .scroll-container {
+                gap: 0.75rem;
+            }
+            .scroll-item {
+                width: 280px;
+            }
+        }
+        .scroll-wrapper {
+            position: relative;
+        }
+        .scroll-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: rgba(18, 18, 18, 0.9);
+            border: 1px solid #2a2a2a;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .scroll-btn:hover {
+            background: rgba(36, 36, 36, 0.95);
+            border-color: #dc2626;
+        }
+        .scroll-btn-left {
+            left: -20px;
+        }
+        .scroll-btn-right {
+            right: -20px;
+        }
+        @media (max-width: 1024px) {
+            .scroll-btn {
+                display: none;
+            }
+        }
     </style>
+    <script>
+        function scrollContainer(direction, containerId) {
+            const container = document.getElementById(containerId);
+            const scrollAmount = 320;
+            container.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    </script>
 </head>
 <body class="bg-dark-bg text-text-primary">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -133,7 +186,18 @@
         {% if ufc_fights %}
         <div class="mb-12">
             <h2 class="font-staatliches text-3xl uppercase mb-6">UFC</h2>
-            <div class="scroll-container pb-4">
+            <div class="scroll-wrapper">
+                <button onclick="scrollContainer('left', 'ufc-scroll')" class="scroll-btn scroll-btn-left" aria-label="Scroll left">
+                    <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <button onclick="scrollContainer('right', 'ufc-scroll')" class="scroll-btn scroll-btn-right" aria-label="Scroll right">
+                    <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                <div id="ufc-scroll" class="scroll-container pb-4">
                 {% for fight in ufc_fights %}
                 <a href="/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}" 
                    class="scroll-item w-80 block bg-dark-card rounded-xl p-6 border border-dark-border hover:border-accent-red/50 transition-all">
@@ -171,6 +235,7 @@
                 </a>
                 {% endfor %}
             </div>
+            </div>
         </div>
         {% endif %}
 
@@ -178,7 +243,18 @@
         {% if boxing_fights %}
         <div class="mb-12">
             <h2 class="font-staatliches text-3xl uppercase mb-6">Boxing</h2>
-            <div class="scroll-container pb-4">
+            <div class="scroll-wrapper">
+                <button onclick="scrollContainer('left', 'boxing-scroll')" class="scroll-btn scroll-btn-left" aria-label="Scroll left">
+                    <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <button onclick="scrollContainer('right', 'boxing-scroll')" class="scroll-btn scroll-btn-right" aria-label="Scroll right">
+                    <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+                <div id="boxing-scroll" class="scroll-container pb-4">
                 {% for fight in boxing_fights %}
                 <a href="/boxing-event/{{ fight.venue|lower|replace(' ', '-')|replace(',', '')|replace('.', '')|replace("'", '') }}-{{ fight.date }}" 
                    class="scroll-item w-80 block bg-dark-card rounded-xl p-6 border border-dark-border hover:border-accent-orange/50 transition-all">
@@ -215,6 +291,7 @@
                     </div>
                 </a>
                 {% endfor %}
+            </div>
             </div>
         </div>
         {% endif %}

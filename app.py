@@ -1333,13 +1333,13 @@ def home():
     ufc_fights = [f for f in ufc_fights if id(f) not in featured_ids]
     boxing_fights = [f for f in boxing_fights if id(f) not in featured_ids]
     
-    # Limit horizontal scroll sections (show 6-8 fights)
-    ufc_scroll = ufc_fights[:8]
-    boxing_scroll = boxing_fights[:8]
+    # Limit horizontal scroll sections (show more fights)
+    ufc_scroll = ufc_fights[:12]
+    boxing_scroll = boxing_fights[:12]
     
     # Coming up soon: Everything else
-    coming_soon = ufc_fights[8:] + boxing_fights[8:]
-    coming_soon = sorted(coming_soon, key=lambda x: x['date'])[:10]  # Show 10 max
+    coming_soon = ufc_fights[12:] + boxing_fights[12:]
+    coming_soon = sorted(coming_soon, key=lambda x: x['date'])[:20]  # Show 20 max
     
     logger.info(f"  Sections: Featured={len(featured_fights)}, UFC={len(ufc_scroll)}, Boxing={len(boxing_scroll)}, Coming Soon={len(coming_soon)}")
     
