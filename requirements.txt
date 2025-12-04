@@ -5,3 +5,4 @@ beautifulsoup4==4.12.2
 python-dateutil==2.8.2
 flask-admin==1.6.1
 markdown==3.5.1
+gunicorn==21.2.0
