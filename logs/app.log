@@ -1043,3 +1043,29 @@
 [2025-12-04 21:20:25] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
 [2025-12-04 21:20:25] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
 [2025-12-04 21:20:25] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=20
+[2025-12-04 21:27:45] INFO: ======================================================================
+[2025-12-04 21:27:45] INFO: FIGHT SCHEDULE APP STARTING
+[2025-12-04 21:27:45] INFO: ======================================================================
+[2025-12-04 21:27:45] INFO: Starting Flask server on port 5000
+[2025-12-04 21:27:45] INFO: Debug mode: False
+[2025-12-04 21:27:45] INFO: Cache duration: 6 hours
+[2025-12-04 21:27:48] INFO: --> Home page accessed
+[2025-12-04 21:27:48] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 23 minutes)
+[2025-12-04 21:27:48] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:27:48] INFO:   Rendering 57 fights
+[2025-12-04 21:27:48] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:27:48] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:27:48] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=20
+[2025-12-04 21:29:42] INFO: Boxing event accessed: adventist-health-arena-2025-12-13
+[2025-12-04 21:29:42] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 25 minutes)
+[2025-12-04 21:29:42] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:29:42] INFO: Found 1 fights for this event
+[2025-12-04 21:29:42] INFO: Main event: Diego Pacheco vs Kévin Lele Sadjo
+[2025-12-04 21:29:42] WARNING: No Anthropic API key set - skipping preview generation
+[2025-12-04 21:29:44] INFO: --> Home page accessed
+[2025-12-04 21:29:44] INFO: [OK] Using cached data from 2025-12-04 21:04:04 (age: 25 minutes)
+[2025-12-04 21:29:44] INFO:   Loaded 57 fights from cache
+[2025-12-04 21:29:44] INFO:   Rendering 57 fights
+[2025-12-04 21:29:44] INFO:   Featured UFC: Merab Dvalishvili vs Petr Yan
+[2025-12-04 21:29:44] INFO:   Featured Boxing: Stephen Fulton vs O'Shaquie Foster
+[2025-12-04 21:29:44] INFO:   Sections: Featured=2, UFC=12, Boxing=12, Coming Soon=20
