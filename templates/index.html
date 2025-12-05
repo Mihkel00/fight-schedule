@@ -192,9 +192,20 @@
                 if (!utcTime || utcTime === 'TBA' || utcTime === '') return 'TBA';
                 
                 try {
-                    // Parse the date and UTC time
-                    const [hours, minutes] = utcTime.split(':').map(num => parseInt(num));
-                    const utcDate = new Date(date + 'T' + utcTime + ':00Z'); // 'Z' indicates UTC
+                    // Parse the date and UTC time - handle cases like "12:" or "12:00"
+                    const timeParts = utcTime.split(':');
+                    const hours = parseInt(timeParts[0]) || 0;
+                    const minutes = parseInt(timeParts[1] || '0') || 0;
+                    
+                    // Validate parsed values
+                    if (isNaN(hours) || isNaN(minutes)) {
+                        console.warn('Invalid time format:', utcTime);
+                        return utcTime;
+                    }
+                    
+                    // Ensure time is properly formatted for Date constructor
+                    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    const utcDate = new Date(date + 'T' + formattedTime + ':00Z'); // 'Z' indicates UTC
                     
                     // Convert to user's local time
                     const localHours = utcDate.getHours();
@@ -416,7 +427,7 @@
                         </div>
                         
                         <div class="absolute inset-0 bg-gradient-to-t from-dark-card via-dark-card/50 to-transparent">
-                            <div class="absolute bottom-0 left-0 right-0 p-8">
+                            <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6">
                                 <div class="flex items-end justify-between mb-5">
                                     <div>
                                         <h3 class="font-staatliches text-4xl md:text-5xl uppercase">{{ fight.fighter1.split()[-1] }}</h3>
