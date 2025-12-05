@@ -318,6 +318,13 @@
             container.insertBefore(resultsDiv, header.nextSibling);
         }
         
+        function formatDate(dateStr) {
+            // Convert YYYY-MM-DD to "Sun, Dec 07" format
+            const date = new Date(dateStr + 'T00:00:00');
+            const options = { weekday: 'short', month: 'short', day: '2-digit' };
+            return date.toLocaleDateString('en-US', options);
+        }
+        
         function createFightCard(fight) {
             const isUFC = fight.sport === 'UFC';
             const accentColor = isUFC ? 'accent-red' : 'accent-orange';
@@ -345,7 +352,7 @@
                     </div>
                     <div class="border-t border-dark-border pt-5">
                         <p class="text-${accentColor} font-work font-semibold mb-3 text-sm">
-                            ${fight.date} • <span class="fight-time" data-utc-time="${fight.time}" data-date="${fight.date}">${fight.displayTime || fight.time || 'TBA'}</span>
+                            ${formatDate(fight.date)} • <span class="fight-time" data-utc-time="${fight.time}" data-date="${fight.date}">${fight.displayTime || fight.time || 'TBA'}</span>
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">${fight.venue}</span>
@@ -455,7 +462,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                         </svg>
                                         <span class="text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold">
-                                            {{ fight.date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
+                                            {{ fight.date|format_date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
                                         </span>
                                     </div>
                                     <div class="flex items-center gap-2">
@@ -514,7 +521,7 @@
                     </div>
                     <div class="border-t border-dark-border pt-5">
                         <p class="text-accent-red font-work font-semibold mb-3 text-sm">
-                            {{ fight.date }}{% if fight.card_type %} • {{ fight.card_type }}: <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>{% else %} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>{% endif %}
+                            {{ fight.date|format_date }}{% if fight.card_type %} • {{ fight.card_type }}: <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>{% else %} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>{% endif %}
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
@@ -571,7 +578,7 @@
                     </div>
                     <div class="border-t border-dark-border pt-5">
                         <p class="text-accent-orange font-work font-semibold mb-3 text-sm">
-                            {{ fight.date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
+                            {{ fight.date|format_date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
@@ -608,7 +615,7 @@
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
                             <span class="font-work text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold flex-shrink-0 order-1">
-                                {{ fight.date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
+                                {{ fight.date|format_date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
                             </span>
                             <span class="font-work text-text-tertiary truncate order-2">
                                 {{ fight.venue }}
