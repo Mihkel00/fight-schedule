@@ -265,14 +265,14 @@ class MissingFighterImagesView(BaseView):
         
         logger = logging.getLogger(__name__)
         
-        # Load databases
+        # Load databases from root directory
         fighters_db = {}
         try:
-            with open('data/fighters.json', 'r') as f:
+            with open('fighters.json', 'r') as f:
                 fighters_db.update(json.load(f))
         except: pass
         try:
-            with open('data/fighters_ufc.json', 'r') as f:
+            with open('fighters_ufc.json', 'r') as f:
                 fighters_db.update(json.load(f))
         except: pass
         
@@ -321,7 +321,8 @@ class MissingFighterImagesView(BaseView):
         """Save fighter image to JSON"""
         import json
         
-        file = 'data/fighters_ufc.json' if sport == 'UFC' else 'data/fighters.json'
+        # Save to root directory where app.py loads from
+        file = 'fighters_ufc.json' if sport == 'UFC' else 'fighters.json'
         
         try:
             with open(file, 'r') as f:
