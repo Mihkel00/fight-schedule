@@ -8,6 +8,7 @@ from flask_admin import Admin, BaseView, expose, AdminIndexView
 from flask_admin.form import Select2Widget
 from wtforms import Form, StringField, SelectField, validators
 import os
+import logging
 from admin_models import FighterImageOverride, BigNameFighter, ManualEvent, TimeOverride
 
 # Simple password protection (you can change this password)
@@ -259,7 +260,10 @@ class MissingFighterImagesView(BaseView):
     def get_all_fighters(self):
         """Get all fighters split into missing and existing images"""
         import json
+        import logging
         from collections import defaultdict
+        
+        logger = logging.getLogger(__name__)
         
         # Load databases
         fighters_db = {}
