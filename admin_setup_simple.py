@@ -245,6 +245,13 @@ class MissingFighterImagesView(BaseView):
         
         # Get all fighters
         fighters_data = self.get_all_fighters()
+        
+        # Debug logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"Missing fighters: {len(fighters_data['missing'])}")
+        logger.info(f"Existing fighters: {len(fighters_data['existing'])}")
+        
         return self.render('admin/missing_fighter_images.html', 
                          missing_fighters=fighters_data['missing'],
                          existing_fighters=fighters_data['existing'])
@@ -266,10 +273,21 @@ class MissingFighterImagesView(BaseView):
         except: pass
         
         # Get fights
+        import os
+        cache_path = 'data/fights_cache.json'
+        logger = logging.getLogger(__name__)
+        
+        if not os.path.exists(cache_path):
+            logger.warning(f"Cache file not found: {cache_path}")
+            return {'missing': {}, 'existing': {}}
+        
         try:
-            with open('data/fights_cache.json', 'r') as f:
-                fights = json.load(f).get('fights', [])
-        except:
+            with open(cache_path, 'r') as f:
+                cache_data = json.load(f)
+                fights = cache_data.get('fights', [])
+                logger.info(f"Loaded {len(fights)} fights from cache")
+        except Exception as e:
+            logger.error(f"Error loading cache: {e}")
             return {'missing': {}, 'existing': {}}
         
         # Collect all fighters
