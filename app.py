@@ -1560,23 +1560,37 @@ def boxing_event_detail(event_slug):
     
     logger.info(f"Found {len(event_fights)} fights for this event")
     
-    # Sort fights - main event first (check big-name list)
-    def is_big_name_in_fight(fight):
+    # Sort fights by importance
+    def get_fight_importance(fight):
+        """Score fight importance: higher = more important"""
+        score = 0
+        
+        # Title fights are most important
+        if 'Title' in fight.get('weight_class', ''):
+            score += 10
+        
+        # Big-name fighters add importance
         model = BigNameFighter()
-        return model.is_big_name(fight['fighter1']) or model.is_big_name(fight['fighter2'])
+        if model.is_big_name(fight['fighter1']):
+            score += 5
+        if model.is_big_name(fight['fighter2']):
+            score += 5
+        
+        # Heavier weight classes typically headline
+        weight_class = fight.get('weight_class', '').lower()
+        if 'heavyweight' in weight_class:
+            score += 3
+        elif 'middleweight' in weight_class or 'welterweight' in weight_class:
+            score += 2
+        elif 'lightweight' in weight_class:
+            score += 1
+        
+        return score
     
-    # Separate big-name and regular fights
-    big_name_fights = [f for f in event_fights if is_big_name_in_fight(f)]
-    other_fights = [f for f in event_fights if not is_big_name_in_fight(f)]
-    
-    # Main event is first big-name fight, or first fight alphabetically
-    if big_name_fights:
-        main_event_fight = big_name_fights[0]
-        undercard = big_name_fights[1:] + other_fights
-    else:
-        event_fights_sorted = sorted(event_fights, key=lambda x: x['fighter1'])
-        main_event_fight = event_fights_sorted[0]
-        undercard = event_fights_sorted[1:]
+    # Sort all fights by importance
+    event_fights_sorted = sorted(event_fights, key=get_fight_importance, reverse=True)
+    main_event_fight = event_fights_sorted[0]
+    undercard = event_fights_sorted[1:]
     
     logger.info(f"Main event: {main_event_fight['fighter1']} vs {main_event_fight['fighter2']}")
     
