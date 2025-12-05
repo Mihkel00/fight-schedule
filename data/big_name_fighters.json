@@ -1,292 +1,74 @@
 [
-  {
-    "name": "Naoya Inoue",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Terence Crawford",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Junto Nakatani",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Jaron Ennis",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Saul Alvarez",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Canelo Alvarez",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Shakur Stevenson",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "David Benavidez",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Dmitrii Bivol",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Jesse Rodriguez",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Artur Beterbiev",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Devin Haney",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Gervonta Davis",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Teofimo Lopez",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Oleksandr Usyk",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Vergil Ortiz Jr",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Raymond Muratalla",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Zhanbek Alimkhanuly",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Rafael Espinoza",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Hamzah Sheeraz",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Nick Ball",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Xander Zayas",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Gilberto Ramirez",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Jermall Charlo",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Masamichi Yabuki",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Fabio Wardley",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Anthony Cacace",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Emanuel Navarrete",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Osleys Iglesias",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Jai Opetaia",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Subriel Matias",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Christian Mbilli",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Agit Kabayel",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Richardson Hitchins",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Oscar Collazo",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Liam Paro",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Jaime Munguia",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Brian Norman Jr",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Keyshawn Davis",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Eduardo Nunez",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Ricardo Rafael Sandoval",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Adam Azim",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Kenshiro Teraji",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Daniel Dubois",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Arnold Barboza Jr",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Ricardo Majika",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Diego Pacheco",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Luis Nery",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Stephen Fulton",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Callum Smith",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Sebastian Fundora",
-    "sport": "Boxing",
-    "notes": "Champion"
-  },
-  {
-    "name": "Jake Paul",
-    "sport": "Boxing",
-    "notes": "Celebrity"
-  },
-  {
-    "name": "Logan Paul",
-    "sport": "Boxing",
-    "notes": "Celebrity"
-  },
-  {
-    "name": "Tommy Fury",
-    "sport": "Boxing",
-    "notes": "Celebrity"
-  },
-  {
-    "name": "KSI",
-    "sport": "Boxing",
-    "notes": "Celebrity"
-  },
-  {
-    "name": "Tyson Fury",
-    "sport": "Boxing",
-    "notes": "Legend"
-  },
-  {
-    "name": "Anthony Joshua",
-    "sport": "Boxing",
-    "notes": "Legend"
-  },
-  {
-    "name": "Manny Pacquiao",
-    "sport": "Boxing",
-    "notes": "Legend"
-  }
+  {"name": "Oleksandr Usyk", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Terence Crawford", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Canelo Alvarez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Dmitry Bivol", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Naoya Inoue", "sport": "Boxing", "notes": "Champion"},
+  {"name": "David Benavidez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Vergil Ortiz Jr.", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Shakur Stevenson", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Errol Spence Jr.", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Gervonta Davis", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Anthony Joshua", "sport": "Boxing", "notes": "Legend"},
+  {"name": "Joseph Parker", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Zhilei Zhang", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Jai Opetaia", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Gilberto Ramirez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Chris Billam-Smith", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Michal Cieslak", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Badou Jack", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Daniel Dubois", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Efe Ajagba", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Bakhodir Jalolov", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Fabio Wardley", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Lawrence Okolie", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Hamzah Sheeraz", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Christian Mbilli", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Lester Martinez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Diego Pacheco", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Caleb Plant", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Osleys Iglesias", "sport": "Boxing", "notes": "Champion"},
+  {"name": "David Morrell", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Sergiy Derevyanchenko", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Artur Beterbiev", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Jesse Rodriguez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Devin Haney", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Junto Nakatani", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Teofimo Lopez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Erislandy Lara", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Carlos Adames", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Janibek Alimkhanuly", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Chris Eubank Jr.", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Bilal Jkitou", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Lawrence Torrez Jr.", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Martin Bakole", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Filip Hrgovic", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Moses Itauma", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Atif Oberlton", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Umut Camkiran", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Andrii Novitskyi", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Frank Sanchez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Jared Anderson", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Andy Ruiz Jr.", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Isaac Cruz", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Raymond Ford", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Subriel Matias", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Emmanuel Navarrete", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Robeisy Ramirez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Luis Alberto Lopez", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Keyshawn Davis", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Ryan Garcia", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Josh Taylor", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Jaron Ennis", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Stephen Fulton", "sport": "Boxing", "notes": "Champion"},
+  {"name": "O'Shaquie Foster", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Nick Ball", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Rafael Espinoza", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Xander Zayas", "sport": "Boxing", "notes": "Champion"},
+  {"name": "Tyson Fury", "sport": "Boxing", "notes": "Legend"},
+  {"name": "Manny Pacquiao", "sport": "Boxing", "notes": "Legend"},
+  {"name": "Jake Paul", "sport": "Boxing", "notes": "Celebrity"},
+  {"name": "Logan Paul", "sport": "Boxing", "notes": "Celebrity"},
+  {"name": "Tommy Fury", "sport": "Boxing", "notes": "Celebrity"},
+  {"name": "KSI", "sport": "Boxing", "notes": "Celebrity"}
 ]
