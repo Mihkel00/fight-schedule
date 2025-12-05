@@ -229,6 +229,7 @@ class MissingFighterImagesView(BaseView):
     @expose('/', methods=['GET', 'POST'])
     def index(self):
         if request.method == 'POST':
+            import logging
             # Save submitted images
             saved = 0
             logger = logging.getLogger(__name__)
