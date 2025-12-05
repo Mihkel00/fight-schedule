@@ -1219,10 +1219,10 @@ def fetch_fights():
         for existing in fights:
             if (existing['fighter1'] == tsd_fight['fighter1'] and 
                 existing['fighter2'] == tsd_fight['fighter2']):
-                # Merge: Add images from TheSportsDB
-                if tsd_fight.get('fighter1_image'):
+                # Merge: Add images from TheSportsDB only if we don't have them
+                if tsd_fight.get('fighter1_image') and not existing.get('fighter1_image'):
                     existing['fighter1_image'] = tsd_fight['fighter1_image']
-                if tsd_fight.get('fighter2_image'):
+                if tsd_fight.get('fighter2_image') and not existing.get('fighter2_image'):
                     existing['fighter2_image'] = tsd_fight['fighter2_image']
                 exists = True
                 merged_count += 1
