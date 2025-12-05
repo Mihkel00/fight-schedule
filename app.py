@@ -1262,27 +1262,12 @@ def fetch_fights():
     fights_before_filter = len(fights)
     fights = [f for f in fights if f.get('date', '') >= today]
     
-    # Filter to title fights OR big-name fighters OR UFC
-    fights_before_title_filter = len(fights)
-    fights = [f for f in fights if 
-              'Title' in f.get('weight_class', '') or 
-              f.get('sport') == 'UFC' or 
-              is_big_name_fight(f)]
+    # Keep all UFC fights (no filtering needed)
+    # Keep all boxing fights - BBC Sport already curates quality matches
+    fights_before_sport_filter = len(fights)
+    # No filtering needed - trust the source curation
     
-    # Log which big-name fights were kept
-    big_name_fights = [f for f in fights if f.get('sport') == 'Boxing' and 'Title' not in f.get('weight_class', '') and is_big_name_fight(f)]
-    if big_name_fights:
-        log(f"\n[OK] Kept {len(big_name_fights)} big-name boxing fights (non-title):")
-        for fight in big_name_fights[:5]:
-            log(f"  • {fight['fighter1']} vs {fight['fighter2']} - {fight['date']}")
-        if len(big_name_fights) > 5:
-            log(f"  ... and {len(big_name_fights) - 5} more")
-    
-    log("\n" + "="*60)
-    log(f"Filtered out {fights_before_filter - len(fights)} past fights")
-    log(f"Filtered to {len(fights)} fights (removed {fights_before_title_filter - len(fights)} non-title/non-big-name bouts)")
-    log(f"FINAL RESULT: {len(fights)} upcoming fights (titles + big names + UFC)")
-    log("="*60)
+    log(f"Kept all {len(fights)} fights from trusted sources")
     
     # Count fights with images
     with_images = sum(1 for f in fights if f.get('fighter1_image') or f.get('fighter2_image'))
@@ -1351,6 +1336,18 @@ def home():
     coming_soon = sorted(coming_soon, key=lambda x: x['date'])[:20]  # Show 20 max
     
     logger.info(f"  Sections: Featured={len(featured_fights)}, UFC={len(ufc_scroll)}, Boxing={len(boxing_scroll)}, Coming Soon={len(coming_soon)}")
+    
+    # Dynamically load fighter images (always fresh from JSON)
+    all_fights_to_display = featured_fights + ufc_scroll + boxing_scroll + coming_soon
+    for fight in all_fights_to_display:
+        if not fight.get('fighter1_image'):
+            img = get_fighter_image(fight['fighter1'])
+            if img:
+                fight['fighter1_image'] = img
+        if not fight.get('fighter2_image'):
+            img = get_fighter_image(fight['fighter2'])
+            if img:
+                fight['fighter2_image'] = img
     
     return render_template('index.html', 
                          featured_fights=featured_fights,
