@@ -1500,16 +1500,15 @@ def event_detail(event_slug):
         'prelim_time': prelim_fights[0].get('time', 'TBA') if prelim_fights else 'TBA'
     }
     
-    # Generate AI preview for main event (TEMPORARILY DISABLED FOR TESTING)
-    # preview = get_or_generate_preview(
-    #     preview_id=event_slug,
-    #     fighter1=main_event_fight['fighter1'],
-    #     fighter2=main_event_fight['fighter2'],
-    #     sport='UFC',
-    #     is_title=(main_event_fight.get('weight_class') == 'Title'),
-    #     weight_class=None  # UFC doesn't extract weight classes
-    # )
-    preview = None  # Disabled for testing
+    # Load AI preview for main event
+    preview = get_or_generate_preview(
+        preview_id=event_slug,
+        fighter1=main_event_fight['fighter1'],
+        fighter2=main_event_fight['fighter2'],
+        sport='UFC',
+        is_title=(main_event_fight.get('weight_class') == 'Title'),
+        weight_class=None  # UFC doesn't extract weight classes
+    )
     
     event_data['preview'] = preview
     
