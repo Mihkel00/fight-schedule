@@ -231,16 +231,22 @@ class MissingFighterImagesView(BaseView):
         if request.method == 'POST':
             # Save submitted images
             saved = 0
+            logger = logging.getLogger(__name__)
+            
             for key, value in request.form.items():
                 if key.startswith('image_') and value.strip():
                     fighter_name = key.replace('image_', '').replace('_', ' ')
                     sport = request.form.get(f'sport_{key.replace("image_", "")}')
                     
+                    logger.info(f"Attempting to save: {fighter_name} = {value[:50]}... (Sport: {sport})")
+                    
                     # Save to appropriate JSON file
                     if self.save_fighter_image(fighter_name, value.strip(), sport):
                         saved += 1
+                        logger.info(f"✓ Saved: {fighter_name}")
             
             from flask import flash
+            logger.info(f"Total saved: {saved}")
             flash(f'Updated {saved} fighter images', 'success')
             return redirect(url_for('.index'))
         
