@@ -352,55 +352,42 @@
 <body class="bg-dark-bg text-text-primary">
     <div class="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
         
-        <!-- Header with generous spacing (Apple-style) -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-16 pt-8">
-            <h1 class="bg-accent-red px-6 py-3 font-staatliches text-2xl inline-block self-start rounded-xl m-0">
-                FIGHT SCHEDULE
-            </h1>
-            
-            <!-- Friendly search bar -->
-            <div class="flex-1 max-w-md sm:ml-6">
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        id="searchInput"
-                        placeholder="Search fighters or events"
-                        class="w-full bg-dark-elevated border border-dark-border rounded-2xl px-5 py-3.5 pl-12 text-text-primary placeholder-text-tertiary font-work text-sm focus:outline-none focus:border-accent-red focus:ring-2 focus:ring-accent-red/20 transition-all duration-300"
-                    >
-                    <svg class="absolute left-4 top-4 w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
+        <!-- Compact Header -->
+        <div class="mb-12">
+            <!-- Logo + Search (side by side on desktop, stacked on mobile) -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <h1 class="bg-accent-red px-6 py-3 font-staatliches text-2xl inline-block self-start rounded-xl m-0">
+                    FIGHT SCHEDULE
+                </h1>
+                
+                <!-- Search bar -->
+                <div class="flex-1 max-w-md sm:ml-6">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Search fighters or events"
+                            class="w-full bg-dark-elevated border border-dark-border rounded-2xl px-5 py-3.5 pl-12 text-text-primary placeholder-text-tertiary font-work text-sm focus:outline-none focus:border-accent-red focus:ring-2 focus:ring-accent-red/20 transition-all duration-300"
+                        >
+                        <svg class="absolute left-4 top-4 w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- COMPACT HERO SECTION (full-width with context) -->
-        <div class="mb-16 -mx-4 sm:-mx-8 lg:-mx-12">
-            <div class="relative h-40 sm:h-48 bg-dark-elevated rounded-2xl overflow-hidden mx-4 sm:mx-8 lg:mx-12">
-                <!-- Placeholder background image - can be replaced with custom design -->
-                <div class="absolute inset-0 bg-gradient-to-r from-accent-red/10 via-transparent to-accent-orange/10"></div>
-                
-                <!-- Subtle pattern overlay (optional - remove if you design your own) -->
-                <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 24px 24px;"></div>
-                
-                <!-- Content -->
-                <div class="relative h-full flex flex-col justify-center px-4 sm:px-8 lg:px-12">
-                    <div class="max-w-3xl">
-                        <h2 class="font-staatliches text-2xl sm:text-4xl uppercase mb-3 text-text-primary">
-                            Never Miss a Fight
-                        </h2>
-                        <p class="font-work text-sm sm:text-lg text-text-secondary mb-2">
-                            Complete UFC and Boxing schedule with times automatically converted to your timezone
-                        </p>
-                        <div class="flex items-center gap-2 text-sm font-work">
-                            <svg class="w-4 h-4 text-accent-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span id="timezone-display" class="text-accent-red font-semibold">
-                                Detecting your timezone...
-                            </span>
-                        </div>
-                    </div>
+            
+            <!-- Description + Timezone (corners on desktop, stacked on mobile) -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm font-work">
+                <p class="text-text-secondary">
+                    Your complete UFC and Boxing schedule
+                </p>
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-accent-red flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span id="timezone-display" class="text-accent-red font-semibold whitespace-nowrap">
+                        Detecting your timezone...
+                    </span>
                 </div>
             </div>
         </div>
