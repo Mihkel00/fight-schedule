@@ -316,8 +316,8 @@
                 : `/boxing-event/${fight.venue.toLowerCase().replace(/ /g, '-').replace(/,/g, '').replace(/\./g, '').replace(/'/g, '')}-${fight.date}`;
             
             return `
-                <a href="${eventUrl}" class="block bg-dark-card rounded-2xl p-8 border border-dark-border card-hover">
-                    <div class="flex items-center justify-center gap-6 mb-6">
+                <a href="${eventUrl}" class="block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
+                    <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-30'}">
@@ -350,7 +350,7 @@
     </script>
 </head>
 <body class="bg-dark-bg text-text-primary">
-    <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
         
         <!-- Header with generous spacing (Apple-style) -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-16 pt-8">
@@ -375,8 +375,8 @@
         </div>
 
         <!-- COMPACT HERO SECTION (full-width with context) -->
-        <div class="mb-16 -mx-6 sm:-mx-8 lg:-mx-12">
-            <div class="relative h-40 sm:h-48 bg-dark-elevated rounded-2xl overflow-hidden mx-6 sm:mx-8 lg:mx-12">
+        <div class="mb-16 -mx-4 sm:-mx-8 lg:-mx-12">
+            <div class="relative h-40 sm:h-48 bg-dark-elevated rounded-2xl overflow-hidden mx-4 sm:mx-8 lg:mx-12">
                 <!-- Placeholder background image - can be replaced with custom design -->
                 <div class="absolute inset-0 bg-gradient-to-r from-accent-red/10 via-transparent to-accent-orange/10"></div>
                 
@@ -384,12 +384,12 @@
                 <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 24px 24px;"></div>
                 
                 <!-- Content -->
-                <div class="relative h-full flex flex-col justify-center px-8 sm:px-12">
+                <div class="relative h-full flex flex-col justify-center px-4 sm:px-8 lg:px-12">
                     <div class="max-w-3xl">
-                        <h2 class="font-staatliches text-3xl sm:text-4xl uppercase mb-3 text-text-primary">
+                        <h2 class="font-staatliches text-2xl sm:text-4xl uppercase mb-3 text-text-primary">
                             Never Miss a Fight
                         </h2>
-                        <p class="font-work text-base sm:text-lg text-text-secondary mb-2">
+                        <p class="font-work text-sm sm:text-lg text-text-secondary mb-2">
                             Complete UFC and Boxing schedule with times automatically converted to your timezone
                         </p>
                         <div class="flex items-center gap-2 text-sm font-work">
@@ -494,8 +494,8 @@
                 <div id="ufc-scroll" class="scroll-container pb-6">
                 {% for fight in ufc_fights %}
                 <a href="/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}" 
-                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-8 border border-dark-border card-hover">
-                    <div class="flex items-center justify-center gap-6 mb-6">
+                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
+                    <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-mma.png' }}" 
@@ -551,8 +551,8 @@
                 <div id="boxing-scroll" class="scroll-container pb-6">
                 {% for fight in boxing_fights %}
                 <a href="/boxing-event/{{ fight.venue|lower|replace(' ', '-')|replace(',', '')|replace('.', '')|replace("'", '') }}-{{ fight.date }}" 
-                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-8 border border-dark-border card-hover">
-                    <div class="flex items-center justify-center gap-6 mb-6">
+                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
+                    <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-boxing.png' }}" 
@@ -597,7 +597,7 @@
             <div class="bg-dark-card rounded-3xl border border-dark-border overflow-hidden">
                 {% for fight in coming_soon %}
                 <a href="{% if fight.sport == 'UFC' %}/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}{% else %}/boxing-event/{{ fight.venue|lower|replace(' ', '-')|replace(',', '')|replace('.', '')|replace("'", '') }}-{{ fight.date }}{% endif %}" 
-                   class="block p-6 {% if not loop.last %}border-b border-dark-border{% endif %} hover:bg-dark-elevated/30 transition-all duration-300">
+                   class="block p-4 {% if not loop.last %}border-b border-dark-border{% endif %} hover:bg-dark-elevated/30 transition-all duration-300">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                         <div class="flex items-center gap-3">
                             <span class="font-work font-semibold text-text-primary">
