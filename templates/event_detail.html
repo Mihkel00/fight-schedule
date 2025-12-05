@@ -40,8 +40,20 @@
                 if (!utcTime || utcTime === 'TBA' || utcTime === '') return 'TBA';
                 
                 try {
-                    const [hours, minutes] = utcTime.split(':').map(num => parseInt(num));
-                    const utcDate = new Date(date + 'T' + utcTime + ':00Z');
+                    // Parse the date and UTC time - handle cases like "12:" or "12:00"
+                    const timeParts = utcTime.split(':');
+                    const hours = parseInt(timeParts[0]) || 0;
+                    const minutes = parseInt(timeParts[1] || '0') || 0;
+                    
+                    // Validate parsed values
+                    if (isNaN(hours) || isNaN(minutes)) {
+                        console.warn('Invalid time format:', utcTime);
+                        return utcTime;
+                    }
+                    
+                    // Ensure time is properly formatted for Date constructor
+                    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    const utcDate = new Date(date + 'T' + formattedTime + ':00Z');
                     
                     const localHours = utcDate.getHours();
                     const localMinutes = utcDate.getMinutes();
@@ -58,15 +70,23 @@
             }
             
             // Convert all times with data attributes
-            document.querySelectorAll('[data-utc-time]').forEach(elem => {
+            const timeElements = document.querySelectorAll('[data-utc-time]');
+            console.log(`Found ${timeElements.length} time elements to convert`);
+            
+            timeElements.forEach(elem => {
                 const utcTime = elem.getAttribute('data-utc-time');
                 const date = elem.getAttribute('data-date');
                 
+                console.log(`Converting: ${date} ${utcTime}`);
+                
                 if (utcTime && date && utcTime !== 'TBA' && utcTime !== '') {
                     const localTime = convertUTCToLocal(date, utcTime);
+                    console.log(`Result: ${localTime}`);
                     elem.textContent = localTime;
                 }
             });
+            
+            console.log('✓ Timezone conversion complete');
         });
     </script>
 </head>
@@ -101,7 +121,7 @@
                 <div>
                     <p class="text-xs text-text-tertiary font-work">Date & Time</p>
                     <p class="text-text-primary font-work">
-                        Sun, Jan 25, 2025 • <span data-utc-time="{{ event.main_event.time }}" data-date="{{ event.main_event.date }}">{{ event.main_event.time }}</span>
+                        {{ event.date|format_date }} • <span data-utc-time="{{ event.main_event.time }}" data-date="{{ event.date }}">{{ event.main_event.time or 'TBA' }}</span>
                     </p>
                 </div>
             </div>
@@ -183,7 +203,6 @@
         <!-- AI Fight Preview -->
         {% if event.preview and event.preview.parsed %}
         <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-8">
-            <h2 class="font-staatliches text-2xl uppercase mb-4 text-accent-red-custom">Fight Preview</h2>
             <div class="space-y-4">
                 <!-- Context -->
                 <h3 class="font-work font-semibold text-accent-red-custom text-lg uppercase tracking-wide">
@@ -230,7 +249,7 @@
                 <!-- Main Card Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Main Card (<span data-utc-time="{{ event.main_card_time }}" data-date="{{ event.main_event.date }}">{{ event.main_card_time if event.main_card_time != 'TBA' else 'TBA' }}</span>)
+                        Main Card (<span data-utc-time="{{ event.main_card_time }}" data-date="{{ event.date }}">{{ event.main_card_time or 'TBA' }}</span>)
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.main_card %}
@@ -252,7 +271,7 @@
                 <!-- Prelims Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Prelims (<span data-utc-time="{{ event.prelim_time }}" data-date="{{ event.main_event.date }}">{{ event.prelim_time if event.prelim_time != 'TBA' else 'TBA' }}</span>)
+                        Prelims (<span data-utc-time="{{ event.prelim_time }}" data-date="{{ event.date }}">{{ event.prelim_time or 'TBA' }}</span>)
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.prelims %}
