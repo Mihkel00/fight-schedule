@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fight Schedule - UFC & Boxing Fights Calendar | Upcoming Events</title>
-    <meta name="description" content="Complete schedule of upcoming UFC and Boxing fights. Get fight dates, times, venues, and AI-powered previews for all major MMA and boxing events.">
+    <title>UFC & Boxing Schedule 2025 | Live Fight Calendar & Event Times</title>
+    <meta name="description" content="Complete 2025 UFC and Boxing fight schedule with automatic timezone conversion. Get live updates on fight dates, times, venues, and AI-powered previews for all major events.">
     <meta name="keywords" content="UFC schedule, boxing schedule, MMA fights, fight calendar, upcoming fights, UFC events, boxing matches">
     
     <!-- Open Graph / Facebook -->
@@ -22,6 +22,9 @@
     <meta property="twitter:image" content="https://fightschedule.live/static/og-image.png">
     
     <link rel="canonical" href="https://fightschedule.live/">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -35,29 +38,35 @@
                         'work': ['"Work Sans"', 'sans-serif'],
                     },
                     colors: {
-                        'dark-bg': '#0f0f0f',
-                        'dark-card': '#121212',
-                        'dark-elevated': '#242424',
-                        'dark-border': '#2a2a2a',
-                        'text-primary': '#ffffff',
-                        'text-secondary': '#a3a3a3',
-                        'text-tertiary': '#6b6b6b',
-                        'accent-red': '#dc2626',
-                        'accent-orange': '#f59e0b',
+                        // Warmer, softer dark palette (Apple-inspired)
+                        'dark-bg': '#0a0a0a',
+                        'dark-card': '#141414',
+                        'dark-elevated': '#1a1a1a',
+                        'dark-border': '#252525',
+                        'text-primary': '#f5f5f5',
+                        'text-secondary': '#a8a8a8',
+                        'text-tertiary': '#737373',
+                        // Refined accent colors
+                        'accent-red': '#ef4444',
+                        'accent-orange': '#fb923c',
                     }
                 }
             }
         }
     </script>
     <style>
+        /* Smooth scrolling carousel with edge fade (Apple Music style) */
         .scroll-container {
             display: flex;
             overflow-x: auto;
             scroll-snap-type: x mandatory;
-            gap: 1rem;
+            gap: 1.25rem;
             scrollbar-width: none;
             -ms-overflow-style: none;
             scroll-behavior: smooth;
+            /* Edge fade for peek effect */
+            mask-image: linear-gradient(to right, black 92%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 92%, transparent 100%);
         }
         .scroll-container::-webkit-scrollbar {
             display: none;
@@ -68,7 +77,7 @@
         }
         @media (max-width: 640px) {
             .scroll-container {
-                gap: 0.75rem;
+                gap: 1rem;
                 padding-right: 1rem;
             }
             .scroll-item {
@@ -76,6 +85,29 @@
                 max-width: 280px;
             }
         }
+        
+        /* Soft transitions (Apple-style - slower, more deliberate) */
+        * {
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Hover states with soft elevation and border glow */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+            border-color: #3a3a3a; /* Neutral light gray border on hover */
+        }
+        
+        /* Prevent carousel overflow from cropping hover effects */
+        .scroll-container {
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+        
+        /* Scroll buttons for desktop */
         .scroll-wrapper {
             position: relative;
         }
@@ -97,7 +129,7 @@
         }
         .scroll-btn:hover {
             background: rgba(36, 36, 36, 0.95);
-            border-color: #dc2626;
+            border-color: #ef4444;
         }
         .scroll-btn-left {
             left: -20px;
@@ -109,6 +141,18 @@
             .scroll-btn {
                 display: none;
             }
+        }
+        
+        /* Rounded, friendly inputs */
+        input:focus {
+            outline: none;
+            border-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+        }
+        
+        /* Softer borders everywhere */
+        .soft-border {
+            border-radius: 1rem;
         }
     </style>
     <script>
@@ -125,6 +169,77 @@
         let allFights = [];
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Detect and display user's timezone
+            try {
+                const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const timezoneDisplay = document.getElementById('timezone-display');
+                
+                // Get timezone abbreviation (e.g., EST, PST, EET)
+                const date = new Date();
+                const shortTz = date.toLocaleTimeString('en-us', {timeZoneName:'short'}).split(' ')[2];
+                
+                // Format city name nicely (e.g., "America/New_York" -> "New York")
+                const cityName = userTimezone.split('/').pop().replace(/_/g, ' ');
+                
+                timezoneDisplay.textContent = `Showing times in ${cityName} (${shortTz})`;
+            } catch (e) {
+                console.error('Timezone detection failed:', e);
+                document.getElementById('timezone-display').textContent = 'Showing times in your local timezone';
+            }
+            
+            // Function to convert UTC time to user's local timezone
+            function convertUTCToLocal(date, utcTime) {
+                if (!utcTime || utcTime === 'TBA' || utcTime === '') return 'TBA';
+                
+                try {
+                    // Parse the date and UTC time
+                    const [hours, minutes] = utcTime.split(':').map(num => parseInt(num));
+                    const utcDate = new Date(date + 'T' + utcTime + ':00Z'); // 'Z' indicates UTC
+                    
+                    // Convert to user's local time
+                    const localHours = utcDate.getHours();
+                    const localMinutes = utcDate.getMinutes();
+                    
+                    // Format as 12-hour time
+                    const period = localHours >= 12 ? 'PM' : 'AM';
+                    const displayHours = localHours % 12 || 12;
+                    const displayMinutes = localMinutes.toString().padStart(2, '0');
+                    
+                    return `${displayHours}:${displayMinutes} ${period}`;
+                } catch (e) {
+                    console.error('Time conversion failed for', date, utcTime, e);
+                    return utcTime;
+                }
+            }
+            
+            // Convert all fight times on page load
+            function convertAllTimes() {
+                // Convert times in all fight objects for search
+                allFights.forEach(fight => {
+                    if (fight.time && fight.date && fight.time !== 'TBA' && fight.time !== '') {
+                        fight.displayTime = convertUTCToLocal(fight.date, fight.time);
+                    } else {
+                        fight.displayTime = 'TBA';
+                    }
+                });
+                
+                // Update all displayed times in the DOM
+                document.querySelectorAll('.fight-time').forEach(elem => {
+                    const utcTime = elem.getAttribute('data-utc-time');
+                    const date = elem.getAttribute('data-date');
+                    
+                    if (utcTime && date && utcTime !== 'TBA' && utcTime !== '') {
+                        const localTime = convertUTCToLocal(date, utcTime);
+                        elem.textContent = localTime;
+                    }
+                });
+                
+                console.log(`✓ Converted ${document.querySelectorAll('.fight-time').length} fight times to local timezone`);
+            }
+            
+            // Convert times after a short delay to ensure DOM is fully loaded
+            setTimeout(convertAllTimes, 100);
+            
             // Collect all fights from sections
             const featured = {{ featured_fights|tojson|safe }};
             const ufc = {{ ufc_fights|tojson|safe }};
@@ -134,7 +249,8 @@
             allFights = [...featured, ...ufc, ...boxing, ...upcoming];
             
             const searchInput = document.getElementById('searchInput');
-            const sections = document.querySelectorAll('.mb-12');
+            // Only select fight sections, not the header
+            const sections = document.querySelectorAll('.fight-section');
             
             searchInput.addEventListener('input', function(e) {
                 const query = e.target.value.toLowerCase().trim();
@@ -168,18 +284,18 @@
             const container = document.querySelector('.max-w-7xl');
             const resultsDiv = document.createElement('div');
             resultsDiv.id = 'searchResults';
-            resultsDiv.className = 'mb-12';
+            resultsDiv.className = 'mb-16';
             
             if (results.length === 0) {
                 resultsDiv.innerHTML = `
-                    <h2 class="font-staatliches text-3xl uppercase mb-6">Search Results</h2>
-                    <div class="bg-dark-card rounded-xl p-8 border border-dark-border text-center">
-                        <p class="font-work text-text-secondary">No fights found for "${query}"</p>
+                    <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Search Results</h2>
+                    <div class="bg-dark-card rounded-2xl p-12 border border-dark-border text-center">
+                        <p class="font-work text-text-secondary text-lg">No fights found for "${query}"</p>
                     </div>
                 `;
             } else {
                 resultsDiv.innerHTML = `
-                    <h2 class="font-staatliches text-3xl uppercase mb-6">Search Results <span class="text-text-secondary">${results.length}</span></h2>
+                    <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Found <span class="text-accent-red">${results.length}</span> fight${results.length !== 1 ? 's' : ''}</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         ${results.map(fight => createFightCard(fight)).join('')}
                     </div>
@@ -200,29 +316,29 @@
                 : `/boxing-event/${fight.venue.toLowerCase().replace(/ /g, '-').replace(/,/g, '').replace(/\./g, '').replace(/'/g, '')}-${fight.date}`;
             
             return `
-                <a href="${eventUrl}" class="block bg-dark-card rounded-xl p-6 border border-dark-border hover:border-${accentColor}/50 transition-all">
+                <a href="${eventUrl}" class="block bg-dark-card rounded-2xl p-8 border border-dark-border card-hover">
                     <div class="flex items-center justify-center gap-6 mb-6">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-40'}">
+                                <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-30'}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter1.split(' ').pop()}</p>
                         </div>
-                        <div class="font-work font-semibold text-base italic uppercase text-text-secondary">VS</div>
+                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-40'}">
+                                <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-30'}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter2.split(' ').pop()}</p>
                         </div>
                     </div>
-                    <div class="border-t border-dark-border pt-4">
-                        <p class="text-${accentColor} font-work font-semibold mb-2 text-sm">
-                            ${fight.date} • ${fight.time || 'TBA'}
+                    <div class="border-t border-dark-border pt-5">
+                        <p class="text-${accentColor} font-work font-semibold mb-3 text-sm">
+                            ${fight.date} • <span class="fight-time" data-utc-time="${fight.time}" data-date="${fight.date}">${fight.displayTime || fight.time || 'TBA'}</span>
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">${fight.venue}</span>
-                            <span class="flex items-center gap-1.5 flex-shrink-0">
+                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
                                 <span class="w-2 h-2 rounded-full bg-${accentColor}"></span>
                                 <span class="font-work text-xs uppercase text-text-secondary">${fight.sport}</span>
                             </span>
@@ -234,56 +350,98 @@
     </script>
 </head>
 <body class="bg-dark-bg text-text-primary">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
         
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div class="bg-accent-red px-4 py-2 font-staatliches text-2xl inline-block self-start">
+        <!-- Header with generous spacing (Apple-style) -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 mb-16 pt-8">
+            <h1 class="bg-accent-red px-6 py-3 font-staatliches text-2xl inline-block self-start rounded-xl m-0">
                 FIGHT SCHEDULE
-            </div>
+            </h1>
             
-            <!-- Search Bar -->
-            <div class="flex-1 max-w-md sm:ml-4">
+            <!-- Friendly search bar -->
+            <div class="flex-1 max-w-md sm:ml-6">
                 <div class="relative">
                     <input 
                         type="text" 
                         id="searchInput"
-                        placeholder="Search fighter or event"
-                        class="w-full bg-dark-elevated border border-dark-border rounded-lg px-4 py-2 pl-10 text-text-primary placeholder-text-tertiary font-work text-sm focus:outline-none focus:border-accent-red"
+                        placeholder="Search fighters or events"
+                        class="w-full bg-dark-elevated border border-dark-border rounded-2xl px-5 py-3.5 pl-12 text-text-primary placeholder-text-tertiary font-work text-sm focus:outline-none focus:border-accent-red focus:ring-2 focus:ring-accent-red/20 transition-all duration-300"
                     >
-                    <svg class="absolute left-3 top-2.5 w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="absolute left-4 top-4 w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
                 </div>
             </div>
         </div>
 
-        <!-- FEATURED FIGHTS -->
+        <!-- COMPACT HERO SECTION (full-width with context) -->
+        <div class="mb-16 -mx-6 sm:-mx-8 lg:-mx-12">
+            <div class="relative h-40 sm:h-48 bg-dark-elevated rounded-2xl overflow-hidden mx-6 sm:mx-8 lg:mx-12">
+                <!-- Placeholder background image - can be replaced with custom design -->
+                <div class="absolute inset-0 bg-gradient-to-r from-accent-red/10 via-transparent to-accent-orange/10"></div>
+                
+                <!-- Subtle pattern overlay (optional - remove if you design your own) -->
+                <div class="absolute inset-0 opacity-5" style="background-image: radial-gradient(circle, white 1px, transparent 1px); background-size: 24px 24px;"></div>
+                
+                <!-- Content -->
+                <div class="relative h-full flex flex-col justify-center px-8 sm:px-12">
+                    <div class="max-w-3xl">
+                        <h2 class="font-staatliches text-3xl sm:text-4xl uppercase mb-3 text-text-primary">
+                            Never Miss a Fight
+                        </h2>
+                        <p class="font-work text-base sm:text-lg text-text-secondary mb-2">
+                            Complete UFC and Boxing schedule with times automatically converted to your timezone
+                        </p>
+                        <div class="flex items-center gap-2 text-sm font-work">
+                            <svg class="w-4 h-4 text-accent-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span id="timezone-display" class="text-accent-red font-semibold">
+                                Detecting your timezone...
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FEATURED FIGHTS (with extra breathing room) -->
         {% if featured_fights %}
-        <div class="mb-12">
-            <h2 class="font-staatliches text-3xl uppercase mb-6">Featured Fights</h2>
+        <div class="mb-16 fight-section">
+            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Featured This Week</h2>
             
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {% for fight in featured_fights %}
                 <a href="{% if fight.sport == 'UFC' %}/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}{% else %}/boxing-event/{{ fight.venue|lower|replace(' ', '-')|replace(',', '')|replace('.', '')|replace("'", '') }}-{{ fight.date }}{% endif %}" 
-                   class="block bg-dark-card rounded-xl overflow-hidden border border-dark-border hover:border-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} transition-colors">
-                    <div class="relative h-80">
+                   class="block bg-dark-card rounded-3xl overflow-hidden border border-dark-border card-hover">
+                    <div class="relative h-96">
                         <div class="absolute inset-0 flex">
                             <div class="w-1/2 bg-gradient-to-r from-dark-elevated to-transparent">
                                 <img src="{{ fight.fighter1_image or ('/static/placeholder-fighter-mma.png' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.png') }}" 
                                      alt="{{ fight.fighter1 }}" 
-                                     class="w-full h-full object-cover opacity-60">
+                                     class="w-full h-full object-cover opacity-75">
                             </div>
                             <div class="w-1/2 bg-gradient-to-l from-dark-elevated to-transparent">
                                 <img src="{{ fight.fighter2_image or ('/static/placeholder-fighter-mma.png' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.png') }}" 
                                      alt="{{ fight.fighter2 }}" 
-                                     class="w-full h-full object-cover opacity-60">
+                                     class="w-full h-full object-cover opacity-75">
                             </div>
                         </div>
                         
                         <div class="absolute inset-0 bg-gradient-to-t from-dark-card via-dark-card/50 to-transparent">
-                            <div class="absolute bottom-0 left-0 right-0 p-6">
-                                <div class="inline-block bg-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} px-3 py-1 rounded-full mb-3">
+                            <div class="absolute bottom-0 left-0 right-0 p-8">
+                                <div class="flex items-end justify-between mb-5">
+                                    <div>
+                                        <h3 class="font-staatliches text-4xl md:text-5xl uppercase">{{ fight.fighter1.split()[-1] }}</h3>
+                                        <p class="font-work text-sm text-text-secondary mt-1">{{ fight.fighter1 }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <h3 class="font-staatliches text-4xl md:text-5xl uppercase">{{ fight.fighter2.split()[-1] }}</h3>
+                                        <p class="font-work text-sm text-text-secondary mt-1">{{ fight.fighter2 }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="inline-block bg-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} px-3 py-1 rounded-full mb-4">
                                     <span class="font-work text-xs font-semibold uppercase {% if fight.sport != 'UFC' %}text-dark-bg{% endif %}">
                                         {% if fight.sport == 'UFC' %}
                                             {{ fight.event_name or 'UFC Fight Night' }}
@@ -293,26 +451,16 @@
                                     </span>
                                 </div>
                                 
-                                <div class="flex items-end justify-between mb-4">
-                                    <div>
-                                        <h3 class="font-staatliches text-3xl md:text-4xl uppercase">{{ fight.fighter1.split()[-1] }}</h3>
-                                        <p class="font-work text-sm text-text-secondary">{{ fight.fighter1 }}</p>
-                                    </div>
-                                    <div class="font-work text-2xl font-bold text-text-secondary mx-4 mb-2">VS</div>
-                                    <div class="text-right">
-                                        <h3 class="font-staatliches text-3xl md:text-4xl uppercase">{{ fight.fighter2.split()[-1] }}</h3>
-                                        <p class="font-work text-sm text-text-secondary">{{ fight.fighter2 }}</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm font-work">
-                                    <div class="flex items-center gap-1.5">
+                                <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm font-work">
+                                    <div class="flex items-center gap-2">
                                         <svg class="w-4 h-4 text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                         </svg>
-                                        <span class="text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold">{{ fight.date }} • {{ fight.time or 'TBA' }}</span>
+                                        <span class="text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold">
+                                            {{ fight.date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
+                                        </span>
                                     </div>
-                                    <div class="flex items-center gap-1.5">
+                                    <div class="flex items-center gap-2">
                                         <svg class="w-4 h-4 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                         </svg>
@@ -328,10 +476,10 @@
         </div>
         {% endif %}
 
-        <!-- UFC SECTION -->
+        <!-- UFC SECTION (generous spacing) -->
         {% if ufc_fights %}
-        <div class="mb-12">
-            <h2 class="font-staatliches text-3xl uppercase mb-6">UFC</h2>
+        <div class="mb-16 fight-section">
+            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">UFC</h2>
             <div class="scroll-wrapper">
                 <button onclick="scrollContainer('left', 'ufc-scroll')" class="scroll-btn scroll-btn-left" aria-label="Scroll left">
                     <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,36 +491,36 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
                 </button>
-                <div id="ufc-scroll" class="scroll-container pb-4">
+                <div id="ufc-scroll" class="scroll-container pb-6">
                 {% for fight in ufc_fights %}
                 <a href="/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}" 
-                   class="scroll-item w-80 block bg-dark-card rounded-xl p-6 border border-dark-border hover:border-accent-red/50 transition-all">
+                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-8 border border-dark-border card-hover">
                     <div class="flex items-center justify-center gap-6 mb-6">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-mma.png' }}" 
                                      alt="{{ fight.fighter1 }}" 
-                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-40{% endif %}">
+                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1.split()[-1] }}</p>
                         </div>
-                        <div class="font-work font-semibold text-base italic uppercase text-text-secondary">VS</div>
+                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-mma.png' }}" 
                                      alt="{{ fight.fighter2 }}" 
-                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-40{% endif %}">
+                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2.split()[-1] }}</p>
                         </div>
                     </div>
-                    <div class="border-t border-dark-border pt-4">
-                        <p class="text-accent-red font-work font-semibold mb-2 text-sm">
-                            {{ fight.date }}{% if fight.card_type %} • {{ fight.card_type }}: {{ fight.time or 'TBA' }}{% else %} • {{ fight.time or 'TBA' }}{% endif %}
+                    <div class="border-t border-dark-border pt-5">
+                        <p class="text-accent-red font-work font-semibold mb-3 text-sm">
+                            {{ fight.date }}{% if fight.card_type %} • {{ fight.card_type }}: <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>{% else %} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>{% endif %}
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
-                            <span class="flex items-center gap-1.5 flex-shrink-0">
+                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
                                 <span class="w-2 h-2 rounded-full bg-accent-red"></span>
                                 <span class="font-work text-xs uppercase text-text-secondary">UFC</span>
                             </span>
@@ -387,8 +535,8 @@
 
         <!-- BOXING SECTION -->
         {% if boxing_fights %}
-        <div class="mb-12">
-            <h2 class="font-staatliches text-3xl uppercase mb-6">Boxing</h2>
+        <div class="mb-16 fight-section">
+            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Boxing</h2>
             <div class="scroll-wrapper">
                 <button onclick="scrollContainer('left', 'boxing-scroll')" class="scroll-btn scroll-btn-left" aria-label="Scroll left">
                     <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -400,36 +548,36 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
                 </button>
-                <div id="boxing-scroll" class="scroll-container pb-4">
+                <div id="boxing-scroll" class="scroll-container pb-6">
                 {% for fight in boxing_fights %}
                 <a href="/boxing-event/{{ fight.venue|lower|replace(' ', '-')|replace(',', '')|replace('.', '')|replace("'", '') }}-{{ fight.date }}" 
-                   class="scroll-item w-80 block bg-dark-card rounded-xl p-6 border border-dark-border hover:border-accent-orange/50 transition-all">
+                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-8 border border-dark-border card-hover">
                     <div class="flex items-center justify-center gap-6 mb-6">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-boxing.png' }}" 
                                      alt="{{ fight.fighter1 }}" 
-                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-40{% endif %}">
+                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1.split()[-1] }}</p>
                         </div>
-                        <div class="font-work font-semibold text-base italic uppercase text-text-secondary">VS</div>
+                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-boxing.png' }}" 
                                      alt="{{ fight.fighter2 }}" 
-                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-40{% endif %}">
+                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2.split()[-1] }}</p>
                         </div>
                     </div>
-                    <div class="border-t border-dark-border pt-4">
-                        <p class="text-accent-orange font-work font-semibold mb-2 text-sm">
-                            {{ fight.date }} • {{ fight.time or 'TBA' }}
+                    <div class="border-t border-dark-border pt-5">
+                        <p class="text-accent-orange font-work font-semibold mb-3 text-sm">
+                            {{ fight.date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
-                            <span class="flex items-center gap-1.5 flex-shrink-0">
+                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
                                 <span class="w-2 h-2 rounded-full bg-accent-orange"></span>
                                 <span class="font-work text-xs uppercase text-text-secondary">BOXING</span>
                             </span>
@@ -444,13 +592,13 @@
 
         <!-- COMING UP SOON -->
         {% if coming_soon %}
-        <div class="mb-12">
-            <h2 class="font-staatliches text-3xl uppercase mb-6">Coming Up Soon</h2>
-            <div class="bg-dark-card rounded-xl border border-dark-border overflow-hidden">
+        <div class="mb-16 fight-section">
+            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Coming Up Soon</h2>
+            <div class="bg-dark-card rounded-3xl border border-dark-border overflow-hidden">
                 {% for fight in coming_soon %}
                 <a href="{% if fight.sport == 'UFC' %}/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}{% else %}/boxing-event/{{ fight.venue|lower|replace(' ', '-')|replace(',', '')|replace('.', '')|replace("'", '') }}-{{ fight.date }}{% endif %}" 
-                   class="block p-4 {% if not loop.last %}border-b border-dark-border{% endif %} hover:bg-dark-elevated/50 transition-colors">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                   class="block p-6 {% if not loop.last %}border-b border-dark-border{% endif %} hover:bg-dark-elevated/30 transition-all duration-300">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                         <div class="flex items-center gap-3">
                             <span class="font-work font-semibold text-text-primary">
                                 {{ fight.fighter1 }} vs {{ fight.fighter2 }}
@@ -462,7 +610,7 @@
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
                             <span class="font-work text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold flex-shrink-0 order-1">
-                                {{ fight.date }} • {{ fight.time or 'TBA' }}
+                                {{ fight.date }} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}">{{ fight.time or 'TBA' }}</span>
                             </span>
                             <span class="font-work text-text-tertiary truncate order-2">
                                 {{ fight.venue }}
@@ -474,6 +622,13 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- Minimal footer with extra spacing -->
+        <div class="mt-24 mb-8 text-center">
+            <p class="font-work text-xs text-text-tertiary">
+                Fight Schedule • Updated daily with the latest UFC and Boxing events
+            </p>
+        </div>
 
     </div>
 </body>

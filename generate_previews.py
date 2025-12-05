@@ -38,8 +38,10 @@ def generate_all_previews():
                 featured.append(fight)
                 break
         
-        # Generate previews for featured + first 10 fights from each sport
-        to_generate = featured + ufc_fights[:10] + boxing_fights[:10]
+        # Generate previews for ONLY 2 featured fights (TESTING LIMIT)
+        to_generate = featured[:2]
+        
+        logger.info(f"Limiting preview generation to {len(to_generate)} fights for testing")
         
         generated = 0
         skipped = 0

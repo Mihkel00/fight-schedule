@@ -1,4 +1,5 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, make_response
+from flask_compress import Compress
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
 import os
@@ -13,9 +14,16 @@ from admin_models import BigNameFighter
 import markdown
 
 app = Flask(__name__)
+Compress(app)  # Enable gzip compression for all responses
 
 # Setup Flask-Admin
 admin = setup_admin(app)
+
+@app.before_request
+def redirect_www():
+    """Redirect www to non-www for canonical URLs"""
+    if request.host.startswith('www.'):
+        return redirect(request.url.replace('www.', '', 1), code=301)
 
 # ============================================================================
 # LOGGING SETUP
@@ -696,8 +704,8 @@ def scrape_mma_fighting():
         
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        def convert_et_to_uk(time_et_str):
-            """Convert ET time to UK time (ET is GMT-5)"""
+        def convert_et_to_utc(time_et_str):
+            """Convert ET time to UTC (ET is UTC-5 in EST, UTC-4 in EDT)"""
             try:
                 time_match = re.search(r'(\d+)\s*(a\.m\.|p\.m\.)', time_et_str.lower())
                 if not time_match:
@@ -712,10 +720,11 @@ def scrape_mma_fighting():
                 elif am_pm == 'a.m.' and hour == 12:
                     hour = 0
                 
-                # ET is GMT-5, so add 5 hours to get UK time
-                uk_hour = (hour + 5) % 24
+                # ET is typically UTC-5 (EST) or UTC-4 (EDT)
+                # For simplicity, using EST (UTC-5). Add 5 hours to get UTC
+                utc_hour = (hour + 5) % 24
                 
-                return f"{uk_hour:02d}:00"
+                return f"{utc_hour:02d}:00"
             except:
                 return None
         
@@ -757,13 +766,13 @@ def scrape_mma_fighting():
                 if 'main card' in details_text.lower():
                     main_card_match = re.search(r'main card.*?(\d+\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
                     if main_card_match:
-                        main_card_time = convert_et_to_uk(main_card_match.group(1))
+                        main_card_time = convert_et_to_utc(main_card_match.group(1))
                 
                 prelim_time = None
                 if 'prelim' in details_text.lower() and 'early' not in details_text.lower():
                     prelim_match = re.search(r'prelim(?:s|inary card)?.*?(\d+\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
                     if prelim_match:
-                        prelim_time = convert_et_to_uk(prelim_match.group(1))
+                        prelim_time = convert_et_to_utc(prelim_match.group(1))
                 
                 print(f"MMA Fighting: {event_name} - {date_formatted}")
                 
@@ -1491,15 +1500,16 @@ def event_detail(event_slug):
         'prelim_time': prelim_fights[0].get('time', 'TBA') if prelim_fights else 'TBA'
     }
     
-    # Generate AI preview for main event
-    preview = get_or_generate_preview(
-        preview_id=event_slug,
-        fighter1=main_event_fight['fighter1'],
-        fighter2=main_event_fight['fighter2'],
-        sport='UFC',
-        is_title=(main_event_fight.get('weight_class') == 'Title'),
-        weight_class=None  # UFC doesn't extract weight classes
-    )
+    # Generate AI preview for main event (TEMPORARILY DISABLED FOR TESTING)
+    # preview = get_or_generate_preview(
+    #     preview_id=event_slug,
+    #     fighter1=main_event_fight['fighter1'],
+    #     fighter2=main_event_fight['fighter2'],
+    #     sport='UFC',
+    #     is_title=(main_event_fight.get('weight_class') == 'Title'),
+    #     weight_class=None  # UFC doesn't extract weight classes
+    # )
+    preview = None  # Disabled for testing
     
     event_data['preview'] = preview
     

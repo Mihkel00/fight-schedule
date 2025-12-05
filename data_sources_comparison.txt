@@ -19,8 +19,8 @@ MMA Fighting UFC found: 33 fights
 
   • Merab Dvalishvili vs Petr Yan - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   • Alexandre Pantoja vs Joshua Van - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
-  • Henry Cejudo vs Payton Talbott - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   • Brandon Moreno vs Tatsuro Taira - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
+  • Henry Cejudo vs Payton Talbott - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   • Jan Blachowicz vs Bogdan Guskov - 2025-12-07 - T-Mobile Arena - Las Vegas, NV
   ... and 28 more
 
@@ -47,7 +47,7 @@ Added 7 new fights from TheSportsDB
 
 --- FETCHING MISSING FIGHTER IMAGES ---
 
-Fetched 112 additional fighter images
+Fetched 114 additional fighter images
 
 [OK] Kept 4 big-name boxing fights (non-title):
   • Diego Pacheco vs Kévin Lele Sadjo - 2025-12-13
@@ -56,9 +56,9 @@ Fetched 112 additional fighter images
   • Sebastian Fundora vs Keith Thurman - 2026-01-24
 
 ============================================================
-Filtered out 28 past fights
-Filtered to 57 fights (removed 28 non-title/non-big-name bouts)
-FINAL RESULT: 57 upcoming fights (titles + big names + UFC)
+Filtered out 29 past fights
+Filtered to 56 fights (removed 23 non-title/non-big-name bouts)
+FINAL RESULT: 56 upcoming fights (titles + big names + UFC)
 ============================================================
-Fights with at least one image: 50 (87%)
+Fights with at least one image: 49 (87%)
 

@@ -17,21 +17,57 @@
                         'work': ['"Work Sans"', 'sans-serif'],
                     },
                     colors: {
-                        'dark-bg': '#0f0f0f',
-                        'dark-card': '#121212',
-                        'dark-elevated': '#242424',
-                        'dark-border': '#2a2a2a',
-                        'text-primary': '#ffffff',
-                        'text-secondary': '#a3a3a3',
-                        'text-tertiary': '#6b6b6b',
+                        'dark-bg': '#0a0a0a',
+                        'dark-card': '#141414',
+                        'dark-elevated': '#1a1a1a',
+                        'dark-border': '#252525',
+                        'text-primary': '#f5f5f5',
+                        'text-secondary': '#a8a8a8',
+                        'text-tertiary': '#737373',
                         'accent-blue': '#3b82f6',
-                        'accent-red': '#dc2626',
+                        'accent-red': '#ef4444',
                         'accent-red-custom': '#C00000',
-                        'accent-orange': '#f59e0b',
+                        'accent-orange': '#fb923c',
                     }
                 }
             }
         }
+    </script>
+    <script>
+        // Timezone conversion for event detail page
+        document.addEventListener('DOMContentLoaded', function() {
+            function convertUTCToLocal(date, utcTime) {
+                if (!utcTime || utcTime === 'TBA' || utcTime === '') return 'TBA';
+                
+                try {
+                    const [hours, minutes] = utcTime.split(':').map(num => parseInt(num));
+                    const utcDate = new Date(date + 'T' + utcTime + ':00Z');
+                    
+                    const localHours = utcDate.getHours();
+                    const localMinutes = utcDate.getMinutes();
+                    
+                    const period = localHours >= 12 ? 'PM' : 'AM';
+                    const displayHours = localHours % 12 || 12;
+                    const displayMinutes = localMinutes.toString().padStart(2, '0');
+                    
+                    return `${displayHours}:${displayMinutes} ${period}`;
+                } catch (e) {
+                    console.error('Time conversion failed:', e);
+                    return utcTime;
+                }
+            }
+            
+            // Convert all times with data attributes
+            document.querySelectorAll('[data-utc-time]').forEach(elem => {
+                const utcTime = elem.getAttribute('data-utc-time');
+                const date = elem.getAttribute('data-date');
+                
+                if (utcTime && date && utcTime !== 'TBA' && utcTime !== '') {
+                    const localTime = convertUTCToLocal(date, utcTime);
+                    elem.textContent = localTime;
+                }
+            });
+        });
     </script>
 </head>
 <body class="bg-dark-bg text-text-primary">
@@ -64,7 +100,9 @@
                 </div>
                 <div>
                     <p class="text-xs text-text-tertiary font-work">Date & Time</p>
-                    <p class="text-text-primary font-work">Sun, Jan 25, 2025 • {{ event.main_event.time }}</p>
+                    <p class="text-text-primary font-work">
+                        Sun, Jan 25, 2025 • <span data-utc-time="{{ event.main_event.time }}" data-date="{{ event.main_event.date }}">{{ event.main_event.time }}</span>
+                    </p>
                 </div>
             </div>
 
@@ -192,7 +230,7 @@
                 <!-- Main Card Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Main Card ({{ event.main_card_time if event.main_card_time != 'TBA' else 'TBA' }})
+                        Main Card (<span data-utc-time="{{ event.main_card_time }}" data-date="{{ event.main_event.date }}">{{ event.main_card_time if event.main_card_time != 'TBA' else 'TBA' }}</span>)
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.main_card %}
@@ -214,7 +252,7 @@
                 <!-- Prelims Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Prelims ({{ event.prelim_time if event.prelim_time != 'TBA' else 'TBA' }})
+                        Prelims (<span data-utc-time="{{ event.prelim_time }}" data-date="{{ event.main_event.date }}">{{ event.prelim_time if event.prelim_time != 'TBA' else 'TBA' }}</span>)
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.prelims %}
