@@ -278,7 +278,7 @@ class MissingFighterImagesView(BaseView):
         
         # Get fights
         import os
-        cache_path = 'data/fights_cache.json'
+        cache_path = 'fights_cache.json'  # Cache is in root directory
         logger = logging.getLogger(__name__)
         
         if not os.path.exists(cache_path):
