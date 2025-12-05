@@ -243,12 +243,14 @@ class MissingFighterImagesView(BaseView):
             flash(f'Updated {saved} fighter images', 'success')
             return redirect(url_for('.index'))
         
-        # Get missing fighters
-        missing = self.get_missing_fighters()
-        return self.render('admin/missing_fighter_images.html', missing_fighters=missing)
+        # Get all fighters
+        fighters_data = self.get_all_fighters()
+        return self.render('admin/missing_fighter_images.html', 
+                         missing_fighters=fighters_data['missing'],
+                         existing_fighters=fighters_data['existing'])
     
-    def get_missing_fighters(self):
-        """Find fighters without images"""
+    def get_all_fighters(self):
+        """Get all fighters split into missing and existing images"""
         import json
         from collections import defaultdict
         
@@ -268,20 +270,30 @@ class MissingFighterImagesView(BaseView):
             with open('data/fights_cache.json', 'r') as f:
                 fights = json.load(f).get('fights', [])
         except:
-            return {}
+            return {'missing': {}, 'existing': {}}
         
-        # Find missing
-        missing = defaultdict(lambda: {'count': 0, 'sport': '', 'example': ''})
+        # Collect all fighters
+        all_fighters = defaultdict(lambda: {'count': 0, 'sport': '', 'example': '', 'image_url': None})
         for fight in fights:
             for fighter in [fight.get('fighter1'), fight.get('fighter2')]:
                 if fighter and fighter != 'TBA':
-                    if fighter not in fighters_db or not fighters_db.get(fighter):
-                        missing[fighter]['count'] += 1
-                        missing[fighter]['sport'] = fight.get('sport')
-                        if not missing[fighter]['example']:
-                            missing[fighter]['example'] = f"{fight['fighter1']} vs {fight['fighter2']}"
+                    all_fighters[fighter]['count'] += 1
+                    all_fighters[fighter]['sport'] = fight.get('sport')
+                    if not all_fighters[fighter]['example']:
+                        all_fighters[fighter]['example'] = f"{fight['fighter1']} vs {fight['fighter2']}"
+                    # Add image URL if exists
+                    if fighter in fighters_db:
+                        all_fighters[fighter]['image_url'] = fighters_db.get(fighter)
         
-        return dict(sorted(missing.items(), key=lambda x: x[1]['count'], reverse=True))
+        # Split into missing and existing
+        missing = {k: v for k, v in all_fighters.items() if not v['image_url']}
+        existing = {k: v for k, v in all_fighters.items() if v['image_url']}
+        
+        # Sort by count (most appearances first)
+        missing = dict(sorted(missing.items(), key=lambda x: x[1]['count'], reverse=True))
+        existing = dict(sorted(existing.items(), key=lambda x: x[1]['count'], reverse=True))
+        
+        return {'missing': missing, 'existing': existing}
     
     def save_fighter_image(self, fighter_name, image_url, sport):
         """Save fighter image to JSON"""
