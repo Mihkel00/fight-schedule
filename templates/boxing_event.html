@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NFMLL334B3"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-NFMLL334B3');
+    </script>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ event.venue }} - {{ event.date|format_date }} - Fight Schedule</title>
@@ -37,8 +46,20 @@
                 if (!utcTime || utcTime === 'TBA' || utcTime === '') return 'TBA';
                 
                 try {
-                    const [hours, minutes] = utcTime.split(':').map(num => parseInt(num));
-                    const utcDate = new Date(date + 'T' + utcTime + ':00Z');
+                    // Parse the date and UTC time - handle cases like "12:" or "12:00"
+                    const timeParts = utcTime.split(':');
+                    const hours = parseInt(timeParts[0]) || 0;
+                    const minutes = parseInt(timeParts[1] || '0') || 0;
+                    
+                    // Validate parsed values
+                    if (isNaN(hours) || isNaN(minutes)) {
+                        console.warn('Invalid time format:', utcTime);
+                        return utcTime;
+                    }
+                    
+                    // Ensure time is properly formatted for Date constructor
+                    const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    const utcDate = new Date(date + 'T' + formattedTime + ':00Z');
                     
                     const localHours = utcDate.getHours();
                     const localMinutes = utcDate.getMinutes();
@@ -98,7 +119,7 @@
                 <div>
                     <p class="text-xs text-text-tertiary font-work">Date & Time</p>
                     <p class="text-text-primary font-work">
-                        {{ event.date|format_date }} • <span data-utc-time="{{ event.time }}" data-date="{{ event.date }}">{{ event.time }}</span>
+                        {{ event.date|format_date }} • <span data-utc-time="{{ event.time }}" data-date="{{ event.date }}">{{ event.time or 'TBA' }}</span>
                     </p>
                 </div>
             </div>
@@ -163,7 +184,6 @@
         <!-- AI Fight Preview -->
         {% if event.preview and event.preview.parsed %}
         <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-8">
-            <h2 class="font-staatliches text-2xl uppercase mb-4 text-accent-orange">Fight Preview</h2>
             <div class="space-y-4">
                 <!-- Context -->
                 <h3 class="font-work font-semibold text-accent-orange text-lg uppercase tracking-wide">
@@ -209,7 +229,7 @@
             <!-- Single Column for Boxing (no prelims) -->
             <div>
                 <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                    All Fights (<span data-utc-time="{{ event.time }}" data-date="{{ event.date }}">{{ event.time }}</span>)
+                    All Fights (<span data-utc-time="{{ event.time }}" data-date="{{ event.date }}">{{ event.time or 'TBA' }}</span>)
                 </h3>
                 <div class="space-y-3">
                     {% for fight in event.fights %}
