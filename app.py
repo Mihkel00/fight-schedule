@@ -12,6 +12,7 @@ from logging.handlers import RotatingFileHandler
 from admin_setup_simple import setup_admin
 from admin_models import BigNameFighter
 import markdown
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 Compress(app)  # Enable gzip compression for all responses
@@ -59,8 +60,6 @@ logger.info("="*70)
 # ============================================================================
 
 # Your Premium API Key
-API_KEY = '891686'
-
 # Anthropic API Key for fight previews
 # ⚠️ ADD YOUR NEW API KEY HERE (after creating it in console.anthropic.com)
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')  # Will load from environment variable
@@ -198,31 +197,13 @@ def get_fighter_image(fighter_name):
     if not fighter_name or fighter_name == 'TBA':
         return None
     
-    # Check local database first
+    # Check local database only (no API fallback)
     fighters_db = load_fighter_database()
     if fighter_name in fighters_db:
         cached_url = fighters_db[fighter_name]
         if cached_url:
             print(f"Using cached image for {fighter_name}")
             return cached_url
-        
-    try:
-        # Fallback to API search
-        url = f'https://www.thesportsdb.com/api/v1/json/{API_KEY}/searchplayers.php?p={fighter_name}'
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            players = data.get('player', [])
-            
-            if players and len(players) > 0:
-                # Return first match's image
-                player = players[0]
-                # Try different image fields (cutout is best, thumb is backup)
-                return player.get('strCutout') or player.get('strThumb') or player.get('strFanart1')
-                    
-    except Exception as e:
-        print(f"Error fetching image for {fighter_name}: {e}")
     
     return None
 
@@ -565,6 +546,380 @@ def scrape_espn_ufc():
     return fights
 
 def scrape_bbc_boxing():
+    """Scrape boxing fights from BBC Sport calendar"""
+    fights = []
+    
+    try:
+        print("Scraping BBC Sport Boxing calendar...")
+        
+        # Get next 3 months of events
+        from datetime import datetime, timedelta
+        
+        for i in range(3):
+            month_date = datetime.now() + timedelta(days=i*30)
+            month = month_date.strftime('%Y-%m')
+            
+            try:
+                url = f"https://www.bbc.com/sport/boxing/calendar/{month}"
+                headers = {'User-Agent': 'Mozilla/5.0'}
+                response = requests.get(url, headers=headers, timeout=10)
+                
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    
+                    # Find all event cards
+                    cards = soup.find_all('div', class_='event-item')
+                    
+                    for card in cards:
+                        try:
+                            # Check if cancelled
+                            cancelled_badge = card.find('span', class_='ssrcss-1xk4umy-Label')
+                            if cancelled_badge and 'CANCELLED' in cancelled_badge.text.upper():
+                                continue
+                            
+                            # Extract fighters
+                            title_elem = card.find('h3')
+                            if not title_elem:
+                                continue
+                            
+                            fight_title = title_elem.get_text(strip=True)
+                            
+                            if ' v ' in fight_title:
+                                parts = fight_title.split(' v ')
+                                fighter1 = parts[0].strip()
+                                fighter2 = parts[1].strip()
+                            else:
+                                continue
+                            
+                            # Extract date
+                            date_elem = card.find('time')
+                            date_str = date_elem.get('datetime') if date_elem else ''
+                            
+                            # Extract venue
+                            venue_elem = card.find('span', class_='venue')
+                            venue = venue_elem.get_text(strip=True) if venue_elem else 'TBA'
+                            
+                            # Format date as YYYY-MM-DD
+                            date_formatted = date_str.split('T')[0] if 'T' in date_str else date_str
+                            
+                            fights.append({
+                                'fighter1': fighter1,
+                                'fighter2': fighter2,
+                                'date': date_formatted,
+                                'time': '',
+                                'venue': venue,
+                                'location': venue,
+                                'sport': 'Boxing',
+                                'weight_class': ''
+                            })
+                            
+                            print(f"BBC Sport: Added {fighter1} vs {fighter2} ({date_formatted})")
+                        except Exception as e:
+                            print(f"Error parsing BBC card: {e}")
+                            continue
+                
+                print(f"BBC Sport {month}: Found {len([f for f in fights if f['date'].startswith(month)])} fights")
+            except Exception as e:
+                print(f"Error scraping BBC Sport for {month}: {e}")
+                continue
+        
+        print(f"BBC Sport Boxing Total: Found {len(fights)} fights across all months")
+        return fights
+    except Exception as e:
+        print(f"Error in BBC Sport scraper: {e}")
+        return []
+
+def scrape_boxingschedule_co():
+    """Scrape boxing fights from boxingschedule.co"""
+    import re
+    import traceback
+    from datetime import datetime
+    import bs4
+    
+    fights = []
+    
+    try:
+        print("Scraping BoxingSchedule.co...")
+        
+        url = "https://boxingschedule.co"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code != 200:
+            print(f"BoxingSchedule.co error: Status {response.status_code}")
+            return []
+        
+        soup = bs4.BeautifulSoup(response.content, 'html.parser')
+        
+        # Find all paragraphs with data-start (these are date headers)
+        date_paragraphs = soup.find_all('p', attrs={'data-start': True})
+        
+        for para in date_paragraphs:
+            strong = para.find('strong')
+            if not strong:
+                continue
+                
+            text = strong.get_text(strip=True)
+            
+            # Check if this is a date header (starts with 📅)
+            if not text.startswith('📅'):
+                continue
+            
+            # Parse date
+            date_match = re.search(r'📅\s+([A-Za-z]+\s+\d+)', text)
+            if not date_match:
+                continue
+                
+            date_str = date_match.group(1)
+            year = datetime.now().year
+            try:
+                date_obj = datetime.strptime(f"{date_str} {year}", "%B %d %Y")
+                current_date = date_obj.strftime("%Y-%m-%d")
+            except:
+                continue
+            
+            # Extract venue
+            venue_match = re.search(r':\s+([^|]+)', text)
+            current_venue = venue_match.group(1).strip() if venue_match else 'TBA'
+            
+            # Extract UK time
+            uk_time_match = re.search(r'UK London:\s+(\d+:\d+\s+[AP]M)', text)
+            current_uk_time = None
+            if uk_time_match:
+                uk_time_str = uk_time_match.group(1)
+                try:
+                    time_obj = datetime.strptime(uk_time_str, "%I:%M %p")
+                    current_uk_time = time_obj.strftime("%H:%M")
+                except:
+                    pass
+            
+            # Extract streaming
+            streaming_match = re.search(r'live on ([^🇺]+)', text)
+            current_streaming = streaming_match.group(1).strip() if streaming_match else None
+            
+            # Find next ul sibling
+            next_ul = para.find_next_sibling('ul')
+            if not next_ul:
+                continue
+            
+            # Parse fights
+            fight_items = next_ul.find_all('li')
+            
+            for idx, li in enumerate(fight_items):
+                try:
+                    fight_text = li.get_text(strip=True)
+                    
+                    if ' vs. ' not in fight_text and ' vs ' not in fight_text:
+                        continue
+                    
+                    # Split fighters
+                    vs_split = fight_text.replace(' vs. ', ' vs ').split(' vs ')
+                    if len(vs_split) < 2:
+                        continue
+                    
+                    fighter1 = vs_split[0].strip()
+                    rest = vs_split[1]
+                    
+                    # Extract fighter2 (before first comma)
+                    if ',' in rest:
+                        fighter2 = rest.split(',')[0].strip()
+                        details = ','.join(rest.split(',')[1:])
+                    else:
+                        fighter2 = rest.strip()
+                        details = ''
+                    
+                    # Parse rounds
+                    rounds_match = re.search(r'(\d+)\s+rds?', details)
+                    rounds = rounds_match.group(1) if rounds_match else None
+                    
+                    # Check if title
+                    is_title = 'title' in details.lower()
+                    
+                    # Parse weight class
+                    weight_class = ''
+                    wc_pattern = r'(heavyweight|middleweight|welterweight|lightweight|featherweight|bantamweight|flyweight|cruiserweight|super [a-z]+|light [a-z]+|junior [a-z]+)'
+                    wc_match = re.search(wc_pattern, details, re.IGNORECASE)
+                    if wc_match:
+                        weight_class = wc_match.group(1).title()
+                        if is_title:
+                            weight_class = f"Title {weight_class}"
+                    
+                    fight_data = {
+                        'fighter1': fighter1,
+                        'fighter2': fighter2,
+                        'date': current_date,
+                        'time': current_uk_time or 'TBA',
+                        'venue': current_venue,
+                        'location': current_venue,
+                        'sport': 'Boxing',
+                        'weight_class': weight_class,
+                        'rounds': rounds,
+                        'is_main_event': (idx == 0),
+                        'streaming': current_streaming
+                    }
+                    
+                    fights.append(fight_data)
+                    print(f"BoxingSchedule.co: Added {fighter1} vs {fighter2} ({current_date}) {'[MAIN]' if idx == 0 else ''}")
+                
+                except Exception as e:
+                    print(f"Error parsing fight: {e}")
+                    continue
+        
+        print(f"BoxingSchedule.co Total: Found {len(fights)} fights")
+        return fights
+        
+    except Exception as e:
+        print(f"Error in BoxingSchedule.co scraper: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+    """Scrape boxing fights from boxingschedule.co"""
+    import re
+    from datetime import datetime
+    
+    fights = []
+    
+    try:
+        print("Scraping BoxingSchedule.co...")
+        
+        url = "https://boxingschedule.co"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=15)
+        
+        if response.status_code != 200:
+            print(f"BoxingSchedule.co error: Status {response.status_code}")
+            return []
+        
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Find all date blocks
+        date_blocks = soup.find_all('p', attrs={'data-start': True})
+        
+        current_date = None
+        current_uk_time = None
+        current_venue = None
+        current_streaming = None
+        
+        for block in date_blocks:
+            text = block.get_text(strip=True)
+            
+            # Check if this is a date header
+            if text.startswith('📅'):
+                # Parse date: "📅 December 11: Gatineau, Canada | Local: 8:00 PM | USA ET: 8:00 PM 🇺🇸 | UK London: 1:00 AM 🇬🇧"
+                import re
+                from datetime import datetime
+                
+                # Extract date
+                date_match = re.search(r'📅\s+([A-Za-z]+\s+\d+)', text)
+                if date_match:
+                    date_str = date_match.group(1)
+                    # Add current year
+                    year = datetime.now().year
+                    try:
+                        date_obj = datetime.strptime(f"{date_str} {year}", "%B %d %Y")
+                        current_date = date_obj.strftime("%Y-%m-%d")
+                    except:
+                        continue
+                
+                # Extract venue
+                venue_match = re.search(r':\s+([^|]+)', text)
+                if venue_match:
+                    current_venue = venue_match.group(1).strip()
+                
+                # Extract UK time
+                uk_time_match = re.search(r'UK London:\s+(\d+:\d+\s+[AP]M)', text)
+                if uk_time_match:
+                    uk_time_str = uk_time_match.group(1)
+                    # Convert UK time to UTC (UK is GMT, so same as UTC in winter)
+                    try:
+                        time_obj = datetime.strptime(uk_time_str, "%I:%M %p")
+                        current_uk_time = time_obj.strftime("%H:%M")
+                    except:
+                        current_uk_time = None
+                
+                # Extract streaming info
+                if 'live on' in text:
+                    streaming_match = re.search(r'live on ([^🇺]+)', text)
+                    if streaming_match:
+                        current_streaming = streaming_match.group(1).strip()
+                else:
+                    current_streaming = None
+            
+            # Find fights following this date
+            next_ul = block.find_next_sibling('ul')
+            if next_ul and current_date:
+                fight_items = next_ul.find_all('li')
+                
+                for idx, li in enumerate(fight_items):
+                    try:
+                        fight_text = li.get_text(strip=True)
+                        
+                        # Parse: "Kubrat Pulev vs. Murat Gassiev, 12 rds, for Pulev's WBA "regular" heavyweight title"
+                        if ' vs. ' in fight_text or ' vs ' in fight_text:
+                            # Split by " vs. " or " vs "
+                            vs_split = fight_text.replace(' vs. ', ' vs ').split(' vs ')
+                            if len(vs_split) >= 2:
+                                fighter1 = vs_split[0].strip()
+                                
+                                # Fighter 2 and details are in the rest
+                                rest = vs_split[1]
+                                
+                                # Extract fighter2 (before first comma)
+                                if ',' in rest:
+                                    fighter2 = rest.split(',')[0].strip()
+                                    details = ','.join(rest.split(',')[1:])
+                                else:
+                                    fighter2 = rest.strip()
+                                    details = ''
+                                
+                                # Parse rounds
+                                rounds_match = re.search(r'(\d+)\s+rds?', details)
+                                rounds = rounds_match.group(1) if rounds_match else None
+                                
+                                # Check if title fight
+                                is_title = 'title' in details.lower()
+                                
+                                # Parse weight class
+                                weight_class = ''
+                                if is_title:
+                                    # Extract weight class from title description
+                                    wc_match = re.search(r'(heavyweight|middleweight|welterweight|lightweight|featherweight|bantamweight|flyweight|cruiserweight|super [a-z]+|light [a-z]+|junior [a-z]+)', details, re.IGNORECASE)
+                                    if wc_match:
+                                        weight_class = wc_match.group(1).title()
+                                        if is_title:
+                                            weight_class = f"Title {weight_class}"
+                                else:
+                                    wc_match = re.search(r'(heavyweight|middleweight|welterweight|lightweight|featherweight|bantamweight|flyweight|cruiserweight|super [a-z]+|light [a-z]+|junior [a-z]+)s?', details, re.IGNORECASE)
+                                    if wc_match:
+                                        weight_class = wc_match.group(1).title()
+                                
+                                fight_data = {
+                                    'fighter1': fighter1,
+                                    'fighter2': fighter2,
+                                    'date': current_date,
+                                    'time': current_uk_time or 'TBA',
+                                    'venue': current_venue or 'TBA',
+                                    'location': current_venue or 'TBA',
+                                    'sport': 'Boxing',
+                                    'weight_class': weight_class,
+                                    'rounds': rounds,
+                                    'is_main_event': (idx == 0),  # First fight is main event
+                                    'streaming': current_streaming
+                                }
+                                
+                                fights.append(fight_data)
+                                print(f"BoxingSchedule.co: Added {fighter1} vs {fighter2} ({current_date}) {'[MAIN EVENT]' if idx == 0 else ''}")
+                    
+                    except Exception as e:
+                        print(f"Error parsing fight: {e}")
+                        continue
+        
+        print(f"BoxingSchedule.co Total: Found {len(fights)} fights")
+        return fights
+        
+    except Exception as e:
+        print(f"Error in BoxingSchedule.co scraper: {e}")
+        return []
     """Scrape boxing fights from BBC Sport calendar"""
     fights = []
     
@@ -938,214 +1293,6 @@ def save_cache(fights):
     except Exception as e:
         logger.error(f"Error saving cache: {e}")
 
-def fetch_ufc_events():
-    """Fetch upcoming UFC events using TheSportsDB Premium API v1"""
-    fights = []
-    
-    try:
-        print("Fetching UFC events from TheSportsDB Premium API...")
-        
-        # V1 API endpoint - eventsnextleague works better
-        url = f'https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id=4443'
-        
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Debug: Print first event to see structure
-            events = data.get('events', [])
-            if events and len(events) > 0:
-                print(f"\nDEBUG - First UFC event structure:")
-                print(f"Keys available: {events[0].keys()}")
-                print(f"strHomeTeam: {events[0].get('strHomeTeam')}")
-                print(f"strAwayTeam: {events[0].get('strAwayTeam')}")
-                print(f"strEvent: {events[0].get('strEvent')}")
-                print(f"strThumb: {events[0].get('strThumb')}")
-                print(f"strPoster: {events[0].get('strPoster')}")
-                print(f"strSquare: {events[0].get('strSquare')}")
-                print()
-            
-            print(f"Found {len(events)} UFC events")
-            
-            for event in events[:15]:  # Limit to 15 events
-                try:
-                    # Fighter names are in strEvent, not strHomeTeam/strAwayTeam
-                    event_name = event.get('strEvent', '')
-                    
-                    # Parse fighters from event name
-                    fighter1 = 'TBA'
-                    fighter2 = 'TBA'
-                    
-                    if event_name:
-                        # Remove UFC/event number prefix (e.g. "UFC 323: " or "UFC 323 ")
-                        clean_name = event_name
-                        if 'UFC' in event_name:
-                            # Remove "UFC XXX: " or "UFC XXX "
-                            parts = event_name.split(':', 1)
-                            if len(parts) > 1:
-                                clean_name = parts[1].strip()
-                            else:
-                                # No colon, try removing "UFC XXX " pattern
-                                clean_name = re.sub(r'^UFC\s+\d+\s+', '', event_name).strip()
-                        
-                        # Now parse "Fighter1 vs Fighter2"
-                        if ' vs ' in clean_name.lower():
-                            parts = clean_name.split(' vs ')
-                            if len(parts) >= 2:
-                                fighter1 = parts[0].strip()
-                                fighter2_raw = parts[1].strip()
-                                # Only remove trailing numbers if they're event numbers (like "2" after "Yan 2")
-                                # Keep if it's part of the name or if there's more content after
-                                if re.match(r'^.+\s+\d+$', fighter2_raw):
-                                    # Has trailing number - only remove if it looks like event number
-                                    fighter2 = re.sub(r'\s+\d+$', '', fighter2_raw).strip()
-                                else:
-                                    fighter2 = fighter2_raw
-                        elif ' vs. ' in clean_name.lower():
-                            parts = clean_name.split(' vs. ')
-                            if len(parts) >= 2:
-                                fighter1 = parts[0].strip()
-                                fighter2_raw = parts[1].strip()
-                                if re.match(r'^.+\s+\d+$', fighter2_raw):
-                                    fighter2 = re.sub(r'\s+\d+$', '', fighter2_raw).strip()
-                                else:
-                                    fighter2 = fighter2_raw
-                        else:
-                            # DEBUG: No "vs" found - print the raw event name
-                            if venue and venue != 'TBA':
-                                print(f"DEBUG TBA FIGHT: strEvent='{event_name}', venue={venue}, date={date_str}")
-                    
-                    # Extract event details
-                    date_str = event.get('dateEvent', '')
-                    time_str = event.get('strTime', '')
-                    venue = event.get('strVenue', 'TBA')
-                    city = event.get('strCity', '')
-                    country = event.get('strCountry', '')
-                    
-                    location = f"{city}, {country}" if city and country else (city or country or 'TBA')
-                    
-                    # Fetch fighter images
-                    print(f"Fetching images for {fighter1} and {fighter2}...")
-                    fighter1_image = get_fighter_image(fighter1)
-                    fighter2_image = get_fighter_image(fighter2)
-                    
-                    fights.append({
-                        'fighter1': fighter1,
-                        'fighter2': fighter2,
-                        'fighter1_image': fighter1_image,
-                        'fighter2_image': fighter2_image,
-                        'date': date_str,
-                        'time': time_str,
-                        'venue': venue,
-                        'location': location,
-                        'sport': 'UFC',
-                        'event_name': event_name
-                    })
-                    
-                    print(f"Added: {fighter1} vs {fighter2}")
-                    
-                except Exception as e:
-                    print(f"Error parsing UFC event: {e}")
-                    continue
-        else:
-            print(f"UFC API error: Status {response.status_code}")
-            print(f"Response: {response.text[:200]}")
-            
-    except Exception as e:
-        print(f"Error fetching UFC events: {e}")
-    
-    return fights
-
-def fetch_boxing_events():
-    """Fetch upcoming Boxing events using TheSportsDB Premium API v1"""
-    fights = []
-    
-    try:
-        print("Fetching Boxing events from TheSportsDB Premium API...")
-        
-        # V1 API endpoint
-        url = f'https://www.thesportsdb.com/api/v1/json/{API_KEY}/eventsnextleague.php?id=4445'
-        
-        response = requests.get(url, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            events = data.get('events', [])
-            print(f"Found {len(events)} Boxing events")
-            
-            for event in events[:15]:
-                try:
-                    # Fighter names are in strEvent, not strHomeTeam/strAwayTeam
-                    event_name = event.get('strEvent', '')
-                    
-                    # Parse fighters from event name
-                    fighter1 = 'TBA'
-                    fighter2 = 'TBA'
-                    
-                    if event_name:
-                        # For boxing, names are usually just "Fighter1 vs Fighter2"
-                        clean_name = event_name
-                        
-                        # Parse "Fighter1 vs Fighter2"
-                        if ' vs ' in clean_name.lower():
-                            parts = clean_name.split(' vs ')
-                            if len(parts) >= 2:
-                                fighter1 = parts[0].strip()
-                                fighter2 = parts[1].strip()
-                                # Remove trailing numbers
-                                fighter2 = re.sub(r'\s+\d+$', '', fighter2).strip()
-                        elif ' vs. ' in clean_name.lower():
-                            parts = clean_name.split(' vs. ')
-                            if len(parts) >= 2:
-                                fighter1 = parts[0].strip()
-                                fighter2 = parts[1].strip()
-                                # Remove trailing numbers
-                                fighter2 = re.sub(r'\s+\d+$', '', fighter2).strip()
-                        else:
-                            # DEBUG: No "vs" found - print the raw event name
-                            print(f"DEBUG TBA BOXING: strEvent='{event_name}'")
-                    
-                    date_str = event.get('dateEvent', '')
-                    time_str = event.get('strTime', '')
-                    venue = event.get('strVenue', 'TBA')
-                    city = event.get('strCity', '')
-                    country = event.get('strCountry', '')
-                    
-                    location = f"{city}, {country}" if city and country else (city or country or 'TBA')
-                    
-                    # Fetch fighter images
-                    print(f"Fetching images for {fighter1} and {fighter2}...")
-                    fighter1_image = get_fighter_image(fighter1)
-                    fighter2_image = get_fighter_image(fighter2)
-                    
-                    fights.append({
-                        'fighter1': fighter1,
-                        'fighter2': fighter2,
-                        'fighter1_image': fighter1_image,
-                        'fighter2_image': fighter2_image,
-                        'date': date_str,
-                        'time': time_str,
-                        'venue': venue,
-                        'location': location,
-                        'sport': 'Boxing',
-                        'event_name': event_name
-                    })
-                    
-                    print(f"Added: {fighter1} vs {fighter2}")
-                    
-                except Exception as e:
-                    print(f"Error parsing Boxing event: {e}")
-                    continue
-        else:
-            print(f"Boxing API error: Status {response.status_code}")
-            print(f"Response: {response.text[:200]}")
-            
-    except Exception as e:
-        print(f"Error fetching Boxing events: {e}")
-    
-    return fights
 
 def fetch_fights():
     """Fetch upcoming UFC and Boxing fights from multiple sources"""
@@ -1169,14 +1316,20 @@ def fetch_fights():
     log("FIGHT DATA SOURCES COMPARISON")
     log("="*60 + "\n")
     
-    # 1. Scrape BBC Sport for boxing
-    log("--- BBC SPORT BOXING ---")
-    bbc_boxing = scrape_bbc_boxing()
-    log(f"BBC Sport Boxing found: {len(bbc_boxing)} fights\n")
-    for fight in bbc_boxing[:5]:
-        log(f"  • {fight['fighter1']} vs {fight['fighter2']} - {fight['date']} - {fight['venue']}")
-    if len(bbc_boxing) > 5:
-        log(f"  ... and {len(bbc_boxing) - 5} more\n")
+    # 1. Scrape BoxingSchedule.co for boxing
+    log("--- BOXINGSCHEDULE.CO ---")
+    boxingschedule_fights = scrape_boxingschedule_co()
+    log(f"BoxingSchedule.co found: {len(boxingschedule_fights)} fights\n")
+    for fight in boxingschedule_fights[:5]:
+        log(f"  • {fight['fighter1']} vs {fight['fighter2']} - {fight['date']} {'[MAIN]' if fight.get('is_main_event') else ''}")
+    if len(boxingschedule_fights) > 5:
+        log(f"  ... and {len(boxingschedule_fights) - 5} more\n")
+    
+    # 1b. Scrape BBC Sport for boxing (DISABLED FOR TESTING)
+    log("--- BBC SPORT BOXING (DISABLED) ---")
+    # bbc_boxing = scrape_bbc_boxing()
+    bbc_boxing = []
+    log(f"BBC Sport Boxing: DISABLED\n")
     
     # 2. Scrape MMA Fighting for UFC schedule
     log("\n--- MMA FIGHTING UFC ---")
@@ -1187,21 +1340,19 @@ def fetch_fights():
     if len(mma_fighting_ufc) > 5:
         log(f"  ... and {len(mma_fighting_ufc) - 5} more\n")
     
-    # 3. Fetch TheSportsDB for boxing images (optional backup)
-    log("\n--- THESPORTSDB BOXING ---")
-    thesportsdb_boxing = fetch_boxing_events()
-    log(f"TheSportsDB Boxing found: {len(thesportsdb_boxing)} fights\n")
-    for fight in thesportsdb_boxing[:5]:
-        log(f"  • {fight['fighter1']} vs {fight['fighter2']} - {fight['date']} - {fight['venue']}")
-        if fight.get('fighter1_image'):
-            log(f"    ✓ Has fighter images")
-    if len(thesportsdb_boxing) > 5:
-        log(f"  ... and {len(thesportsdb_boxing) - 5} more\n")
+    # 3. Fetch TheSportsDB for boxing images (DISABLED - poor data quality)
+    log("\n--- THESPORTSDB BOXING (DISABLED) ---")
+    # thesportsdb_boxing = fetch_boxing_events()
+    thesportsdb_boxing = []
+    log(f"TheSportsDB Boxing: DISABLED\n")
     
     # 4. Combine data
     log("\n" + "="*60)
     log("MERGING DATA...")
     log("="*60 + "\n")
+    
+    # Add BoxingSchedule.co fights
+    fights.extend(boxingschedule_fights)
     
     # Add BBC Sport boxing fights
     fights.extend(bbc_boxing)
@@ -1209,32 +1360,9 @@ def fetch_fights():
     # Add MMA Fighting UFC fights
     fights.extend(mma_fighting_ufc)
     
-    # Merge TheSportsDB boxing data (for images)
+    # TheSportsDB merge disabled
     merged_count = 0
     new_from_tsd = 0
-    
-    for tsd_fight in thesportsdb_boxing:
-        # Check if this fight already exists
-        exists = False
-        for existing in fights:
-            if (existing['fighter1'] == tsd_fight['fighter1'] and 
-                existing['fighter2'] == tsd_fight['fighter2']):
-                # Merge: Add images from TheSportsDB only if we don't have them
-                if tsd_fight.get('fighter1_image') and not existing.get('fighter1_image'):
-                    existing['fighter1_image'] = tsd_fight['fighter1_image']
-                if tsd_fight.get('fighter2_image') and not existing.get('fighter2_image'):
-                    existing['fighter2_image'] = tsd_fight['fighter2_image']
-                exists = True
-                merged_count += 1
-                break
-        
-        # If fight doesn't exist, add it from TheSportsDB
-        if not exists:
-            fights.append(tsd_fight)
-            new_from_tsd += 1
-    
-    log(f"Merged images for {merged_count} fights")
-    log(f"Added {new_from_tsd} new fights from TheSportsDB")
     
     # 5. Fetch images for fights that don't have them yet
     log("\n--- FETCHING MISSING FIGHTER IMAGES ---\n")
@@ -1293,7 +1421,8 @@ def home():
     
     # Separate by sport and filter out prelims
     ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
-    boxing_fights = [f for f in fights if f.get('sport') == 'Boxing']
+    # Boxing: Only show main events (first fight per date/venue)
+    boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event') == True]
     
     # FEATURED FIGHTS
     featured_fights = []
@@ -1560,35 +1689,9 @@ def boxing_event_detail(event_slug):
     
     logger.info(f"Found {len(event_fights)} fights for this event")
     
-    # Sort fights by importance
-    def get_fight_importance(fight):
-        """Score fight importance: higher = more important"""
-        score = 0
-        
-        # Title fights are most important
-        if 'Title' in fight.get('weight_class', ''):
-            score += 10
-        
-        # Big-name fighters add importance
-        model = BigNameFighter()
-        if model.is_big_name(fight['fighter1']):
-            score += 5
-        if model.is_big_name(fight['fighter2']):
-            score += 5
-        
-        # Heavier weight classes typically headline
-        weight_class = fight.get('weight_class', '').lower()
-        if 'heavyweight' in weight_class:
-            score += 3
-        elif 'middleweight' in weight_class or 'welterweight' in weight_class:
-            score += 2
-        elif 'lightweight' in weight_class:
-            score += 1
-        
-        return score
-    
-    # Sort all fights by importance
-    event_fights_sorted = sorted(event_fights, key=get_fight_importance, reverse=True)
+    # Fights are already in correct order from scraper (main event first)
+    # Just sort by is_main_event flag to ensure main is first
+    event_fights_sorted = sorted(event_fights, key=lambda x: not x.get('is_main_event', False))
     main_event_fight = event_fights_sorted[0]
     undercard = event_fights_sorted[1:]
     
@@ -1601,11 +1704,12 @@ def boxing_event_detail(event_slug):
         'date': main_event_fight['date'],
         'time': main_event_fight.get('time', 'TBA'),
         'fight_count': len(event_fights),
+        'streaming': main_event_fight.get('streaming'),  # Add streaming info
         'main_event': {
             'fighter1': main_event_fight['fighter1'],
             'fighter2': main_event_fight['fighter2'],
-            'fighter1_image': main_event_fight.get('fighter1_image') or 'https://a.espncdn.com/combiner/i?img=/i/headshots/boxing/players/full/default.png',
-            'fighter2_image': main_event_fight.get('fighter2_image') or 'https://a.espncdn.com/combiner/i?img=/i/headshots/boxing/players/full/default.png',
+            'fighter1_image': main_event_fight.get('fighter1_image'),
+            'fighter2_image': main_event_fight.get('fighter2_image'),
         },
         'fights': [main_event_fight] + undercard
     }

@@ -144,7 +144,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter1_image }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover">
+                        <img src="{{ event.main_event.fighter1_image or '/static/placeholder-fighter-boxing.png' }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover {{ 'opacity-30' if not event.main_event.fighter1_image else '' }}">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter1.split()[-1]|upper }}
@@ -169,7 +169,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter2_image }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover">
+                        <img src="{{ event.main_event.fighter2_image or '/static/placeholder-fighter-boxing.png' }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover {{ 'opacity-30' if not event.main_event.fighter2_image else '' }}">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter2.split()[-1]|upper }}
@@ -180,6 +180,19 @@
                 </div>
             </div>
         </div>
+
+        <!-- Streaming Links -->
+        {% if event.streaming %}
+        <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-12">
+            <div class="flex items-center justify-center gap-4">
+                <svg class="w-5 h-5 text-accent-orange flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
+                <span class="font-work text-text-primary">Watch on:</span>
+                <span class="font-work font-semibold text-accent-orange">{{ event.streaming }}</span>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- AI Fight Preview -->
         {% if event.preview and event.preview.parsed %}
