@@ -1780,6 +1780,16 @@ def robots():
     response.headers['Content-Type'] = 'text/plain'
     return response
 
+@app.route('/admin/clear-cache')
+def clear_cache():
+    """Clear the fights cache file"""
+    cache_file = 'fights_cache.json'
+    if os.path.exists(cache_file):
+        os.remove(cache_file)
+        logger.info("Cache cleared manually via admin route")
+        return "✓ Cache cleared successfully. Next page load will fetch fresh data."
+    return "No cache file found."
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting Flask server on port {port}")
