@@ -337,7 +337,7 @@
         function createFightCard(fight) {
             const isUFC = fight.sport === 'UFC';
             const accentColor = isUFC ? 'accent-red' : 'accent-orange';
-            const placeholder = isUFC ? '/static/placeholder-fighter-mma.png' : '/static/placeholder-fighter-boxing.png';
+            const placeholder = isUFC ? '/static/placeholder-fighter-mma.svg' : '/static/placeholder-fighter-boxing.svg';
             const eventUrl = isUFC 
                 ? `/event/${fight.event_name.toLowerCase().replace(/ /g, '-').replace(/:/g, '').replace(/,/g, '')}-${fight.date}`
                 : `/boxing-event/${fight.venue.toLowerCase().replace(/ /g, '-').replace(/,/g, '').replace(/\./g, '').replace(/'/g, '')}-${fight.date}`;
@@ -347,14 +347,14 @@
                     <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-30'}">
+                                <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter1.split(' ').pop()}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-30'}">
+                                <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter2.split(' ').pop()}</p>
                         </div>
@@ -431,12 +431,12 @@
                     <div class="relative h-96">
                         <div class="absolute inset-0 flex">
                             <div class="w-1/2 bg-gradient-to-r from-dark-elevated to-transparent">
-                                <img src="{{ fight.fighter1_image or ('/static/placeholder-fighter-mma.png' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.png') }}" 
+                                <img src="{{ fight.fighter1_image or ('/static/placeholder-fighter-mma.svg' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.svg') }}" 
                                      alt="{{ fight.fighter1 }}" 
                                      class="w-full h-full object-cover opacity-75">
                             </div>
                             <div class="w-1/2 bg-gradient-to-l from-dark-elevated to-transparent">
-                                <img src="{{ fight.fighter2_image or ('/static/placeholder-fighter-mma.png' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.png') }}" 
+                                <img src="{{ fight.fighter2_image or ('/static/placeholder-fighter-mma.svg' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.svg') }}" 
                                      alt="{{ fight.fighter2 }}" 
                                      class="w-full h-full object-cover opacity-75">
                             </div>
@@ -512,7 +512,7 @@
                     <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-mma.png' }}" 
+                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-mma.svg' }}" 
                                      alt="{{ fight.fighter1 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
@@ -521,7 +521,7 @@
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-mma.png' }}" 
+                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-mma.svg' }}" 
                                      alt="{{ fight.fighter2 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>
@@ -569,7 +569,7 @@
                     <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-boxing.png' }}" 
+                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-boxing.svg' }}" 
                                      alt="{{ fight.fighter1 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
@@ -578,7 +578,7 @@
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-boxing.png' }}" 
+                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-boxing.svg' }}" 
                                      alt="{{ fight.fighter2 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>

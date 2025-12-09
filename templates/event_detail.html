@@ -155,7 +155,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter1_image }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover">
+                        <img src="{{ event.main_event.fighter1_image or '/static/placeholder-fighter-mma.svg' }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover {{ 'opacity-30' if not event.main_event.fighter1_image else '' }}" loading="lazy">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter1.split()[-1] }}
@@ -180,7 +180,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter2_image }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover">
+                        <img src="{{ event.main_event.fighter2_image or '/static/placeholder-fighter-mma.svg' }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover {{ 'opacity-30' if not event.main_event.fighter2_image else '' }}" loading="lazy">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter2.split()[-1] }}
