@@ -23,7 +23,21 @@ class ProtectedAdminIndexView(AdminIndexView):
         # Check if authenticated
         if not self.is_authenticated():
             return redirect(url_for('.login'))
-        return super(ProtectedAdminIndexView, self).index()
+        
+        # Load stats
+        import json
+        with open('data/big_name_fighters.json', 'r') as f:
+            big_names_count = len(json.load(f))
+        with open('fighters.json', 'r', encoding='utf-8') as f:
+            boxing_count = len(json.load(f))
+        with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+            ufc_count = len(json.load(f))
+        
+        return self.render('admin/dashboard.html',
+                          big_names=big_names_count,
+                          total_fighters=boxing_count + ufc_count,
+                          boxing_count=boxing_count,
+                          ufc_count=ufc_count)
     
     @expose('/login', methods=['GET', 'POST'])
     def login(self):

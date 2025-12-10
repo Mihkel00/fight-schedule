@@ -1,62 +1,139 @@
 {% extends 'admin/master.html' %}
 
 {% block body %}
-<div class="container">
-    <h1>Fight Schedule Admin</h1>
+<style>
+    .admin-dashboard {
+        background: #0a0a0a;
+        color: #f5f5f5;
+        padding: 30px;
+        min-height: 100vh;
+    }
+    .dashboard-header {
+        margin-bottom: 40px;
+    }
+    .dashboard-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+    }
+    .dashboard-header p {
+        color: #a8a8a8;
+        font-size: 1.1rem;
+    }
     
-    <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Big Name Fighters</h5>
-                    <p class="card-text display-4">{{ big_names }}</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Image Overrides</h5>
-                    <p class="card-text display-4">{{ overrides }}</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Manual Events</h5>
-                    <p class="card-text display-4">{{ manual_events }}</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Time Overrides</h5>
-                    <p class="card-text display-4">{{ time_overrides }}</p>
-                </div>
-            </div>
-        </div>
+    .quick-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    .quick-link-card {
+        background: #141414;
+        border: 1px solid #252525;
+        border-radius: 12px;
+        padding: 25px;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: block;
+    }
+    .quick-link-card:hover {
+        background: #1a1a1a;
+        border-color: #fb923c;
+        transform: translateY(-2px);
+    }
+    .quick-link-icon {
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+    .quick-link-title {
+        color: #f5f5f5;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .quick-link-desc {
+        color: #a8a8a8;
+        font-size: 0.9rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #1a1a1a 0%, #141414 100%);
+        border: 1px solid #252525;
+        border-radius: 12px;
+        padding: 25px;
+    }
+    .stat-label {
+        color: #a8a8a8;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+    .stat-value {
+        color: #fb923c;
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+</style>
+
+<div class="admin-dashboard">
+    <div class="dashboard-header">
+        <h1>Fight Schedule Admin</h1>
+        <p>Manage fighters, images, and site content</p>
     </div>
     
-    <div class="alert alert-info mt-4">
-        <h5>Quick Guide:</h5>
-        <ul>
-            <li>Click <strong>"Data Files"</strong> in the menu to edit JSON files directly</li>
-            <li>Files are in <code>data/</code> directory</li>
-            <li>Edit and save - changes apply immediately (clear cache if needed)</li>
-        </ul>
+    <div class="quick-links">
+        <a href="/admin/upload-images" class="quick-link-card">
+            <div class="quick-link-icon">📸</div>
+            <div class="quick-link-title">Upload Images</div>
+            <div class="quick-link-desc">Add or replace fighter images</div>
+        </a>
+        
+        <a href="/admin/manage-fighters" class="quick-link-card">
+            <div class="quick-link-icon">👤</div>
+            <div class="quick-link-title">Manage Fighters</div>
+            <div class="quick-link-desc">Edit names and big name fighters</div>
+        </a>
+        
+        <a href="/admin/clear-cache" class="quick-link-card">
+            <div class="quick-link-icon">🔄</div>
+            <div class="quick-link-title">Clear Cache</div>
+            <div class="quick-link-desc">Force refresh fight data</div>
+        </a>
+        
+        <a href="/" class="quick-link-card" target="_blank">
+            <div class="quick-link-icon">🌐</div>
+            <div class="quick-link-title">View Site</div>
+            <div class="quick-link-desc">Open live website</div>
+        </a>
     </div>
     
-    <h3 class="mt-4">JSON Files:</h3>
-    <ul>
-        <li><code>big_name_fighters.json</code> - Add/remove big-name fighters</li>
-        <li><code>fighter_image_overrides.json</code> - Override fighter images</li>
-        <li><code>manual_events.json</code> - Add manual events</li>
-        <li><code>time_overrides.json</code> - Fix fight times</li>
-    </ul>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Big Name Fighters</div>
+            <div class="stat-value">{{ big_names }}</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Total Fighters</div>
+            <div class="stat-value">{{ total_fighters }}</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">UFC Fighters</div>
+            <div class="stat-value">{{ ufc_count }}</div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Boxing Fighters</div>
+            <div class="stat-value">{{ boxing_count }}</div>
+        </div>
+    </div>
 </div>
 {% endblock %}
