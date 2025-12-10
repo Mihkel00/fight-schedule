@@ -1897,6 +1897,99 @@ def upload_fighter_images():
     
     return render_template('admin/upload_images.html', missing=unique_missing)
 
+@app.route('/admin/manage-fighters', methods=['GET', 'POST'])
+def manage_fighters():
+    """Manage fighter names and big name fighters"""
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'add_big_name':
+            fighter_name = request.form.get('fighter_name')
+            big_names_file = 'data/big_name_fighters.json'
+            
+            with open(big_names_file, 'r') as f:
+                big_names = json.load(f)
+            
+            if fighter_name not in big_names:
+                big_names.append(fighter_name)
+                big_names.sort()
+                
+                with open(big_names_file, 'w') as f:
+                    json.dump(big_names, f, indent=2)
+                
+                logger.info(f"Added big name fighter: {fighter_name}")
+        
+        elif action == 'remove_big_name':
+            fighter_name = request.form.get('fighter_name')
+            big_names_file = 'data/big_name_fighters.json'
+            
+            with open(big_names_file, 'r') as f:
+                big_names = json.load(f)
+            
+            if fighter_name in big_names:
+                big_names.remove(fighter_name)
+                
+                with open(big_names_file, 'w') as f:
+                    json.dump(big_names, f, indent=2)
+                
+                logger.info(f"Removed big name fighter: {fighter_name}")
+        
+        elif action == 'rename':
+            old_name = request.form.get('old_name')
+            new_name = request.form.get('new_name')
+            sport = request.form.get('sport')
+            
+            json_file = 'fighters.json' if sport == 'Boxing' else 'fighters_ufc.json'
+            
+            with open(json_file, 'r', encoding='utf-8') as f:
+                fighters = json.load(f)
+            
+            if old_name in fighters:
+                fighters[new_name] = fighters.pop(old_name)
+                
+                with open(json_file, 'w', encoding='utf-8') as f:
+                    json.dump(fighters, f, indent=2, ensure_ascii=False)
+                
+                logger.info(f"Renamed fighter: {old_name} → {new_name}")
+        
+        elif action == 'delete':
+            fighter_name = request.form.get('fighter_name')
+            sport = request.form.get('sport')
+            
+            json_file = 'fighters.json' if sport == 'Boxing' else 'fighters_ufc.json'
+            
+            with open(json_file, 'r', encoding='utf-8') as f:
+                fighters = json.load(f)
+            
+            if fighter_name in fighters:
+                del fighters[fighter_name]
+                
+                with open(json_file, 'w', encoding='utf-8') as f:
+                    json.dump(fighters, f, indent=2, ensure_ascii=False)
+                
+                logger.info(f"Deleted fighter: {fighter_name}")
+        
+        return redirect('/admin/manage-fighters')
+    
+    # GET - show management page
+    with open('fighters.json', 'r', encoding='utf-8') as f:
+        boxing = json.load(f)
+    with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+        ufc = json.load(f)
+    
+    with open('data/big_name_fighters.json', 'r') as f:
+        big_names = json.load(f)
+    
+    all_fighters = {}
+    for name, img in boxing.items():
+        all_fighters[name] = {'sport': 'Boxing', 'image': img}
+    for name, img in ufc.items():
+        all_fighters[name] = {'sport': 'UFC', 'image': img}
+    
+    return render_template('admin/manage_fighters.html', 
+                          all_fighters=all_fighters, 
+                          big_names=big_names)
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     logger.info(f"Starting Flask server on port {port}")
