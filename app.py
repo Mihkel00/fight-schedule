@@ -1832,6 +1832,9 @@ def upload_fighter_images():
             return redirect('/admin/upload-images')
     
     # GET - show missing fighters
+    search_name = request.args.get('search', '').strip()
+    show_all = request.args.get('show_all') == 'true'
+    
     try:
         with open('fights_cache.json', 'r') as f:
             cache = json.load(f)
@@ -1846,10 +1849,21 @@ def upload_fighter_images():
     
     all_fighters = {**boxing, **ufc}
     
+    # If searching, show that fighter
+    if search_name:
+        sport = 'UFC' if search_name in ufc else 'Boxing'
+        missing = [{
+            'name': search_name,
+            'sport': sport,
+            'event': 'Search result',
+            'has_image': all_fighters.get(search_name, '').startswith('/static/') if search_name in all_fighters else False
+        }]
+        return render_template('admin/upload_images.html', missing=missing, search_mode=True)
+    
     # Find missing main event fighters
     missing = []
     for fight in cache.get('fights', []):
-        if fight.get('is_main_event'):
+        if fight.get('is_main_event') or show_all:
             for fighter_key in ['fighter1', 'fighter2']:
                 fighter = fight.get(fighter_key)
                 if not fighter or fighter == 'TBA':

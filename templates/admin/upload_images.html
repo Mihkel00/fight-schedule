@@ -100,8 +100,18 @@
         <h1>Upload Fighter Images</h1>
         
         <div class="stats">
-            <strong>{{ missing|length }}</strong> main event fighters need images
+            <strong>{{ missing|length }}</strong> fighter{{ 's' if missing|length != 1 else '' }} {% if search_mode %}found{% else %}need images{% endif %}
         </div>
+        
+        <form method="GET" style="margin-bottom: 30px; display: flex; gap: 10px;">
+            <input type="text" name="search" placeholder="Search fighter name..." 
+                   value="{{ request.args.get('search', '') }}"
+                   style="flex: 1; background: #1a1a1a; color: #f5f5f5; border: 1px solid #252525; padding: 10px 15px; border-radius: 4px;">
+            <button type="submit">Search</button>
+            {% if request.args.get('search') %}
+            <a href="/admin/upload-images" style="padding: 10px 20px; background: #252525; color: #f5f5f5; text-decoration: none; border-radius: 4px; display: flex; align-items: center;">Clear</a>
+            {% endif %}
+        </form>
         
         {% if missing %}
         <div class="fighter-list">
