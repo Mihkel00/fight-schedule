@@ -1902,7 +1902,7 @@ def manage_fighters():
     """Manage fighter names and big name fighters"""
     try:
         if request.method == 'POST':
-        action = request.form.get('action')
+            action = request.form.get('action')
         
         if action == 'add_big_name':
             fighter_name = request.form.get('fighter_name')
