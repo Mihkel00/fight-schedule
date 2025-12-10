@@ -26,8 +26,13 @@ class ProtectedAdminIndexView(AdminIndexView):
         
         # Load stats
         import json
-        with open('data/big_name_fighters.json', 'r') as f:
-            big_names_count = len(json.load(f))
+        big_names_file = 'data/big_name_fighters.json'
+        if os.path.exists(big_names_file):
+            with open(big_names_file, 'r') as f:
+                big_names_count = len(json.load(f))
+        else:
+            big_names_count = 0
+        
         with open('fighters.json', 'r', encoding='utf-8') as f:
             boxing_count = len(json.load(f))
         with open('fighters_ufc.json', 'r', encoding='utf-8') as f:

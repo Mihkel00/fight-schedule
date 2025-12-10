@@ -1977,8 +1977,13 @@ def manage_fighters():
     with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
         ufc = json.load(f)
     
-    with open('data/big_name_fighters.json', 'r') as f:
-        big_names = json.load(f)
+    # Load big names, create if missing
+    big_names_file = 'data/big_name_fighters.json'
+    if os.path.exists(big_names_file):
+        with open(big_names_file, 'r') as f:
+            big_names = json.load(f)
+    else:
+        big_names = []
     
     all_fighters = {}
     for name, img in boxing.items():
