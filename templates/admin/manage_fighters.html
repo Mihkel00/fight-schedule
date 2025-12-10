@@ -137,18 +137,18 @@
                 </div>
                 
                 <div class="fighter-list" id="edit-list">
-                    {% for fighter, data in all_fighters.items() %}
-                    <div class="fighter-item" data-name="{{ fighter.lower() }}">
+                    {% for fighter in all_fighters %}
+                    <div class="fighter-item" data-name="{{ fighter.name.lower() }}">
                         <div class="fighter-info">
                             <div class="fighter-name">
-                                {{ fighter }}
-                                {% if fighter in big_names %}<span class="badge badge-star">★ BIG NAME</span>{% endif %}
+                                {{ fighter.name }}
+                                {% if fighter.name in big_names %}<span class="badge badge-star">★ BIG NAME</span>{% endif %}
                             </div>
-                            <div class="fighter-meta">{{ data.sport }}</div>
+                            <div class="fighter-meta">{{ fighter.sport }}</div>
                         </div>
                         <div class="actions">
-                            <button onclick="editFighter('{{ fighter }}', '{{ data.sport }}')">Rename</button>
-                            <button class="danger" onclick="deleteFighter('{{ fighter }}', '{{ data.sport }}')">Delete</button>
+                            <button onclick="editFighter('{{ fighter.name }}', '{{ fighter.sport }}')">Rename</button>
+                            <button class="danger" onclick="deleteFighter('{{ fighter.name }}', '{{ fighter.sport }}')">Delete</button>
                         </div>
                     </div>
                     {% endfor %}

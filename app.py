@@ -1986,11 +1986,14 @@ def manage_fighters():
         else:
             big_names = []
         
-        all_fighters = {}
+        all_fighters = []
         for name, img in boxing.items():
-            all_fighters[name] = {'sport': 'Boxing', 'image': img}
+            all_fighters.append({'name': name, 'sport': 'Boxing', 'image': img})
         for name, img in ufc.items():
-            all_fighters[name] = {'sport': 'UFC', 'image': img}
+            all_fighters.append({'name': name, 'sport': 'UFC', 'image': img})
+        
+        # Sort by name
+        all_fighters.sort(key=lambda x: x['name'])
         
         return render_template('admin/manage_fighters.html', 
                               all_fighters=all_fighters, 
