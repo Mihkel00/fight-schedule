@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Fighter Images - Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #f5f5f5;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { margin-bottom: 30px; font-size: 2rem; }
+        .stats {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #252525;
+        }
+        .fighter-list { display: grid; gap: 20px; }
+        .fighter-card {
+            background: #141414;
+            border: 1px solid #252525;
+            border-radius: 8px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: center;
+        }
+        .fighter-info h3 { font-size: 1.25rem; margin-bottom: 8px; }
+        .fighter-info .meta {
+            color: #a8a8a8;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 15px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .badge-ufc { background: #dc2626; }
+        .badge-boxing { background: #f59e0b; color: #000; }
+        
+        .upload-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        input[type="file"] {
+            background: #1a1a1a;
+            color: #f5f5f5;
+            border: 1px solid #252525;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button {
+            background: #fb923c;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .success { color: #22c55e; margin-top: 20px; }
+        .nav-links {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+        .nav-links a {
+            color: #fb923c;
+            text-decoration: none;
+        }
+        .nav-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav-links">
+            <a href="/">← Home</a>
+            <a href="/admin/clear-cache">Clear Cache</a>
+        </div>
+        
+        <h1>Upload Fighter Images</h1>
+        
+        <div class="stats">
+            <strong>{{ missing|length }}</strong> main event fighters need images
+        </div>
+        
+        {% if missing %}
+        <div class="fighter-list">
+            {% for fighter in missing %}
+            <div class="fighter-card">
+                <div class="fighter-info">
+                    <h3>{{ fighter.name }}</h3>
+                    <div class="meta">
+                        <span class="badge badge-{{ 'ufc' if fighter.sport == 'UFC' else 'boxing' }}">
+                            {{ fighter.sport }}
+                        </span>
+                        <span>{{ fighter.event }}</span>
+                    </div>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data" class="upload-form">
+                    <input type="hidden" name="fighter_name" value="{{ fighter.name }}">
+                    <input type="hidden" name="sport" value="{{ fighter.sport }}">
+                    <input type="file" name="image" accept="image/*" required 
+                           onchange="this.form.querySelector('button').disabled = false">
+                    <button type="submit" disabled>Upload</button>
+                </form>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="success">
+            ✓ All main event fighters have images!
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

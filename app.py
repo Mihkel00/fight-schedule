@@ -15,6 +15,8 @@ import markdown
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'static/fighters'
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file size
 Compress(app)  # Enable gzip compression for all responses
 
 # Setup Flask-Admin
@@ -1789,6 +1791,97 @@ def clear_cache():
         logger.info("Cache cleared manually via admin route")
         return "✓ Cache cleared successfully. Next page load will fetch fresh data."
     return "No cache file found."
+
+@app.route('/admin/upload-images', methods=['GET', 'POST'])
+def upload_fighter_images():
+    """Admin interface for uploading fighter images"""
+    from werkzeug.utils import secure_filename
+    
+    if request.method == 'POST':
+        fighter_name = request.form.get('fighter_name')
+        sport = request.form.get('sport', 'UFC')
+        
+        if 'image' not in request.files:
+            return "No file uploaded", 400
+        
+        file = request.files['image']
+        if file.filename == '':
+            return "No file selected", 400
+        
+        if file and fighter_name:
+            # Generate filename from fighter name
+            filename = fighter_name.lower().replace(' ', '-').replace("'", '')
+            ext = os.path.splitext(file.filename)[1] or '.png'
+            filename = filename + ext
+            
+            # Save file
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            # Update JSON
+            json_file = 'fighters.json' if sport == 'Boxing' else 'fighters_ufc.json'
+            with open(json_file, 'r', encoding='utf-8') as f:
+                fighters = json.load(f)
+            
+            fighters[fighter_name] = f'/static/fighters/{filename}'
+            
+            with open(json_file, 'w', encoding='utf-8') as f:
+                json.dump(fighters, f, indent=2, ensure_ascii=False)
+            
+            logger.info(f"Uploaded image for {fighter_name}: {filename}")
+            return redirect('/admin/upload-images')
+    
+    # GET - show missing fighters
+    try:
+        with open('fights_cache.json', 'r') as f:
+            cache = json.load(f)
+    except:
+        return "No cache found. Visit homepage first to generate cache.", 404
+    
+    # Load databases
+    with open('fighters.json', 'r', encoding='utf-8') as f:
+        boxing = json.load(f)
+    with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+        ufc = json.load(f)
+    
+    all_fighters = {**boxing, **ufc}
+    
+    # Find missing main event fighters
+    missing = []
+    for fight in cache.get('fights', []):
+        if fight.get('is_main_event'):
+            for fighter_key in ['fighter1', 'fighter2']:
+                fighter = fight.get(fighter_key)
+                if not fighter or fighter == 'TBA':
+                    continue
+                
+                has_image = False
+                if fighter in all_fighters:
+                    url = all_fighters[fighter]
+                    if url and url.startswith('/static/'):
+                        has_image = True
+                
+                img_key = f'{fighter_key}_image'
+                if fight.get(img_key) and fight.get(img_key).startswith('/static/'):
+                    has_image = True
+                
+                if not has_image:
+                    missing.append({
+                        'name': fighter,
+                        'sport': fight.get('sport', 'UFC'),
+                        'event': f"{fight.get('venue')} - {fight.get('date')}"
+                    })
+    
+    # Remove duplicates
+    seen = set()
+    unique_missing = []
+    for f in missing:
+        key = f['name']
+        if key not in seen:
+            seen.add(key)
+            unique_missing.append(f)
+    
+    return render_template('admin/upload_images.html', missing=unique_missing)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
