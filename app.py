@@ -1900,7 +1900,8 @@ def upload_fighter_images():
 @app.route('/admin/manage-fighters', methods=['GET', 'POST'])
 def manage_fighters():
     """Manage fighter names and big name fighters"""
-    if request.method == 'POST':
+    try:
+        if request.method == 'POST':
         action = request.form.get('action')
         
         if action == 'add_big_name':
@@ -1994,6 +1995,12 @@ def manage_fighters():
     return render_template('admin/manage_fighters.html', 
                           all_fighters=all_fighters, 
                           big_names=big_names)
+    
+    except Exception as e:
+        import traceback
+        error_details = f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
+        logger.error(f"manage_fighters error: {error_details}")
+        return f"<pre>{error_details}</pre>", 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
