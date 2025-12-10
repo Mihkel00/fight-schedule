@@ -1982,7 +1982,12 @@ def manage_fighters():
         big_names_file = 'data/big_name_fighters.json'
         if os.path.exists(big_names_file):
             with open(big_names_file, 'r') as f:
-                big_names = json.load(f)
+                big_names_raw = json.load(f)
+                # Ensure it's a list of strings, handle malformed data
+                if isinstance(big_names_raw, list):
+                    big_names = [item if isinstance(item, str) else str(item) for item in big_names_raw]
+                else:
+                    big_names = []
         else:
             big_names = []
         

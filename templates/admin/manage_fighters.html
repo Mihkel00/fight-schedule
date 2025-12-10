@@ -173,7 +173,7 @@
                 
                 <div class="fighter-list" id="big-list">
                     {% for fighter in big_names %}
-                    <div class="fighter-item" data-name="{{ fighter.lower() }}">
+                    <div class="fighter-item" data-name="{{ fighter|lower }}">
                         <div class="fighter-info">
                             <div class="fighter-name">{{ fighter }}</div>
                         </div>
@@ -238,5 +238,3 @@
     </script>
 </body>
 </html>
- 
- 
