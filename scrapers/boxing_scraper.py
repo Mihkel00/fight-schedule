@@ -110,7 +110,8 @@ def scrape_boxing_events():
                     if len(vs_split) < 2:
                         continue
                     
-                    fighter1 = vs_split[0].strip()
+                    # Clean fighter names (remove trailing numbers)
+                    fighter1 = re.sub(r'\s+\d+$', '', vs_split[0].strip())
                     rest = vs_split[1]
                     
                     # Extract fighter2 (before first comma)

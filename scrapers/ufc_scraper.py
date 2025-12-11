@@ -137,9 +137,13 @@ def scrape_ufc_events():
                                 fighters = fight_text.split(' vs ')
                                 
                                 if len(fighters) == 2:
+                                    # Clean fighter names (remove trailing numbers like "Lopes 2")
+                                    fighter1 = re.sub(r'\s+\d+$', '', fighters[0].strip())
+                                    fighter2 = re.sub(r'\s+\d+$', '', fighters[1].strip())
+                                    
                                     fights.append({
-                                        'fighter1': fighters[0].strip(),
-                                        'fighter2': fighters[1].strip(),
+                                        'fighter1': fighter1,
+                                        'fighter2': fighter2,
                                         'date': date_formatted,
                                         'time': main_card_time,
                                         'venue': venue,
@@ -162,6 +166,10 @@ def scrape_ufc_events():
                                 fighters = fight_text.split(' vs ')
                                 
                                 if len(fighters) == 2:
+                                    # Clean fighter names (remove trailing numbers)
+                                    fighter1 = re.sub(r'\s+\d+$', '', fighters[0].strip())
+                                    fighter2 = re.sub(r'\s+\d+$', '', fighters[1].strip())
+                                    
                                     # Calculate prelim time if not found (2 hours before main card)
                                     calculated_prelim_time = prelim_time
                                     if not prelim_time and main_card_time:
@@ -173,8 +181,8 @@ def scrape_ufc_events():
                                             calculated_prelim_time = main_card_time
                                     
                                     fights.append({
-                                        'fighter1': fighters[0].strip(),
-                                        'fighter2': fighters[1].strip(),
+                                        'fighter1': fighter1,
+                                        'fighter2': fighter2,
                                         'date': date_formatted,
                                         'time': calculated_prelim_time or main_card_time,
                                         'venue': venue,
