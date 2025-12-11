@@ -402,8 +402,13 @@ def is_big_name_fight(fight):
     
     return model.is_big_name(fighter1) or model.is_big_name(fighter2)
 
-def load_cache():
-    """Load cached fight data if it exists and is fresh"""
+def load_cache(max_age_hours=None):
+    """
+    Load cached fight data if it exists and is fresh
+    
+    Args:
+        max_age_hours: If provided, accept cache up to this many hours old (for fallback scenarios)
+    """
     if not os.path.exists(CACHE_FILE):
         logger.debug("No cache file found")
         return None
@@ -416,8 +421,14 @@ def load_cache():
         cache_time = datetime.fromisoformat(cache_data['timestamp'])
         age = datetime.now() - cache_time
         
-        if age < CACHE_DURATION:
-            logger.info(f"[OK] Using cached data from {cache_time.strftime('%Y-%m-%d %H:%M:%S')} (age: {age.seconds//60} minutes)")
+        # Use custom max age if provided (for fallback), otherwise use default CACHE_DURATION
+        max_age = timedelta(hours=max_age_hours) if max_age_hours else CACHE_DURATION
+        
+        if age < max_age:
+            if max_age_hours:
+                logger.warning(f"[FALLBACK] Using stale cache from {cache_time.strftime('%Y-%m-%d %H:%M:%S')} (age: {age.seconds//3600} hours)")
+            else:
+                logger.info(f"[OK] Using cached data from {cache_time.strftime('%Y-%m-%d %H:%M:%S')} (age: {age.seconds//60} minutes)")
             
             # Apply time overrides to cached data
             fights = cache_data['fights']
@@ -511,6 +522,58 @@ def fetch_fights():
     
     # Add MMA Fighting UFC fights
     fights.extend(mma_fighting_ufc)
+    
+    # VALIDATION: Check if scrapers failed
+    ufc_count = len(mma_fighting_ufc)
+    boxing_count = len(boxingschedule_fights)
+    total_count = len(fights)
+    
+    scraper_failed = False
+    failure_reasons = []
+    
+    if total_count == 0:
+        scraper_failed = True
+        failure_reasons.append("CRITICAL: No fights scraped at all")
+    elif ufc_count < 10:
+        scraper_failed = True
+        failure_reasons.append(f"UFC scraper: Only {ufc_count} fights (expected 50+)")
+    elif boxing_count < 5:
+        scraper_failed = True
+        failure_reasons.append(f"Boxing scraper: Only {boxing_count} fights (expected 10+)")
+    
+    if scraper_failed:
+        log("\n🚨 SCRAPER FAILURE DETECTED 🚨\n")
+        for reason in failure_reasons:
+            log(f"  ❌ {reason}")
+        
+        # Send email alert
+        from email_alerts import send_alert
+        alert_message = "\n".join([
+            "Fight Schedule scraper failure detected:",
+            "",
+            *[f"- {r}" for r in failure_reasons],
+            "",
+            f"UFC fights scraped: {ufc_count}",
+            f"Boxing fights scraped: {boxing_count}",
+            f"Total fights: {total_count}",
+            "",
+            "Using old cache data. Check Railway logs for details.",
+            "URL: https://railway.app"
+        ])
+        send_alert("Scraper Failure", alert_message)
+        
+        # Return old cache instead
+        log("\n⚠️  Using stale cache data instead of failed scrape\n")
+        debug_log.close()
+        
+        old_cache = load_cache(max_age_hours=72)  # Accept up to 3-day old cache
+        if old_cache:
+            return old_cache
+        else:
+            log("❌ No old cache available - returning empty results")
+            return []
+    
+    log(f"\n✓ Validation passed: UFC={ufc_count}, Boxing={boxing_count}, Total={total_count}\n")
     
     # TheSportsDB merge disabled
     merged_count = 0
