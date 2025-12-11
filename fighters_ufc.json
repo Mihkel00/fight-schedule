@@ -845,7 +845,7 @@
   "Ketlen Vieira": "/static/fighters/ketlen-vieira.png",
   "Tre’ston Vines": "/static/fighters/tre’ston-vines.png",
   "Mateo Vogel": "/themes/custom/ufc/assets/img/no-profile-image.png",
-  "Alexander Volkanovski": "/static/fighters/alexander-volkanovski.png",
+  "Alexander Volkanovski": "https://pub-b7abf892d78f4fa89bc73c046d01fc05.r2.dev/fighters/alexander-volkanovski.png",
   "Alexander Volkov": "/static/fighters/alexander-volkov.png",
   "Mark Vologdin": "/static/fighters/mark-vologdin.png",
   "Chase Waldon": "/static/fighters/chase-waldon.png",
