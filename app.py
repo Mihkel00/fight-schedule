@@ -946,6 +946,7 @@ def clear_cache():
 def upload_fighter_images():
     """Admin interface for uploading fighter images"""
     from werkzeug.utils import secure_filename
+    from r2_storage import upload_fighter_image, is_r2_enabled
     
     if request.method == 'POST':
         fighter_name = request.form.get('fighter_name')
@@ -964,21 +965,31 @@ def upload_fighter_images():
             ext = os.path.splitext(file.filename)[1] or '.png'
             filename = filename + ext
             
-            # Save file
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
+            # Upload to R2 or save locally
+            image_url = None
+            if is_r2_enabled():
+                file.seek(0)  # Reset file pointer
+                image_url = upload_fighter_image(file.read(), filename)
+            
+            # Fallback to local if R2 fails or not configured
+            if not image_url:
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.seek(0)  # Reset file pointer
+                file.save(filepath)
+                image_url = f'/static/fighters/{filename}'
+                logger.info(f"Saved locally (R2 unavailable): {filename}")
             
             # Update JSON
             json_file = 'fighters.json' if sport == 'Boxing' else 'fighters_ufc.json'
             with open(json_file, 'r', encoding='utf-8') as f:
                 fighters = json.load(f)
             
-            fighters[fighter_name] = f'/static/fighters/{filename}'
+            fighters[fighter_name] = image_url
             
             with open(json_file, 'w', encoding='utf-8') as f:
                 json.dump(fighters, f, indent=2, ensure_ascii=False)
             
-            logger.info(f"Uploaded image for {fighter_name}: {filename}")
+            logger.info(f"Uploaded image for {fighter_name}: {image_url}")
             return redirect('/admin/upload-images')
     
     # GET - show missing fighters
