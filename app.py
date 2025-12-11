@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, make_response
+from flask import Flask, render_template, request, redirect, make_response, send_file
 from flask_compress import Compress
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
@@ -1225,6 +1225,25 @@ def manage_fighters():
         error_details = f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
         logger.error(f"manage_fighters error: {error_details}")
         return f"<pre>{error_details}</pre>", 500
+
+@app.route('/admin/download-jsons')
+def download_jsons():
+    """Download updated fighter JSONs as zip"""
+    import zipfile
+    from io import BytesIO
+    
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        zip_file.write('fighters.json', 'fighters.json')
+        zip_file.write('fighters_ufc.json', 'fighters_ufc.json')
+    
+    zip_buffer.seek(0)
+    return send_file(
+        zip_buffer,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name='fighters_updated.zip'
+    )
 
 @app.route('/privacy')
 def privacy():
