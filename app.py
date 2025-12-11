@@ -684,6 +684,12 @@ def home():
             img = get_fighter_image(fight['fighter2'])
             if img:
                 fight['fighter2_image'] = img
+        
+        # Generate slugs for URLs
+        if fight.get('sport') == 'Boxing' and fight.get('is_main_event'):
+            f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
+            f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
+            fight['slug'] = f"{f1}-vs-{f2}-{fight['date']}"
     
     return render_template('index.html', 
                          featured_fights=featured_fights,
@@ -849,57 +855,43 @@ def event_detail(event_slug):
 
 @app.route('/boxing-event/<event_slug>')
 def boxing_event_detail(event_slug):
-    """Show boxing event details grouped by venue and date"""
+    """Show boxing event details using fighter names in URL"""
     logger.info(f"Boxing event accessed: {event_slug}")
     
-    # Load all fights using fetch_fights
     all_fights = fetch_fights()
-    
-    # Filter to boxing only
     boxing_fights = [f for f in all_fights if f.get('sport') == 'Boxing']
     
-    # Parse slug (format: venue-slug-YYYY-MM-DD)
+    # Parse slug: fighter1-vs-fighter2-YYYY-MM-DD
     parts = event_slug.rsplit('-', 3)
     if len(parts) >= 3:
         date_str = f"{parts[-3]}-{parts[-2]}-{parts[-1]}"
+        fighter_slug = '-'.join(parts[:-3])
     else:
-        date_str = ''
+        return "Invalid event URL", 404
     
-    # Group fights by venue + date (with 1-day tolerance)
-    from datetime import datetime, timedelta
-    target_date = datetime.strptime(date_str, '%Y-%m-%d') if date_str else None
-    
-    # Find all fights at same venue within 1 day
-    event_fights = []
+    # Find main event matching this slug
+    main_event_fight = None
     for fight in boxing_fights:
-        if not target_date:
-            continue
-        
-        fight_date = datetime.strptime(fight['date'], '%Y-%m-%d')
-        date_diff = abs((fight_date - target_date).days)
-        
-        # Check if same venue and within 1 day
-        venue_matches = False
-        fight_venue_clean = fight.get('venue', '').lower().replace(',', '').replace('.', '')
-        
-        for part in event_slug.split('-'):
-            if len(part) > 2 and part in fight_venue_clean:
-                venue_matches = True
+        if fight['date'] == date_str and fight.get('is_main_event'):
+            f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
+            f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
+            fight_slug = f"{f1}-vs-{f2}"
+            
+            if fight_slug == fighter_slug:
+                main_event_fight = fight
                 break
-        
-        if venue_matches and date_diff <= 1:
-            event_fights.append(fight)
     
-    if not event_fights:
-        logger.warning(f"No boxing fights found for {event_slug}")
+    if not main_event_fight:
+        logger.warning(f"No boxing fight found for {event_slug}")
         return "Event not found", 404
+    
+    # Get all fights from same venue/date
+    event_fights = [f for f in boxing_fights 
+                    if f['date'] == date_str and f['venue'] == main_event_fight['venue']]
     
     logger.info(f"Found {len(event_fights)} fights for this event")
     
-    # Fights are already in correct order from scraper (main event first)
-    # Just sort by is_main_event flag to ensure main is first
     event_fights_sorted = sorted(event_fights, key=lambda x: not x.get('is_main_event', False))
-    main_event_fight = event_fights_sorted[0]
     undercard = event_fights_sorted[1:]
     
     logger.info(f"Main event: {main_event_fight['fighter1']} vs {main_event_fight['fighter2']}")
@@ -960,12 +952,13 @@ def sitemap():
             pages.append({'loc': f"https://fightschedule.live/event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.8'})
             seen.add(slug)
     
-    # Boxing events
-    boxing_fights = [f for f in fights if f.get('sport') == 'Boxing']
+    # Boxing events - only main events
+    boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event')]
     seen = set()
     for fight in boxing_fights[:20]:
-        venue_slug = fight['venue'].lower().replace(' ', '-').replace(',', '').replace('.', '').replace("'", '')
-        slug = f"{venue_slug}-{fight['date']}"
+        f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
+        f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
+        slug = f"{f1}-vs-{f2}-{fight['date']}"
         if slug not in seen:
             pages.append({'loc': f"https://fightschedule.live/boxing-event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.7'})
             seen.add(slug)

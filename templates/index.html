@@ -564,7 +564,7 @@
                 </button>
                 <div id="boxing-scroll" class="scroll-container pb-6">
                 {% for fight in boxing_fights %}
-                <a href="/boxing-event/{{ fight.venue|lower|replace(' ', '-')|replace(',', '')|replace('.', '')|replace("'", '') }}-{{ fight.date }}" 
+                <a href="/boxing-event/{{ fight.slug }}" 
                    class="scroll-item w-80 block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
                     <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
