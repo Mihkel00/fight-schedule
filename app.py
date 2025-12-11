@@ -1234,6 +1234,21 @@ def manage_fighters():
         logger.error(f"manage_fighters error: {error_details}")
         return f"<pre>{error_details}</pre>", 500
 
+@app.route('/admin/test-email')
+def test_email():
+    """Test email alerts"""
+    from email_alerts import send_alert
+    
+    success = send_alert(
+        "Test Alert", 
+        "This is a test email from Fight Schedule.\n\nIf you received this, email alerts are working!"
+    )
+    
+    if success:
+        return "✓ Test email sent! Check your inbox."
+    else:
+        return "✗ Email failed. Check Railway logs for error details.", 500
+
 @app.route('/privacy')
 def privacy():
     """Privacy and cookie policy page"""
