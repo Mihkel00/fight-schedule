@@ -542,28 +542,20 @@ def fetch_fights():
         failure_reasons.append(f"Boxing scraper: Only {boxing_count} fights (expected 10+)")
     
     if scraper_failed:
-        log("\n🚨 SCRAPER FAILURE DETECTED 🚨\n")
+        log("\n" + "="*60)
+        log("🚨🚨🚨 SCRAPER FAILURE DETECTED 🚨🚨🚨")
+        log("="*60)
         for reason in failure_reasons:
-            log(f"  ❌ {reason}")
+            log(f"❌ {reason}")
+            logger.error(f"SCRAPER FAILURE: {reason}")
         
-        # Send email alert
-        from email_alerts import send_alert
-        alert_message = "\n".join([
-            "Fight Schedule scraper failure detected:",
-            "",
-            *[f"- {r}" for r in failure_reasons],
-            "",
-            f"UFC fights scraped: {ufc_count}",
-            f"Boxing fights scraped: {boxing_count}",
-            f"Total fights: {total_count}",
-            "",
-            "Using old cache data. Check Railway logs for details.",
-            "URL: https://railway.app"
-        ])
-        send_alert("Scraper Failure", alert_message)
+        log(f"\nUFC fights: {ufc_count}")
+        log(f"Boxing fights: {boxing_count}")
+        log(f"Total: {total_count}")
+        log("\n⚠️  Using stale cache data instead of failed scrape")
+        log("="*60 + "\n")
         
         # Return old cache instead
-        log("\n⚠️  Using stale cache data instead of failed scrape\n")
         debug_log.close()
         
         old_cache = load_cache(max_age_hours=72)  # Accept up to 3-day old cache
@@ -1233,28 +1225,6 @@ def manage_fighters():
         error_details = f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
         logger.error(f"manage_fighters error: {error_details}")
         return f"<pre>{error_details}</pre>", 500
-
-@app.route('/admin/test-email')
-def test_email():
-    """Test email alerts"""
-    from email_alerts import send_alert, SMTP_USER, ALERT_EMAIL
-    
-    # Check configuration
-    if not SMTP_USER or not ALERT_EMAIL:
-        return f"Email not configured. Check Railway variables:<br>SMTP_USER={SMTP_USER}<br>ALERT_EMAIL={ALERT_EMAIL}", 500
-    
-    try:
-        success = send_alert(
-            "Test Alert", 
-            "This is a test email from Fight Schedule.\n\nIf you received this, email alerts are working!"
-        )
-        
-        if success:
-            return f"✓ Test email sent to {ALERT_EMAIL}! Check your inbox."
-        else:
-            return "✗ Email failed. Check Railway logs for error details.", 500
-    except Exception as e:
-        return f"✗ Exception: {str(e)}", 500
 
 @app.route('/privacy')
 def privacy():
