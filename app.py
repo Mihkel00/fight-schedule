@@ -1237,17 +1237,24 @@ def manage_fighters():
 @app.route('/admin/test-email')
 def test_email():
     """Test email alerts"""
-    from email_alerts import send_alert
+    from email_alerts import send_alert, SMTP_USER, ALERT_EMAIL
     
-    success = send_alert(
-        "Test Alert", 
-        "This is a test email from Fight Schedule.\n\nIf you received this, email alerts are working!"
-    )
+    # Check configuration
+    if not SMTP_USER or not ALERT_EMAIL:
+        return f"Email not configured. Check Railway variables:<br>SMTP_USER={SMTP_USER}<br>ALERT_EMAIL={ALERT_EMAIL}", 500
     
-    if success:
-        return "✓ Test email sent! Check your inbox."
-    else:
-        return "✗ Email failed. Check Railway logs for error details.", 500
+    try:
+        success = send_alert(
+            "Test Alert", 
+            "This is a test email from Fight Schedule.\n\nIf you received this, email alerts are working!"
+        )
+        
+        if success:
+            return f"✓ Test email sent to {ALERT_EMAIL}! Check your inbox."
+        else:
+            return "✗ Email failed. Check Railway logs for error details.", 500
+    except Exception as e:
+        return f"✗ Exception: {str(e)}", 500
 
 @app.route('/privacy')
 def privacy():
