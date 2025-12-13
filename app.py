@@ -686,7 +686,7 @@ def home():
                 fight['fighter2_image'] = img
         
         # Generate slugs for URLs
-        if fight.get('sport') == 'Boxing' and fight.get('is_main_event'):
+        if fight.get('sport') == 'Boxing':
             f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
             f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
             fight['slug'] = f"{f1}-vs-{f2}-{fight['date']}"
