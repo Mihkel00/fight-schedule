@@ -852,9 +852,9 @@ def event_detail(event_slug):
     event_data['preview'] = preview
     
     # SEO metadata
-    event_data['meta_description'] = f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']} - {matched_event_name} on {main_event_fight['date']} at {main_event_fight['venue']}. Full fight card with main card and prelims, plus AI-powered fight preview."
+    event_data['meta_description'] = f"{matched_event_name} on {main_event_fight['date']} at {main_event_fight['venue']}. Full fight card, main card and prelims."
     event_data['canonical_url'] = f"https://fightschedule.live/event/{event_slug}"
-    event_data['page_title'] = f"{matched_event_name}: {main_event_fight['fighter1']} vs. {main_event_fight['fighter2']} - Fight Schedule"
+    event_data['page_title'] = f"{matched_event_name} - Fight Schedule"
     
     return render_template('event_detail.html', event=event_data)
 
