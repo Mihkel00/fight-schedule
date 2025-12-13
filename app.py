@@ -851,6 +851,11 @@ def event_detail(event_slug):
     
     event_data['preview'] = preview
     
+    # SEO metadata
+    event_data['meta_description'] = f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']} - {matched_event_name} on {main_event_fight['date']} at {main_event_fight['venue']}. Full fight card with main card and prelims, plus AI-powered fight preview."
+    event_data['canonical_url'] = f"https://fightschedule.live/event/{event_slug}"
+    event_data['page_title'] = f"{matched_event_name}: {main_event_fight['fighter1']} vs. {main_event_fight['fighter2']} - Fight Schedule"
+    
     return render_template('event_detail.html', event=event_data)
 
 @app.route('/boxing-event/<event_slug>')
@@ -930,6 +935,11 @@ def boxing_event_detail(event_slug):
     )
     
     event_data['preview'] = preview
+    
+    # SEO metadata
+    event_data['meta_description'] = f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']} - {main_event_fight.get('weight_class', 'Boxing match')} on {main_event_fight['date']} at {main_event_fight['venue']}, {main_event_fight['location']}. Full fight card and AI-powered preview."
+    event_data['canonical_url'] = f"https://fightschedule.live/boxing-event/{event_slug}"
+    event_data['page_title'] = f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']} - Fight Schedule"
     
     return render_template('boxing_event.html', event=event_data)
 

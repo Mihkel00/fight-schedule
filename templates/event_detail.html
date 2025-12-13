@@ -12,7 +12,12 @@
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ event.event_name }} - Fight Schedule</title>
+    <title>{{ event.page_title }}</title>
+    <meta name="description" content="{{ event.meta_description }}">
+    <link rel="canonical" href="{{ event.canonical_url }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
