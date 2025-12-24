@@ -66,7 +66,15 @@ def scrape_boxing_events():
             date_str = date_match.group(1)
             year = datetime.now().year
             try:
+                # Parse date with current year first
                 date_obj = datetime.strptime(f"{date_str} {year}", "%B %d %Y")
+                
+                # If parsed date is more than 60 days in the past, assume it's next year
+                # This handles December → January rollover
+                if (datetime.now() - date_obj).days > 60:
+                    year += 1
+                    date_obj = datetime.strptime(f"{date_str} {year}", "%B %d %Y")
+                
                 current_date = date_obj.strftime("%Y-%m-%d")
             except:
                 continue
