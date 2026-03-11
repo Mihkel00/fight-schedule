@@ -726,12 +726,16 @@ def home():
     today_iso = today_date.isoformat()
 
     # Candidates: all main events / non-prelim fights within the next 7 days
+    # Exclude fights with TBA fighters or TBA times from featured section
     featured_candidates = [
         f for f in fights
         if f.get('date', '') >= today_iso
         and f.get('date', '') <= week_cutoff
         and (f.get('is_main_event') or f.get('card_type') in ('Main Card', 'Title', None))
         and f.get('card_type') != 'Prelims'
+        and f.get('fighter1', 'TBA') != 'TBA'
+        and f.get('fighter2', 'TBA') != 'TBA'
+        and f.get('time') and f.get('time') != 'TBA'
     ]
 
     # Score and sort: highest score first, then soonest date as tiebreaker
@@ -760,6 +764,9 @@ def home():
             if f.get('date', '') >= today_iso
             and (f.get('is_main_event') or f.get('card_type') in ('Main Card', 'Title', None))
             and f.get('card_type') != 'Prelims'
+            and f.get('fighter1', 'TBA') != 'TBA'
+            and f.get('fighter2', 'TBA') != 'TBA'
+            and f.get('time') and f.get('time') != 'TBA'
         ]
         fallback_candidates.sort(
             key=lambda f: (-score_fight_for_featuring(f, today_date), f.get('date', ''))
