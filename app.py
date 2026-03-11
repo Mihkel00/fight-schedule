@@ -399,8 +399,52 @@ def is_big_name_fight(fight):
     model = BigNameFighter()
     fighter1 = fight.get('fighter1', '')
     fighter2 = fight.get('fighter2', '')
-    
+
     return model.is_big_name(fighter1) or model.is_big_name(fighter2)
+
+
+def score_fight_for_featuring(fight, today_date):
+    """
+    Score a fight for the Featured section. Higher = more prominent.
+
+    Scoring:
+      +50  Title fight
+      +30  Big-name fighter involved
+      +20  Main event / main card
+      +10  Has confirmed (non-estimated) time
+      +5   Per day closer (max 7 days out = +35 for today, +5 for 7 days away)
+    """
+    score = 0
+
+    # Title fight
+    wc = fight.get('weight_class', '')
+    if 'Title' in wc or fight.get('card_type') == 'Title':
+        score += 50
+
+    # Big-name fighter
+    if is_big_name_fight(fight):
+        score += 30
+
+    # Main event / main card
+    if fight.get('is_main_event') or fight.get('card_type') == 'Main Card':
+        score += 20
+
+    # Confirmed time (not TBA, not estimated)
+    time_val = fight.get('time', 'TBA')
+    if time_val and time_val != 'TBA' and not fight.get('time_estimated', False):
+        score += 10
+
+    # Proximity bonus: closer fights score higher
+    try:
+        from datetime import date as date_cls
+        fight_date = date_cls.fromisoformat(fight['date'])
+        days_away = (fight_date - today_date).days
+        if 0 <= days_away <= 7:
+            score += max(0, (8 - days_away) * 5)  # today=+40, tomorrow=+35, ... 7 days=+5
+    except (ValueError, KeyError):
+        pass
+
+    return score
 
 def load_cache(max_age_hours=None):
     """
@@ -630,33 +674,64 @@ def home():
     ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
     # Boxing: Only show main events (first fight per date/venue)
     boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event') == True]
-    
-    # FEATURED FIGHTS
+
+    # FEATURED FIGHTS - score-based, filtered to this week (next 7 days)
+    from datetime import date as date_cls, timedelta
+    today_date = date_cls.today()
+    week_cutoff = (today_date + timedelta(days=7)).isoformat()
+    today_iso = today_date.isoformat()
+
+    # Candidates: all main events / non-prelim fights within the next 7 days
+    featured_candidates = [
+        f for f in fights
+        if f.get('date', '') >= today_iso
+        and f.get('date', '') <= week_cutoff
+        and (f.get('is_main_event') or f.get('card_type') in ('Main Card', 'Title', None))
+        and f.get('card_type') != 'Prelims'
+    ]
+
+    # Score and sort: highest score first, then soonest date as tiebreaker
+    featured_candidates.sort(
+        key=lambda f: (-score_fight_for_featuring(f, today_date), f.get('date', ''))
+    )
+
+    # Deduplicate by event: keep only the top-scored fight per event/date combo
+    seen_events = set()
     featured_fights = []
-    
-    # UFC Featured: Next title fight OR first UFC event
-    ufc_featured = None
-    for fight in ufc_fights:
-        if fight.get('weight_class') == 'Title':
-            ufc_featured = fight
+    for fight in featured_candidates:
+        event_key = fight.get('event_name') or f"{fight['fighter1']} vs {fight['fighter2']}"
+        dedup_key = f"{event_key}|{fight['date']}"
+        if dedup_key not in seen_events:
+            seen_events.add(dedup_key)
+            featured_fights.append(fight)
+        if len(featured_fights) >= 6:
             break
-    if not ufc_featured and ufc_fights:
-        ufc_featured = ufc_fights[0]
-    
-    if ufc_featured:
-        featured_fights.append(ufc_featured)
-        logger.info(f"  Featured UFC: {ufc_featured['fighter1']} vs {ufc_featured['fighter2']}")
-    
-    # Boxing Featured: Next big-name fight
-    boxing_featured = None
-    for fight in boxing_fights:
-        if is_big_name_fight(fight):
-            boxing_featured = fight
-            break
-    
-    if boxing_featured:
-        featured_fights.append(boxing_featured)
-        logger.info(f"  Featured Boxing: {boxing_featured['fighter1']} vs {boxing_featured['fighter2']}")
+
+    # Fallback: if no fights this week, show the next 2 best upcoming fights
+    featured_section_title = 'Featured This Week'
+    if not featured_fights:
+        featured_section_title = 'Coming Up Next'
+        fallback_candidates = [
+            f for f in fights
+            if f.get('date', '') >= today_iso
+            and (f.get('is_main_event') or f.get('card_type') in ('Main Card', 'Title', None))
+            and f.get('card_type') != 'Prelims'
+        ]
+        fallback_candidates.sort(
+            key=lambda f: (-score_fight_for_featuring(f, today_date), f.get('date', ''))
+        )
+        seen_events = set()
+        for fight in fallback_candidates:
+            event_key = fight.get('event_name') or f"{fight['fighter1']} vs {fight['fighter2']}"
+            dedup_key = f"{event_key}|{fight['date']}"
+            if dedup_key not in seen_events:
+                seen_events.add(dedup_key)
+                featured_fights.append(fight)
+            if len(featured_fights) >= 2:
+                break
+
+    for fight in featured_fights:
+        logger.info(f"  Featured: {fight['fighter1']} vs {fight['fighter2']} ({fight['date']}, score={score_fight_for_featuring(fight, today_date)})")
     
     # Remove featured from main lists
     featured_ids = {id(f) for f in featured_fights}
@@ -691,8 +766,9 @@ def home():
             f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
             fight['slug'] = f"{f1}-vs-{f2}-{fight['date']}"
     
-    return render_template('index.html', 
+    return render_template('index.html',
                          featured_fights=featured_fights,
+                         featured_section_title=featured_section_title,
                          ufc_fights=ufc_scroll,
                          boxing_fights=boxing_scroll,
                          coming_soon=coming_soon)

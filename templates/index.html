@@ -446,26 +446,44 @@
         <!-- FEATURED FIGHTS (with extra breathing room) -->
         {% if featured_fights %}
         <div class="mb-16 fight-section">
-            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Featured This Week</h2>
-            
+            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">{{ featured_section_title }}</h2>
+
+            {% if featured_fights|length <= 2 %}
+            {# Grid layout for 1-2 fights #}
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {% else %}
+            {# Carousel layout for 3+ fights #}
+            <div class="scroll-wrapper">
+                <button onclick="scrollContainer('left', 'featured-scroll')" class="scroll-btn scroll-btn-left" aria-label="Scroll left">
+                    <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <button onclick="scrollContainer('right', 'featured-scroll')" class="scroll-btn scroll-btn-right" aria-label="Scroll right">
+                    <svg class="w-5 h-5 text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            <div id="featured-scroll" class="scroll-container pb-6">
+            {% endif %}
+
                 {% for fight in featured_fights %}
-                <a href="{% if fight.sport == 'UFC' %}/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}{% else %}/boxing-event/{{ fight.slug }}{% endif %}" 
-                   class="block bg-dark-card rounded-3xl overflow-hidden border border-dark-border card-hover">
+                <a href="{% if fight.sport == 'UFC' %}/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}{% else %}/boxing-event/{{ fight.slug }}{% endif %}"
+                   class="{% if featured_fights|length > 2 %}scroll-item w-[32rem] flex-shrink-0{% endif %} block bg-dark-card rounded-3xl overflow-hidden border border-dark-border card-hover">
                     <div class="relative h-96">
                         <div class="absolute inset-0 flex">
                             <div class="w-1/2 bg-gradient-to-r from-dark-elevated to-transparent">
-                                <img src="{{ fight.fighter1_image or ('/static/placeholder-fighter-mma.svg' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.svg') }}" 
-                                     alt="{{ fight.fighter1 }}" 
+                                <img src="{{ fight.fighter1_image or ('/static/placeholder-fighter-mma.svg' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.svg') }}"
+                                     alt="{{ fight.fighter1 }}"
                                      class="w-full h-full object-cover opacity-75">
                             </div>
                             <div class="w-1/2 bg-gradient-to-l from-dark-elevated to-transparent">
-                                <img src="{{ fight.fighter2_image or ('/static/placeholder-fighter-mma.svg' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.svg') }}" 
-                                     alt="{{ fight.fighter2 }}" 
+                                <img src="{{ fight.fighter2_image or ('/static/placeholder-fighter-mma.svg' if fight.sport == 'UFC' else '/static/placeholder-fighter-boxing.svg') }}"
+                                     alt="{{ fight.fighter2 }}"
                                      class="w-full h-full object-cover opacity-75">
                             </div>
                         </div>
-                        
+
                         <div class="absolute inset-0 bg-gradient-to-t from-dark-card via-dark-card/50 to-transparent">
                             <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6">
                                 <div class="flex items-end justify-between mb-5">
@@ -478,7 +496,7 @@
                                         <p class="font-work text-sm text-text-secondary mt-1">{{ fight.fighter2 }}</p>
                                     </div>
                                 </div>
-                                
+
                                 <div class="inline-block bg-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} px-3 py-1 rounded-full mb-4">
                                     <span class="font-work text-xs font-semibold uppercase {% if fight.sport != 'UFC' %}text-dark-bg{% endif %}">
                                         {% if fight.sport == 'UFC' %}
@@ -488,7 +506,7 @@
                                         {% endif %}
                                     </span>
                                 </div>
-                                
+
                                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 text-sm font-work">
                                     <div class="flex items-center gap-2">
                                         <svg class="w-4 h-4 text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -510,7 +528,13 @@
                     </div>
                 </a>
                 {% endfor %}
+
+            {% if featured_fights|length <= 2 %}
             </div>
+            {% else %}
+            </div>
+            </div>
+            {% endif %}
         </div>
         {% endif %}
 
