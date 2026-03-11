@@ -1235,7 +1235,7 @@ def upload_fighter_images():
             seen.add(key)
             unique_missing.append(f)
     
-    return render_template('admin/upload_images.html', missing=unique_missing)
+    return render_template('admin/upload_images.html', missing=unique_missing, search_mode=False)
 
 @app.route('/admin/manage-fighters', methods=['GET', 'POST'])
 def manage_fighters():
