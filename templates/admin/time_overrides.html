@@ -1,0 +1,56 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<style>
+    .admin-panel { background: #0a0a0a; color: #f5f5f5; padding: 30px; min-height: 100vh; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .panel-header h1 { font-size: 2rem; font-weight: 700; }
+    .btn { display: inline-block; padding: 10px 20px; border-radius: 4px; font-weight: 600; text-decoration: none; cursor: pointer; border: none; font-size: 0.9rem; }
+    .btn-primary { background: #fb923c; color: #000; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-danger { background: #dc2626; color: #fff; }
+    .table-wrap { background: #141414; border: 1px solid #252525; border-radius: 8px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1a1a1a; text-align: left; padding: 12px 16px; font-size: 0.85rem; text-transform: uppercase; color: #a8a8a8; letter-spacing: 0.5px; }
+    td { padding: 12px 16px; border-top: 1px solid #252525; }
+    tr:hover td { background: #1a1a1a; }
+    .empty { text-align: center; padding: 40px; color: #a8a8a8; }
+    .time-val { color: #fb923c; font-weight: 600; font-size: 1.1rem; }
+</style>
+
+<div class="admin-panel">
+    <div class="panel-header">
+        <h1>Time Overrides</h1>
+        <a href="{{ url_for('.add') }}" class="btn btn-primary">+ Add Override</a>
+    </div>
+
+    <div class="table-wrap">
+        {% if items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Matchup</th>
+                    <th>Date</th>
+                    <th>Override Time</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td><strong>{{ item.matchup }}</strong></td>
+                    <td>{{ item.date }}</td>
+                    <td><span class="time-val">{{ item.time }}</span></td>
+                    <td>
+                        <a href="{{ url_for('.delete', idx=loop.index0) }}" class="btn btn-danger" onclick="return confirm('Delete this override?')">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty">No time overrides. Click "+ Add Override" to set a custom fight time.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
