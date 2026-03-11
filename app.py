@@ -907,6 +907,7 @@ def boxing_event_detail(event_slug):
         'location': main_event_fight['location'],
         'date': main_event_fight['date'],
         'time': main_event_fight.get('time', 'TBA'),
+        'time_estimated': main_event_fight.get('time_estimated', False),
         'fight_count': len(event_fights),
         'streaming': main_event_fight.get('streaming'),  # Add streaming info
         'main_event': {

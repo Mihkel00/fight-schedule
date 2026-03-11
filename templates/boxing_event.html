@@ -84,10 +84,15 @@
             document.querySelectorAll('[data-utc-time]').forEach(elem => {
                 const utcTime = elem.getAttribute('data-utc-time');
                 const date = elem.getAttribute('data-date');
-                
+                const isEstimated = elem.getAttribute('data-estimated') === 'true';
+
                 if (utcTime && date && utcTime !== 'TBA' && utcTime !== '') {
                     const localTime = convertUTCToLocal(date, utcTime);
-                    elem.textContent = localTime;
+                    const prefix = isEstimated ? '~' : '';
+                    elem.textContent = prefix + localTime;
+                    if (isEstimated) {
+                        elem.title = 'Estimated time based on venue region';
+                    }
                 }
             });
         });
@@ -124,7 +129,7 @@
                 <div>
                     <p class="text-xs text-text-tertiary font-work">Date & Time</p>
                     <p class="text-text-primary font-work">
-                        <span class="fight-date">{{ event.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ event.time }}" data-date="{{ event.date }}">{{ event.time or 'TBA' }}</span>
+                        <span class="fight-date">{{ event.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ event.time }}" data-date="{{ event.date }}" data-estimated="{{ event.time_estimated|default(false)|lower }}">{{ '~' if event.time_estimated else '' }}{{ event.time or 'TBA' }}</span>
                     </p>
                 </div>
             </div>
@@ -247,7 +252,7 @@
             <!-- Single Column for Boxing (no prelims) -->
             <div>
                 <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                    All Fights (<span class="fight-time" data-utc-time="{{ event.time }}" data-date="{{ event.date }}">{{ event.time or 'TBA' }}</span>)
+                    All Fights (<span class="fight-time" data-utc-time="{{ event.time }}" data-date="{{ event.date }}" data-estimated="{{ event.time_estimated|default(false)|lower }}">{{ '~' if event.time_estimated else '' }}{{ event.time or 'TBA' }}</span>)
                 </h3>
                 <div class="space-y-3">
                     {% for fight in event.fights %}
