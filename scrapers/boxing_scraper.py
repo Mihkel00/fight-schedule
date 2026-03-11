@@ -6,7 +6,11 @@ Scrapes boxing fight schedules from boxingschedule.co
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import re
+
+UK_ZONE = ZoneInfo('Europe/London')
+UTC_ZONE = ZoneInfo('UTC')
 
 
 def scrape_boxing_events():
@@ -83,15 +87,19 @@ def scrape_boxing_events():
             venue_match = re.search(r':\s+([^|]+)', text)
             current_venue = venue_match.group(1).strip() if venue_match else 'TBA'
             
-            # Extract UK time
+            # Extract UK time and convert to UTC (handles BST/GMT automatically)
             uk_time_match = re.search(r'UK London:\s+(\d+:\d+\s+[AP]M)', text)
             current_uk_time = None
             if uk_time_match:
                 uk_time_str = uk_time_match.group(1)
                 try:
                     time_obj = datetime.strptime(uk_time_str, "%I:%M %p")
-                    current_uk_time = time_obj.strftime("%H:%M")
-                except:
+                    # Build a timezone-aware UK datetime using the event date
+                    uk_dt = datetime(date_obj.year, date_obj.month, date_obj.day,
+                                     time_obj.hour, time_obj.minute, tzinfo=UK_ZONE)
+                    utc_dt = uk_dt.astimezone(UTC_ZONE)
+                    current_uk_time = utc_dt.strftime("%H:%M")
+                except Exception:
                     pass
             
             # Extract streaming

@@ -6,31 +6,52 @@ Scrapes UFC fight schedules from mmafighting.com
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import re
 
+ET_ZONE = ZoneInfo('America/New_York')
+UTC_ZONE = ZoneInfo('UTC')
 
-def convert_et_to_utc(time_et_str):
-    """Convert ET time to UTC (ET is UTC-5 in EST, UTC-4 in EDT)"""
+
+def convert_et_to_utc(time_et_str, event_date=None):
+    """Convert ET time to UTC, handling EST/EDT automatically via zoneinfo.
+
+    Args:
+        time_et_str: Time string like "10 p.m. ET" or "6:30 p.m. ET"
+        event_date: Optional date string (YYYY-MM-DD) for accurate DST lookup.
+                    Falls back to today if not provided.
+    """
     try:
-        time_match = re.search(r'(\d+)\s*(a\.m\.|p\.m\.)', time_et_str.lower())
+        time_match = re.search(r'(\d+)(?::(\d+))?\s*(a\.m\.|p\.m\.)', time_et_str.lower())
         if not time_match:
             return None
-        
+
         hour = int(time_match.group(1))
-        am_pm = time_match.group(2)
-        
+        minute = int(time_match.group(2)) if time_match.group(2) else 0
+        am_pm = time_match.group(3)
+
         # Convert to 24-hour format
         if am_pm == 'p.m.' and hour != 12:
             hour += 12
         elif am_pm == 'a.m.' and hour == 12:
             hour = 0
-        
-        # ET is typically UTC-5 (EST) or UTC-4 (EDT)
-        # For simplicity, using EST (UTC-5). Add 5 hours to get UTC
-        utc_hour = (hour + 5) % 24
-        
-        return f"{utc_hour:02d}:00"
-    except:
+
+        # Use event date for accurate DST determination, fall back to today
+        if event_date:
+            try:
+                ref_date = datetime.strptime(event_date, '%Y-%m-%d').date()
+            except ValueError:
+                ref_date = datetime.now(UTC_ZONE).date()
+        else:
+            ref_date = datetime.now(UTC_ZONE).date()
+
+        # Build timezone-aware ET datetime, then convert to UTC
+        et_dt = datetime(ref_date.year, ref_date.month, ref_date.day,
+                         hour, minute, tzinfo=ET_ZONE)
+        utc_dt = et_dt.astimezone(UTC_ZONE)
+
+        return utc_dt.strftime('%H:%M')
+    except Exception:
         return None
 
 
@@ -105,15 +126,15 @@ def scrape_ufc_events():
                 # Extract times
                 main_card_time = None
                 if 'main card' in details_text.lower():
-                    main_card_match = re.search(r'main card.*?(\d+\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
+                    main_card_match = re.search(r'main card.*?(\d+(?::\d+)?\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
                     if main_card_match:
-                        main_card_time = convert_et_to_utc(main_card_match.group(1))
-                
+                        main_card_time = convert_et_to_utc(main_card_match.group(1), event_date=date_formatted)
+
                 prelim_time = None
                 if 'prelim' in details_text.lower() and 'early' not in details_text.lower():
-                    prelim_match = re.search(r'prelim(?:s|inary card)?.*?(\d+\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
+                    prelim_match = re.search(r'prelim(?:s|inary card)?.*?(\d+(?::\d+)?\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
                     if prelim_match:
-                        prelim_time = convert_et_to_utc(prelim_match.group(1))
+                        prelim_time = convert_et_to_utc(prelim_match.group(1), event_date=date_formatted)
                 
                 print(f"MMA Fighting: {event_name} - {date_formatted}")
                 
@@ -174,10 +195,12 @@ def scrape_ufc_events():
                                     calculated_prelim_time = prelim_time
                                     if not prelim_time and main_card_time:
                                         try:
-                                            main_hour = int(main_card_time.split(':')[0])
+                                            parts = main_card_time.split(':')
+                                            main_hour = int(parts[0])
+                                            main_min = int(parts[1]) if len(parts) > 1 else 0
                                             prelim_hour = (main_hour - 2) % 24
-                                            calculated_prelim_time = f"{prelim_hour:02d}:00"
-                                        except:
+                                            calculated_prelim_time = f"{prelim_hour:02d}:{main_min:02d}"
+                                        except Exception:
                                             calculated_prelim_time = main_card_time
                                     
                                     fights.append({
