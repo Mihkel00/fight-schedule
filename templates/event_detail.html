@@ -15,6 +15,80 @@
     <title>{{ event.page_title }}</title>
     <meta name="description" content="{{ event.meta_description }}">
     <link rel="canonical" href="{{ event.canonical_url }}">
+
+    <!-- Structured Data: SportsEvent (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SportsEvent",
+        "name": "{{ event.event_name|e }}",
+        "description": "{{ event.meta_description|e }}",
+        "url": "{{ event.canonical_url }}",
+        "sport": "Mixed Martial Arts",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
+        {% if event.date and event.main_event.time and event.main_event.time != 'TBA' %}
+        "startDate": "{{ event.date }}T{{ '%02d'|format(event.main_event.time.split(':')[0]|int) }}:{{ '%02d'|format(event.main_event.time.split(':')[1]|default('00', true)|int) }}:00Z",
+        {% elif event.date %}
+        "startDate": "{{ event.date }}",
+        {% endif %}
+        "location": {
+            "@type": "Place",
+            "name": "{{ event.venue|e }}",
+            "address": "{{ event.venue|e }}"
+        },
+        "organizer": {
+            "@type": "Organization",
+            "name": "UFC",
+            "url": "https://www.ufc.com"
+        },
+        "competitor": [
+            {
+                "@type": "Person",
+                "name": "{{ event.main_event.fighter1|e }}"
+                {% if event.main_event.fighter1_image and '/static/' not in event.main_event.fighter1_image %}
+                ,"image": "{{ event.main_event.fighter1_image }}"
+                {% endif %}
+            },
+            {
+                "@type": "Person",
+                "name": "{{ event.main_event.fighter2|e }}"
+                {% if event.main_event.fighter2_image and '/static/' not in event.main_event.fighter2_image %}
+                ,"image": "{{ event.main_event.fighter2_image }}"
+                {% endif %}
+            }
+        ]
+        {% if event.main_card|length > 1 or event.prelims %}
+        ,"subEvent": [
+            {% set all_fights = [] %}
+            {% for fight in event.main_card %}
+            {% if not loop.first %},{% endif %}
+            {
+                "@type": "SportsEvent",
+                "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
+                "sport": "Mixed Martial Arts",
+                "competitor": [
+                    {"@type": "Person", "name": "{{ fight.fighter1|e }}"},
+                    {"@type": "Person", "name": "{{ fight.fighter2|e }}"}
+                ]
+            }
+            {% endfor %}
+            {% for fight in event.prelims %}
+            ,{
+                "@type": "SportsEvent",
+                "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
+                "sport": "Mixed Martial Arts",
+                "competitor": [
+                    {"@type": "Person", "name": "{{ fight.fighter1|e }}"},
+                    {"@type": "Person", "name": "{{ fight.fighter2|e }}"}
+                ]
+            }
+            {% endfor %}
+        ]
+        {% endif %}
+    }
+    </script>
+
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
