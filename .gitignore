@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 *.pyo
+logs/
+
+# Ephemeral cache (regenerated at runtime)
+fights_cache.json

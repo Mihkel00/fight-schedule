@@ -3,6 +3,7 @@ from flask_compress import Compress
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
 import os
+import shutil
 import requests
 from datetime import datetime, timedelta
 import json
@@ -17,9 +18,52 @@ from bs4 import BeautifulSoup
 # Import scrapers
 from scrapers import scrape_ufc_events, scrape_boxing_events
 
+# ============================================================================
+# PERSISTENT DATA DIRECTORY
+# ============================================================================
+# On Railway: mount a persistent volume at /data and set DATA_DIR=/data
+# Locally: defaults to ./data (relative to project root)
+DATA_DIR = os.environ.get('DATA_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
+
+def data_path(filename):
+    """Get full path for a file in the persistent data directory"""
+    return os.path.join(DATA_DIR, filename)
+
+def _seed_data_files():
+    """
+    On first deploy, copy git-tracked seed files into DATA_DIR if they
+    don't already exist there. This ensures a fresh Railway volume gets
+    populated with the initial fighter databases and config.
+    """
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(os.path.join(DATA_DIR, 'logs'), exist_ok=True)
+
+    project_root = os.path.dirname(os.path.abspath(__file__))
+
+    # Files to seed: (source relative to project root, dest relative to DATA_DIR)
+    seed_files = [
+        ('fighters.json', 'fighters.json'),
+        ('fighters_ufc.json', 'fighters_ufc.json'),
+        ('time_overrides.json', 'time_overrides.json'),
+        ('data/big_name_fighters.json', 'big_name_fighters.json'),
+        ('data/fight_previews.json', 'fight_previews.json'),
+        ('data/fighter_image_overrides.json', 'fighter_image_overrides.json'),
+        ('data/manual_events.json', 'manual_events.json'),
+    ]
+
+    for src_rel, dest_rel in seed_files:
+        src = os.path.join(project_root, src_rel)
+        dest = data_path(dest_rel)
+        if not os.path.exists(dest) and os.path.exists(src):
+            shutil.copy2(src, dest)
+            print(f"[SEED] Copied {src_rel} → {dest}")
+
+_seed_data_files()
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/fighters'
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file size
+app.config['DATA_DIR'] = DATA_DIR  # Make available to admin views
 Compress(app)  # Enable gzip compression for all responses
 
 # Setup Flask-Admin
@@ -35,15 +79,15 @@ def redirect_www():
 # LOGGING SETUP
 # ============================================================================
 # Create logs directory if it doesn't exist
-if not os.path.exists('logs'):
-    os.makedirs('logs')
+log_dir = os.path.join(DATA_DIR, 'logs')
+os.makedirs(log_dir, exist_ok=True)
 
 # Set up logging to both file and console
 logger = logging.getLogger('fight_schedule')
 logger.setLevel(logging.DEBUG)
 
 # File handler (rotates at 10MB, keeps 3 backup files)
-file_handler = RotatingFileHandler('logs/app.log', maxBytes=10*1024*1024, backupCount=3)
+file_handler = RotatingFileHandler(os.path.join(log_dir, 'app.log'), maxBytes=10*1024*1024, backupCount=3)
 file_handler.setLevel(logging.DEBUG)
 
 # Console handler (shows in terminal)
@@ -136,8 +180,8 @@ BIG_NAME_FIGHTERS = [
     'Manny Pacquiao',
 ]
 
-# Cache file path
-CACHE_FILE = 'fights_cache.json'
+# Cache file path (in persistent data directory)
+CACHE_FILE = data_path('fights_cache.json')
 CACHE_DURATION = timedelta(hours=6)  # Refresh every 6 hours
 
 def format_fight_date(date_str):
@@ -176,25 +220,25 @@ app.jinja_env.filters['format_date'] = format_fight_date
 app.jinja_env.filters['format_time'] = format_fight_time
 
 def load_fighter_database():
-    """Load fighters.json and fighters_ufc.json if they exist"""
+    """Load fighters.json and fighters_ufc.json from persistent data directory"""
     fighters_db = {}
-    
+
     # Load general fighter database (from TheSportsDB)
     try:
-        with open('fighters.json', 'r', encoding='utf-8') as f:
+        with open(data_path('fighters.json'), 'r', encoding='utf-8') as f:
             fighters_db.update(json.load(f))
     except:
         pass
-    
+
     # Load UFC-specific database (from UFC.com scraper)
     try:
-        with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+        with open(data_path('fighters_ufc.json'), 'r', encoding='utf-8') as f:
             ufc_db = json.load(f)
             # UFC database takes priority for UFC fighters
             fighters_db.update(ufc_db)
     except:
         pass
-    
+
     return fighters_db
 
 def get_fighter_image(fighter_name):
@@ -217,9 +261,9 @@ def get_fighter_image(fighter_name):
 # ============================================================================
 
 def load_previews():
-    """Load cached fight previews from JSON file"""
+    """Load cached fight previews from persistent data directory"""
     try:
-        with open('data/fight_previews.json', 'r', encoding='utf-8') as f:
+        with open(data_path('fight_previews.json'), 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
         logger.warning(f"Could not load previews: {e}")
@@ -239,7 +283,7 @@ def save_preview(preview_id, preview_data):
         
         previews = load_previews()
         previews[preview_id] = preview_data
-        with open('data/fight_previews.json', 'w', encoding='utf-8') as f:
+        with open(data_path('fight_previews.json'), 'w', encoding='utf-8') as f:
             json.dump(previews, f, indent=2, ensure_ascii=False)
         logger.info(f"Saved preview: {preview_id}")
     except Exception as e:
@@ -359,9 +403,9 @@ def get_or_generate_preview(preview_id, fighter1, fighter2, sport, is_title, wei
 # ============================================================================
 
 def load_time_overrides():
-    """Load manual time overrides from time_overrides.json"""
+    """Load manual time overrides from persistent data directory"""
     try:
-        with open('time_overrides.json', 'r', encoding='utf-8') as f:
+        with open(data_path('time_overrides.json'), 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
         return {}
@@ -1070,7 +1114,7 @@ def robots():
 @app.route('/admin/clear-cache')
 def clear_cache():
     """Clear the fights cache file"""
-    cache_file = 'fights_cache.json'
+    cache_file = CACHE_FILE
     if os.path.exists(cache_file):
         os.remove(cache_file)
         logger.info("Cache cleared manually via admin route")
@@ -1114,13 +1158,13 @@ def upload_fighter_images():
                 image_url = f'/static/fighters/{filename}'
                 logger.info(f"Saved locally (R2 unavailable): {filename}")
             
-            # Update JSON
-            json_file = 'fighters.json' if sport == 'Boxing' else 'fighters_ufc.json'
+            # Update JSON in persistent data directory
+            json_file = data_path('fighters.json') if sport == 'Boxing' else data_path('fighters_ufc.json')
             with open(json_file, 'r', encoding='utf-8') as f:
                 fighters = json.load(f)
-            
+
             fighters[fighter_name] = image_url
-            
+
             with open(json_file, 'w', encoding='utf-8') as f:
                 json.dump(fighters, f, indent=2, ensure_ascii=False)
             
@@ -1132,15 +1176,15 @@ def upload_fighter_images():
     show_all = request.args.get('show_all') == 'true'
     
     try:
-        with open('fights_cache.json', 'r') as f:
+        with open(CACHE_FILE, 'r') as f:
             cache = json.load(f)
     except:
         return "No cache found. Visit homepage first to generate cache.", 404
-    
-    # Load databases
-    with open('fighters.json', 'r', encoding='utf-8') as f:
+
+    # Load databases from persistent data directory
+    with open(data_path('fighters.json'), 'r', encoding='utf-8') as f:
         boxing = json.load(f)
-    with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+    with open(data_path('fighters_ufc.json'), 'r', encoding='utf-8') as f:
         ufc = json.load(f)
     
     all_fighters = {**boxing, **ufc}
@@ -1202,80 +1246,80 @@ def manage_fighters():
             
             if action == 'add_big_name':
                 fighter_name = request.form.get('fighter_name')
-                big_names_file = 'data/big_name_fighters.json'
-                
+                big_names_file = data_path('big_name_fighters.json')
+
                 with open(big_names_file, 'r') as f:
                     big_names = json.load(f)
-                
+
                 if fighter_name not in big_names:
                     big_names.append(fighter_name)
                     big_names.sort()
-                    
+
                     with open(big_names_file, 'w') as f:
                         json.dump(big_names, f, indent=2)
-                    
+
                     logger.info(f"Added big name fighter: {fighter_name}")
-            
+
             elif action == 'remove_big_name':
                 fighter_name = request.form.get('fighter_name')
-                big_names_file = 'data/big_name_fighters.json'
-                
+                big_names_file = data_path('big_name_fighters.json')
+
                 with open(big_names_file, 'r') as f:
                     big_names = json.load(f)
-                
+
                 if fighter_name in big_names:
                     big_names.remove(fighter_name)
-                    
+
                     with open(big_names_file, 'w') as f:
                         json.dump(big_names, f, indent=2)
-                    
+
                     logger.info(f"Removed big name fighter: {fighter_name}")
-            
+
             elif action == 'rename':
                 old_name = request.form.get('old_name')
                 new_name = request.form.get('new_name')
                 sport = request.form.get('sport')
-                
-                json_file = 'fighters.json' if sport == 'Boxing' else 'fighters_ufc.json'
-                
+
+                json_file = data_path('fighters.json') if sport == 'Boxing' else data_path('fighters_ufc.json')
+
                 with open(json_file, 'r', encoding='utf-8') as f:
                     fighters = json.load(f)
-                
+
                 if old_name in fighters:
                     fighters[new_name] = fighters.pop(old_name)
-                    
+
                     with open(json_file, 'w', encoding='utf-8') as f:
                         json.dump(fighters, f, indent=2, ensure_ascii=False)
-                    
+
                     logger.info(f"Renamed fighter: {old_name} → {new_name}")
-            
+
             elif action == 'delete':
                 fighter_name = request.form.get('fighter_name')
                 sport = request.form.get('sport')
-                
-                json_file = 'fighters.json' if sport == 'Boxing' else 'fighters_ufc.json'
-                
+
+                json_file = data_path('fighters.json') if sport == 'Boxing' else data_path('fighters_ufc.json')
+
                 with open(json_file, 'r', encoding='utf-8') as f:
                     fighters = json.load(f)
-                
+
                 if fighter_name in fighters:
                     del fighters[fighter_name]
-                    
+
                     with open(json_file, 'w', encoding='utf-8') as f:
                         json.dump(fighters, f, indent=2, ensure_ascii=False)
-                    
+
                     logger.info(f"Deleted fighter: {fighter_name}")
             
             return redirect('/admin/manage-fighters')
         
         # GET - show management page
-        with open('fighters.json', 'r', encoding='utf-8') as f:
+        with open(data_path('fighters.json'), 'r', encoding='utf-8') as f:
             boxing = json.load(f)
-        with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+        with open(data_path('fighters_ufc.json'), 'r', encoding='utf-8') as f:
             ufc = json.load(f)
-        
+
         # Load big names, create if missing
-        big_names_file = 'data/big_name_fighters.json'
+        big_names_file = data_path('big_name_fighters.json')
         if os.path.exists(big_names_file):
             with open(big_names_file, 'r') as f:
                 big_names_raw = json.load(f)
@@ -1314,8 +1358,8 @@ def download_jsons():
     
     zip_buffer = BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-        zip_file.write('fighters.json', 'fighters.json')
-        zip_file.write('fighters_ufc.json', 'fighters_ufc.json')
+        zip_file.write(data_path('fighters.json'), 'fighters.json')
+        zip_file.write(data_path('fighters_ufc.json'), 'fighters_ufc.json')
     
     zip_buffer.seek(0)
     return send_file(

@@ -9,7 +9,7 @@ from flask_admin.form import Select2Widget
 from wtforms import Form, StringField, SelectField, validators
 import os
 import logging
-from admin_models import FighterImageOverride, BigNameFighter, ManualEvent, TimeOverride
+from admin_models import FighterImageOverride, BigNameFighter, ManualEvent, TimeOverride, data_path
 
 # Simple password protection (you can change this password)
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'fightschedule2025')
@@ -26,16 +26,16 @@ class ProtectedAdminIndexView(AdminIndexView):
         
         # Load stats
         import json
-        big_names_file = 'data/big_name_fighters.json'
+        big_names_file = data_path('big_name_fighters.json')
         if os.path.exists(big_names_file):
             with open(big_names_file, 'r') as f:
                 big_names_count = len(json.load(f))
         else:
             big_names_count = 0
-        
-        with open('fighters.json', 'r', encoding='utf-8') as f:
+
+        with open(data_path('fighters.json'), 'r', encoding='utf-8') as f:
             boxing_count = len(json.load(f))
-        with open('fighters_ufc.json', 'r', encoding='utf-8') as f:
+        with open(data_path('fighters_ufc.json'), 'r', encoding='utf-8') as f:
             ufc_count = len(json.load(f))
         
         return self.render('admin/dashboard.html',
@@ -291,20 +291,20 @@ class MissingFighterImagesView(BaseView):
         
         logger = logging.getLogger(__name__)
         
-        # Load databases from root directory
+        # Load databases from persistent data directory
         fighters_db = {}
         try:
-            with open('fighters.json', 'r') as f:
+            with open(data_path('fighters.json'), 'r') as f:
                 fighters_db.update(json.load(f))
         except: pass
         try:
-            with open('fighters_ufc.json', 'r') as f:
+            with open(data_path('fighters_ufc.json'), 'r') as f:
                 fighters_db.update(json.load(f))
         except: pass
-        
+
         # Get fights
         import os
-        cache_path = 'fights_cache.json'  # Cache is in root directory
+        cache_path = data_path('fights_cache.json')
         logger = logging.getLogger(__name__)
         
         if not os.path.exists(cache_path):
@@ -347,8 +347,8 @@ class MissingFighterImagesView(BaseView):
         """Save fighter image to JSON"""
         import json
         
-        # Save to root directory where app.py loads from
-        file = 'fighters_ufc.json' if sport == 'UFC' else 'fighters.json'
+        # Save to persistent data directory
+        file = data_path('fighters_ufc.json') if sport == 'UFC' else data_path('fighters.json')
         
         try:
             with open(file, 'r') as f:
@@ -370,8 +370,9 @@ def setup_admin(app):
     # Set secret key for session management
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fight-schedule-secret-key-change-me')
     
-    # Create data directory if it doesn't exist
-    os.makedirs('data', exist_ok=True)
+    # Ensure persistent data directory exists
+    from admin_models import DATA_DIR
+    os.makedirs(DATA_DIR, exist_ok=True)
     
     # Initialize admin with custom index view (password protected)
     admin = Admin(
