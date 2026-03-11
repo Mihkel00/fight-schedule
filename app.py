@@ -1071,6 +1071,28 @@ def boxing_event_detail(event_slug):
     
     return render_template('boxing_event.html', event=event_data)
 
+# ============================================================================
+# ESPN DATA EXPLORATION PAGE
+# ============================================================================
+@app.route('/espn')
+def espn_data():
+    """
+    Temporary page to explore ESPN API data.
+    Shows raw data from ESPN's hidden API for MMA and Boxing.
+    """
+    from scrapers.espn_api import fetch_all_espn_data
+    import json
+
+    espn = fetch_all_espn_data()
+
+    # Helper to make data JSON-serializable for the template
+    def to_json(obj):
+        return json.dumps(obj, indent=2, default=str) if obj else 'null'
+
+    return render_template('espn_data.html',
+                           espn=espn,
+                           to_json=to_json)
+
 # SEO Routes
 @app.route('/sitemap.xml')
 def sitemap():
