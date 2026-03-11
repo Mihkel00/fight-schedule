@@ -24,6 +24,7 @@
 
     <div class="form-card">
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label>Matchup</label>
                 <input type="text" name="matchup" required placeholder="e.g. Fighter1 vs Fighter2">

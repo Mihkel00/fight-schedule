@@ -1128,28 +1128,36 @@ def clear_cache():
         return "✓ Cache cleared successfully. Next page load will fetch fresh data."
     return "No cache file found."
 
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+
 @app.route('/admin/upload-images', methods=['GET', 'POST'])
 def upload_fighter_images():
     """Admin interface for uploading fighter images"""
     from werkzeug.utils import secure_filename
     from r2_storage import upload_fighter_image, is_r2_enabled
-    
+
     if request.method == 'POST':
-        fighter_name = request.form.get('fighter_name')
+        fighter_name = request.form.get('fighter_name', '').strip()[:200]
         sport = request.form.get('sport', 'UFC')
-        
+
         if 'image' not in request.files:
             return "No file uploaded", 400
-        
+
         file = request.files['image']
         if file.filename == '':
             return "No file selected", 400
-        
+
         if file and fighter_name:
-            # Generate filename from fighter name
-            filename = fighter_name.lower().replace(' ', '-').replace("'", '')
-            ext = os.path.splitext(file.filename)[1] or '.png'
-            filename = filename + ext
+            # Validate file extension against whitelist
+            ext = os.path.splitext(secure_filename(file.filename))[1].lower() or '.png'
+            if ext not in ALLOWED_IMAGE_EXTENSIONS:
+                return f"Invalid file type. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}", 400
+
+            # Generate safe filename from fighter name
+            safe_name = secure_filename(fighter_name.lower().replace(' ', '-'))
+            if not safe_name:
+                return "Invalid fighter name", 400
+            filename = safe_name + ext
             
             # Upload to R2 or save locally
             image_url = None
@@ -1352,10 +1360,8 @@ def manage_fighters():
                               big_names=big_names)
     
     except Exception as e:
-        import traceback
-        error_details = f"Error: {str(e)}\n\nTraceback:\n{traceback.format_exc()}"
-        logger.error(f"manage_fighters error: {error_details}")
-        return f"<pre>{error_details}</pre>", 500
+        logger.error(f"manage_fighters error: {e}", exc_info=True)
+        return "An error occurred. Please try again.", 500
 
 @app.route('/admin/download-jsons')
 def download_jsons():
