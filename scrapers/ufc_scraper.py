@@ -20,6 +20,10 @@ def convert_et_to_utc(time_et_str, event_date=None):
         time_et_str: Time string like "10 p.m. ET" or "6:30 p.m. ET"
         event_date: Optional date string (YYYY-MM-DD) for accurate DST lookup.
                     Falls back to today if not provided.
+
+    Returns:
+        datetime (UTC, timezone-aware) or None. The date component may differ
+        from event_date when the ET time crosses midnight into the next UTC day.
     """
     try:
         time_match = re.search(r'(\d+)(?::(\d+))?\s*(a\.m\.|p\.m\.)', time_et_str.lower())
@@ -48,9 +52,7 @@ def convert_et_to_utc(time_et_str, event_date=None):
         # Build timezone-aware ET datetime, then convert to UTC
         et_dt = datetime(ref_date.year, ref_date.month, ref_date.day,
                          hour, minute, tzinfo=ET_ZONE)
-        utc_dt = et_dt.astimezone(UTC_ZONE)
-
-        return utc_dt.strftime('%H:%M')
+        return et_dt.astimezone(UTC_ZONE)
     except Exception:
         return None
 
@@ -123,18 +125,25 @@ def scrape_ufc_events():
                 
                 venue = details_text.split('•')[0].strip() if '•' in details_text else ''
                 
-                # Extract times
-                main_card_time = None
+                # Extract times — convert_et_to_utc returns a UTC datetime so the
+                # date is also correct when ET crosses midnight into the next UTC day.
+                main_card_utc_dt = None
                 if 'main card' in details_text.lower():
                     main_card_match = re.search(r'main card.*?(\d+(?::\d+)?\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
                     if main_card_match:
-                        main_card_time = convert_et_to_utc(main_card_match.group(1), event_date=date_formatted)
+                        main_card_utc_dt = convert_et_to_utc(main_card_match.group(1), event_date=date_formatted)
 
-                prelim_time = None
+                prelim_utc_dt = None
                 if 'prelim' in details_text.lower() and 'early' not in details_text.lower():
                     prelim_match = re.search(r'prelim(?:s|inary card)?.*?(\d+(?::\d+)?\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
                     if prelim_match:
-                        prelim_time = convert_et_to_utc(prelim_match.group(1), event_date=date_formatted)
+                        prelim_utc_dt = convert_et_to_utc(prelim_match.group(1), event_date=date_formatted)
+
+                # Helper to extract (date_str, time_str) from a UTC datetime
+                def fmt(utc_dt):
+                    if utc_dt is None:
+                        return date_formatted, None
+                    return utc_dt.strftime('%Y-%m-%d'), utc_dt.strftime('%H:%M')
                 
                 print(f"MMA Fighting: {event_name} - {date_formatted}")
                 
@@ -161,12 +170,13 @@ def scrape_ufc_events():
                                     # Clean fighter names (remove trailing numbers like "Lopes 2")
                                     fighter1 = re.sub(r'\s+\d+$', '', fighters[0].strip())
                                     fighter2 = re.sub(r'\s+\d+$', '', fighters[1].strip())
-                                    
+
+                                    main_date, main_time = fmt(main_card_utc_dt)
                                     fights.append({
                                         'fighter1': fighter1,
                                         'fighter2': fighter2,
-                                        'date': date_formatted,
-                                        'time': main_card_time,
+                                        'date': main_date,
+                                        'time': main_time,
                                         'venue': venue,
                                         'location': venue,
                                         'sport': 'UFC',
@@ -190,24 +200,19 @@ def scrape_ufc_events():
                                     # Clean fighter names (remove trailing numbers)
                                     fighter1 = re.sub(r'\s+\d+$', '', fighters[0].strip())
                                     fighter2 = re.sub(r'\s+\d+$', '', fighters[1].strip())
-                                    
-                                    # Calculate prelim time if not found (2 hours before main card)
-                                    calculated_prelim_time = prelim_time
-                                    if not prelim_time and main_card_time:
-                                        try:
-                                            parts = main_card_time.split(':')
-                                            main_hour = int(parts[0])
-                                            main_min = int(parts[1]) if len(parts) > 1 else 0
-                                            prelim_hour = (main_hour - 2) % 24
-                                            calculated_prelim_time = f"{prelim_hour:02d}:{main_min:02d}"
-                                        except Exception:
-                                            calculated_prelim_time = main_card_time
-                                    
+
+                                    # Determine prelim UTC datetime: scraped or estimated (-2h from main card)
+                                    resolved_prelim_utc_dt = prelim_utc_dt
+                                    if not resolved_prelim_utc_dt and main_card_utc_dt:
+                                        from datetime import timedelta
+                                        resolved_prelim_utc_dt = main_card_utc_dt - timedelta(hours=2)
+
+                                    prelim_date, prelim_time = fmt(resolved_prelim_utc_dt)
                                     fights.append({
                                         'fighter1': fighter1,
                                         'fighter2': fighter2,
-                                        'date': date_formatted,
-                                        'time': calculated_prelim_time or main_card_time,
+                                        'date': prelim_date,
+                                        'time': prelim_time,
                                         'venue': venue,
                                         'location': venue,
                                         'sport': 'UFC',
