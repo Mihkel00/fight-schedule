@@ -31,6 +31,72 @@
     <meta property="twitter:image" content="https://fightschedule.live/static/og-image.png">
     
     <link rel="canonical" href="https://fightschedule.live/">
+
+    <!-- Structured Data: WebSite + ItemList of upcoming events (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Fight Schedule",
+        "url": "https://fightschedule.live/",
+        "description": "Complete UFC and Boxing fight schedule with automatic timezone conversion, AI-powered previews, and live updates."
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Upcoming Fights",
+        "itemListOrder": "https://schema.org/ItemListOrderAscending",
+        "numberOfItems": {{ featured_fights|length }},
+        "itemListElement": [
+            {% for fight in featured_fights %}
+            {% if not loop.first %},{% endif %}
+            {
+                "@type": "ListItem",
+                "position": {{ loop.index }},
+                "item": {
+                    "@type": "SportsEvent",
+                    "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
+                    "sport": "{{ 'Mixed Martial Arts' if fight.sport == 'UFC' else 'Boxing' }}",
+                    "eventStatus": "https://schema.org/EventScheduled",
+                    {% if fight.date and fight.time and fight.time != 'TBA' %}
+                    "startDate": "{{ fight.date }}T{{ '%02d'|format(fight.time.split(':')[0]|int) }}:{{ '%02d'|format(fight.time.split(':')[1]|default('00', true)|int) }}:00Z",
+                    {% elif fight.date %}
+                    "startDate": "{{ fight.date }}",
+                    {% endif %}
+                    "location": {
+                        "@type": "Place",
+                        "name": "{{ fight.venue|e }}"
+                    },
+                    {% if fight.sport == 'UFC' %}
+                    "url": "https://fightschedule.live/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}",
+                    {% else %}
+                    "url": "https://fightschedule.live/boxing-event/{{ fight.slug }}",
+                    {% endif %}
+                    "competitor": [
+                        {
+                            "@type": "Person",
+                            "name": "{{ fight.fighter1|e }}"
+                            {% if fight.fighter1_image and '/static/' not in fight.fighter1_image %}
+                            ,"image": "{{ fight.fighter1_image }}"
+                            {% endif %}
+                        },
+                        {
+                            "@type": "Person",
+                            "name": "{{ fight.fighter2|e }}"
+                            {% if fight.fighter2_image and '/static/' not in fight.fighter2_image %}
+                            ,"image": "{{ fight.fighter2_image }}"
+                            {% endif %}
+                        }
+                    ]
+                }
+            }
+            {% endfor %}
+        ]
+    }
+    </script>
+
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">

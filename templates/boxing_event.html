@@ -15,6 +15,70 @@
     <title>{{ event.page_title }}</title>
     <meta name="description" content="{{ event.meta_description }}">
     <link rel="canonical" href="{{ event.canonical_url }}">
+
+    <!-- Structured Data: SportsEvent (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SportsEvent",
+        "name": "{{ event.main_event.fighter1|e }} vs {{ event.main_event.fighter2|e }}",
+        "description": "{{ event.meta_description|e }}",
+        "url": "{{ event.canonical_url }}",
+        "sport": "Boxing",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
+        {% if event.date and event.time and event.time != 'TBA' %}
+        "startDate": "{{ event.date }}T{{ '%02d'|format(event.time.split(':')[0]|int) }}:{{ '%02d'|format(event.time.split(':')[1]|default('00', true)|int) }}:00Z",
+        {% elif event.date %}
+        "startDate": "{{ event.date }}",
+        {% endif %}
+        "location": {
+            "@type": "Place",
+            "name": "{{ event.venue|e }}",
+            "address": "{{ event.location|e }}"
+        },
+        "organizer": {
+            "@type": "Organization",
+            "name": "Boxing Event"
+        },
+        "competitor": [
+            {
+                "@type": "Person",
+                "name": "{{ event.main_event.fighter1|e }}"
+                {% if event.main_event.fighter1_image and '/static/' not in event.main_event.fighter1_image %}
+                ,"image": "{{ event.main_event.fighter1_image }}"
+                {% endif %}
+            },
+            {
+                "@type": "Person",
+                "name": "{{ event.main_event.fighter2|e }}"
+                {% if event.main_event.fighter2_image and '/static/' not in event.main_event.fighter2_image %}
+                ,"image": "{{ event.main_event.fighter2_image }}"
+                {% endif %}
+            }
+        ]
+        {% if event.fights|length > 1 %}
+        ,"subEvent": [
+            {% for fight in event.fights %}
+            {% if not loop.first %},{% endif %}
+            {
+                "@type": "SportsEvent",
+                "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
+                "sport": "Boxing",
+                {% if fight.weight_class %}
+                "description": "{{ fight.weight_class|e }}",
+                {% endif %}
+                "competitor": [
+                    {"@type": "Person", "name": "{{ fight.fighter1|e }}"},
+                    {"@type": "Person", "name": "{{ fight.fighter2|e }}"}
+                ]
+            }
+            {% endfor %}
+        ]
+        {% endif %}
+    }
+    </script>
+
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
