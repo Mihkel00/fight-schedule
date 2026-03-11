@@ -128,6 +128,7 @@
                 </div>
                 
                 <form method="POST" enctype="multipart/form-data" class="upload-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="fighter_name" value="{{ fighter.name }}">
                     <input type="hidden" name="sport" value="{{ fighter.sport }}">
                     <input type="file" name="image" accept="image/*" required 

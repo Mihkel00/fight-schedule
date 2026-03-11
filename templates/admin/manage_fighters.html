@@ -161,6 +161,7 @@
                 
                 <div class="add-form">
                     <form method="POST" action="/admin/manage-fighters">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="add_big_name">
                         <input type="text" name="fighter_name" placeholder="Fighter name" required>
                         <button type="submit">Add Big Name</button>
@@ -179,6 +180,7 @@
                         </div>
                         <div class="actions">
                             <form method="POST" action="/admin/manage-fighters" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <input type="hidden" name="action" value="remove_big_name">
                                 <input type="hidden" name="fighter_name" value="{{ fighter }}">
                                 <button type="submit" class="danger">Remove</button>
@@ -192,18 +194,20 @@
     </div>
     
     <script>
+        const csrfToken = "{{ csrf_token() }}";
+
         function filterList(type) {
             const input = document.getElementById('search-' + type);
             const filter = input.value.toLowerCase();
             const list = document.getElementById(type + '-list');
             const items = list.getElementsByClassName('fighter-item');
-            
+
             for (let item of items) {
                 const name = item.getAttribute('data-name');
                 item.style.display = name.includes(filter) ? '' : 'none';
             }
         }
-        
+
         function editFighter(oldName, sport) {
             const newName = prompt('Rename fighter:', oldName);
             if (newName && newName !== oldName) {
@@ -211,6 +215,7 @@
                 form.method = 'POST';
                 form.action = '/admin/manage-fighters';
                 form.innerHTML = `
+                    <input type="hidden" name="csrf_token" value="${csrfToken}">
                     <input type="hidden" name="action" value="rename">
                     <input type="hidden" name="old_name" value="${oldName}">
                     <input type="hidden" name="new_name" value="${newName}">
@@ -220,13 +225,14 @@
                 form.submit();
             }
         }
-        
+
         function deleteFighter(name, sport) {
             if (confirm(`Delete ${name}? This will remove their image entry.`)) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/admin/manage-fighters';
                 form.innerHTML = `
+                    <input type="hidden" name="csrf_token" value="${csrfToken}">
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="fighter_name" value="${name}">
                     <input type="hidden" name="sport" value="${sport}">

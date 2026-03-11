@@ -23,6 +23,7 @@
 
     <div class="form-card">
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label>Fighter Name</label>
                 <input type="text" name="fighter_name" value="{{ item.fighter_name if item else '' }}" required placeholder="e.g. Conor McGregor">

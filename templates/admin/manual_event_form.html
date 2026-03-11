@@ -24,6 +24,7 @@
 
     <div class="form-card">
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-row">
                 <div class="form-group">
                     <label>Fighter 1</label>
