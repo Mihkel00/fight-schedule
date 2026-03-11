@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>ESPN API Data Explorer | Fight Schedule</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'staatliches': ['"Staatliches"', 'Impact', 'sans-serif'],
+                        'work': ['"Work Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        'dark-bg': '#0a0a0a',
+                        'dark-card': '#141414',
+                        'dark-elevated': '#1a1a1a',
+                        'dark-border': '#252525',
+                        'text-primary': '#f5f5f5',
+                        'text-secondary': '#a8a8a8',
+                        'text-tertiary': '#737373',
+                        'accent-red': '#ef4444',
+                        'accent-orange': '#fb923c',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Work Sans', sans-serif; }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+        .collapsible-content { display: none; }
+        .collapsible-content.open { display: block; }
+        .toggle-btn::after { content: ' +'; }
+        .toggle-btn.open::after { content: ' −'; }
+    </style>
+</head>
+<body class="bg-dark-bg text-text-primary min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-dark-border bg-dark-card">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/" class="text-text-secondary hover:text-text-primary text-sm">&larr; Back to site</a>
+                <h1 class="font-staatliches text-2xl tracking-wide">ESPN API DATA EXPLORER</h1>
+            </div>
+            <span class="text-text-tertiary text-xs">Internal tool &mdash; not indexed</span>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-8 space-y-8">
+
+        <!-- Errors -->
+        {% if espn.errors %}
+        <div class="bg-red-900/30 border border-red-800 rounded-lg p-4">
+            <h2 class="font-staatliches text-lg text-accent-red mb-2">API ERRORS</h2>
+            <ul class="text-sm text-red-300 space-y-1">
+                {% for err in espn.errors %}
+                <li>{{ err }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 text-center">
+                <div class="font-staatliches text-3xl text-accent-orange">
+                    {{ espn.mma_scoreboard.events|length if espn.mma_scoreboard and espn.mma_scoreboard.events else 0 }}
+                </div>
+                <div class="text-text-secondary text-sm">MMA Events</div>
+            </div>
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 text-center">
+                <div class="font-staatliches text-3xl text-accent-orange">
+                    {{ espn.boxing_scoreboard.events|length if espn.boxing_scoreboard and espn.boxing_scoreboard.events else 0 }}
+                </div>
+                <div class="text-text-secondary text-sm">Boxing Events</div>
+            </div>
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 text-center">
+                <div class="font-staatliches text-3xl text-accent-orange">
+                    {{ espn.mma_events_detail|length }}
+                </div>
+                <div class="text-text-secondary text-sm">MMA Details Fetched</div>
+            </div>
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 text-center">
+                <div class="font-staatliches text-3xl text-accent-orange">
+                    {{ espn.boxing_events_detail|length }}
+                </div>
+                <div class="text-text-secondary text-sm">Boxing Details Fetched</div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- MMA/UFC SECTION -->
+        <!-- ============================================================ -->
+        <section>
+            <h2 class="font-staatliches text-2xl tracking-wide mb-4 text-accent-red">MMA / UFC</h2>
+
+            <!-- MMA Scoreboard Events -->
+            {% if espn.mma_scoreboard and espn.mma_scoreboard.events %}
+            <div class="space-y-4 mb-8">
+                <h3 class="font-staatliches text-lg text-text-secondary">SCOREBOARD EVENTS ({{ espn.mma_scoreboard.events|length }})</h3>
+                {% for event in espn.mma_scoreboard.events %}
+                <div class="bg-dark-card border border-dark-border rounded-lg overflow-hidden">
+                    <!-- Event Header -->
+                    <div class="p-4 border-b border-dark-border">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h4 class="font-semibold text-lg">{{ event.name or event.shortName or 'Unknown Event' }}</h4>
+                                <div class="text-text-secondary text-sm mt-1 space-y-0.5">
+                                    {% if event.date %}
+                                    <div>Date: <span class="text-text-primary">{{ event.date }}</span></div>
+                                    {% endif %}
+                                    {% if event.status %}
+                                    <div>Status: <span class="text-accent-orange">{{ event.status.type.description if event.status.type else event.status }}</span></div>
+                                    {% endif %}
+                                    {% if event.id %}
+                                    <div>ESPN ID: <span class="text-text-tertiary">{{ event.id }}</span></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Competitions (individual fights) -->
+                    {% if event.competitions %}
+                    <div class="p-4">
+                        <h5 class="text-sm font-semibold text-text-secondary mb-3">FIGHTS ({{ event.competitions|length }})</h5>
+                        <div class="space-y-3">
+                            {% for comp in event.competitions %}
+                            <div class="bg-dark-elevated rounded-lg p-3 border border-dark-border">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        {% if comp.competitors and comp.competitors|length >= 2 %}
+                                        <div class="flex items-center gap-3">
+                                            <!-- Fighter 1 -->
+                                            <div class="flex items-center gap-2 flex-1">
+                                                {% if comp.competitors[0].athlete and comp.competitors[0].athlete.headshot %}
+                                                <img src="{{ comp.competitors[0].athlete.headshot.href }}"
+                                                     alt="" class="w-10 h-10 rounded-full object-cover bg-dark-border">
+                                                {% endif %}
+                                                <div>
+                                                    <div class="font-semibold text-sm">
+                                                        {{ comp.competitors[0].athlete.displayName if comp.competitors[0].athlete else comp.competitors[0].displayName or 'TBD' }}
+                                                    </div>
+                                                    {% if comp.competitors[0].records %}
+                                                    <div class="text-text-tertiary text-xs">
+                                                        {% for rec in comp.competitors[0].records %}{{ rec.summary }}{% if not loop.last %} | {% endif %}{% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <span class="text-text-tertiary text-xs font-semibold px-2">VS</span>
+
+                                            <!-- Fighter 2 -->
+                                            <div class="flex items-center gap-2 flex-1 justify-end text-right">
+                                                <div>
+                                                    <div class="font-semibold text-sm">
+                                                        {{ comp.competitors[1].athlete.displayName if comp.competitors[1].athlete else comp.competitors[1].displayName or 'TBD' }}
+                                                    </div>
+                                                    {% if comp.competitors[1].records %}
+                                                    <div class="text-text-tertiary text-xs">
+                                                        {% for rec in comp.competitors[1].records %}{{ rec.summary }}{% if not loop.last %} | {% endif %}{% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                {% if comp.competitors[1].athlete and comp.competitors[1].athlete.headshot %}
+                                                <img src="{{ comp.competitors[1].athlete.headshot.href }}"
+                                                     alt="" class="w-10 h-10 rounded-full object-cover bg-dark-border">
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% elif comp.competitors %}
+                                        <div class="text-sm">
+                                            {% for c in comp.competitors %}
+                                            {{ c.athlete.displayName if c.athlete else c.displayName or 'TBD' }}{% if not loop.last %} vs {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Fight metadata -->
+                                <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                                    {% if comp.date %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-text-secondary">{{ comp.date }}</span>
+                                    {% endif %}
+                                    {% if comp.status and comp.status.type %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-text-secondary">{{ comp.status.type.description }}</span>
+                                    {% endif %}
+                                    {% if comp.type and comp.type.text %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-accent-orange">{{ comp.type.text }}</span>
+                                    {% endif %}
+                                    {% if comp.note %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-accent-red">{{ comp.note }}</span>
+                                    {% endif %}
+                                    {% if comp.id %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-text-tertiary">ID: {{ comp.id }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Result if available -->
+                                {% if comp.result %}
+                                <div class="mt-2 text-xs text-text-secondary">
+                                    Result: {{ comp.result }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Raw JSON toggle -->
+                    <div class="px-4 pb-4">
+                        <button onclick="toggleRaw(this)" class="toggle-btn text-xs text-accent-orange hover:text-accent-red cursor-pointer">
+                            Raw JSON
+                        </button>
+                        <div class="collapsible-content mt-2">
+                            <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(event) }}</pre>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bg-dark-card border border-dark-border rounded-lg p-6 text-center text-text-secondary mb-8">
+                No MMA scoreboard data available
+            </div>
+            {% endif %}
+
+            <!-- MMA Event Details -->
+            {% if espn.mma_events_detail %}
+            <div class="space-y-4 mb-8">
+                <h3 class="font-staatliches text-lg text-text-secondary">EVENT DETAILS (SUMMARY ENDPOINT)</h3>
+                {% for detail in espn.mma_events_detail %}
+                <div class="bg-dark-card border border-dark-border rounded-lg p-4">
+                    <button onclick="toggleRaw(this)" class="toggle-btn font-semibold text-sm text-accent-orange hover:text-accent-red cursor-pointer">
+                        Event Summary #{{ loop.index }}
+                        {% if detail.header and detail.header.competitions %}
+                        &mdash; {{ detail.header.competitions[0].date if detail.header.competitions[0].date else '' }}
+                        {% endif %}
+                    </button>
+                    <div class="collapsible-content mt-2">
+                        <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(detail) }}</pre>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- MMA Calendar -->
+            {% if espn.mma_calendar %}
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 mb-8">
+                <button onclick="toggleRaw(this)" class="toggle-btn font-staatliches text-lg text-text-secondary cursor-pointer">
+                    MMA CALENDAR
+                </button>
+                <div class="collapsible-content mt-2">
+                    <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(espn.mma_calendar) }}</pre>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- MMA News -->
+            {% if espn.mma_news and espn.mma_news.articles %}
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 mb-8">
+                <h3 class="font-staatliches text-lg text-text-secondary mb-3">MMA NEWS ({{ espn.mma_news.articles|length }} articles)</h3>
+                <div class="space-y-2">
+                    {% for article in espn.mma_news.articles[:10] %}
+                    <div class="bg-dark-elevated rounded p-3 border border-dark-border">
+                        <div class="font-semibold text-sm">{{ article.headline }}</div>
+                        <div class="text-text-tertiary text-xs mt-1">{{ article.published or '' }} | {{ article.type or '' }}</div>
+                        {% if article.description %}
+                        <div class="text-text-secondary text-xs mt-1">{{ article.description[:200] }}{% if article.description|length > 200 %}...{% endif %}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <button onclick="toggleRaw(this)" class="toggle-btn text-xs text-accent-orange hover:text-accent-red cursor-pointer mt-3">
+                    Raw JSON
+                </button>
+                <div class="collapsible-content mt-2">
+                    <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(espn.mma_news) }}</pre>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- BOXING SECTION -->
+        <!-- ============================================================ -->
+        <section>
+            <h2 class="font-staatliches text-2xl tracking-wide mb-4 text-accent-red">BOXING</h2>
+
+            <!-- Boxing Scoreboard Events -->
+            {% if espn.boxing_scoreboard and espn.boxing_scoreboard.events %}
+            <div class="space-y-4 mb-8">
+                <h3 class="font-staatliches text-lg text-text-secondary">SCOREBOARD EVENTS ({{ espn.boxing_scoreboard.events|length }})</h3>
+                {% for event in espn.boxing_scoreboard.events %}
+                <div class="bg-dark-card border border-dark-border rounded-lg overflow-hidden">
+                    <!-- Event Header -->
+                    <div class="p-4 border-b border-dark-border">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                                <h4 class="font-semibold text-lg">{{ event.name or event.shortName or 'Unknown Event' }}</h4>
+                                <div class="text-text-secondary text-sm mt-1 space-y-0.5">
+                                    {% if event.date %}
+                                    <div>Date: <span class="text-text-primary">{{ event.date }}</span></div>
+                                    {% endif %}
+                                    {% if event.status %}
+                                    <div>Status: <span class="text-accent-orange">{{ event.status.type.description if event.status.type else event.status }}</span></div>
+                                    {% endif %}
+                                    {% if event.id %}
+                                    <div>ESPN ID: <span class="text-text-tertiary">{{ event.id }}</span></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Competitions (individual fights) -->
+                    {% if event.competitions %}
+                    <div class="p-4">
+                        <h5 class="text-sm font-semibold text-text-secondary mb-3">FIGHTS ({{ event.competitions|length }})</h5>
+                        <div class="space-y-3">
+                            {% for comp in event.competitions %}
+                            <div class="bg-dark-elevated rounded-lg p-3 border border-dark-border">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1">
+                                        {% if comp.competitors and comp.competitors|length >= 2 %}
+                                        <div class="flex items-center gap-3">
+                                            <div class="flex items-center gap-2 flex-1">
+                                                {% if comp.competitors[0].athlete and comp.competitors[0].athlete.headshot %}
+                                                <img src="{{ comp.competitors[0].athlete.headshot.href }}"
+                                                     alt="" class="w-10 h-10 rounded-full object-cover bg-dark-border">
+                                                {% endif %}
+                                                <div>
+                                                    <div class="font-semibold text-sm">
+                                                        {{ comp.competitors[0].athlete.displayName if comp.competitors[0].athlete else comp.competitors[0].displayName or 'TBD' }}
+                                                    </div>
+                                                    {% if comp.competitors[0].records %}
+                                                    <div class="text-text-tertiary text-xs">
+                                                        {% for rec in comp.competitors[0].records %}{{ rec.summary }}{% if not loop.last %} | {% endif %}{% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+
+                                            <span class="text-text-tertiary text-xs font-semibold px-2">VS</span>
+
+                                            <div class="flex items-center gap-2 flex-1 justify-end text-right">
+                                                <div>
+                                                    <div class="font-semibold text-sm">
+                                                        {{ comp.competitors[1].athlete.displayName if comp.competitors[1].athlete else comp.competitors[1].displayName or 'TBD' }}
+                                                    </div>
+                                                    {% if comp.competitors[1].records %}
+                                                    <div class="text-text-tertiary text-xs">
+                                                        {% for rec in comp.competitors[1].records %}{{ rec.summary }}{% if not loop.last %} | {% endif %}{% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+                                                {% if comp.competitors[1].athlete and comp.competitors[1].athlete.headshot %}
+                                                <img src="{{ comp.competitors[1].athlete.headshot.href }}"
+                                                     alt="" class="w-10 h-10 rounded-full object-cover bg-dark-border">
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% elif comp.competitors %}
+                                        <div class="text-sm">
+                                            {% for c in comp.competitors %}
+                                            {{ c.athlete.displayName if c.athlete else c.displayName or 'TBD' }}{% if not loop.last %} vs {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                                    {% if comp.date %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-text-secondary">{{ comp.date }}</span>
+                                    {% endif %}
+                                    {% if comp.status and comp.status.type %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-text-secondary">{{ comp.status.type.description }}</span>
+                                    {% endif %}
+                                    {% if comp.type and comp.type.text %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-accent-orange">{{ comp.type.text }}</span>
+                                    {% endif %}
+                                    {% if comp.note %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-accent-red">{{ comp.note }}</span>
+                                    {% endif %}
+                                    {% if comp.id %}
+                                    <span class="bg-dark-bg px-2 py-0.5 rounded text-text-tertiary">ID: {{ comp.id }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Raw JSON toggle -->
+                    <div class="px-4 pb-4">
+                        <button onclick="toggleRaw(this)" class="toggle-btn text-xs text-accent-orange hover:text-accent-red cursor-pointer">
+                            Raw JSON
+                        </button>
+                        <div class="collapsible-content mt-2">
+                            <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(event) }}</pre>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="bg-dark-card border border-dark-border rounded-lg p-6 text-center text-text-secondary mb-8">
+                No Boxing scoreboard data available
+            </div>
+            {% endif %}
+
+            <!-- Boxing Event Details -->
+            {% if espn.boxing_events_detail %}
+            <div class="space-y-4 mb-8">
+                <h3 class="font-staatliches text-lg text-text-secondary">EVENT DETAILS (SUMMARY ENDPOINT)</h3>
+                {% for detail in espn.boxing_events_detail %}
+                <div class="bg-dark-card border border-dark-border rounded-lg p-4">
+                    <button onclick="toggleRaw(this)" class="toggle-btn font-semibold text-sm text-accent-orange hover:text-accent-red cursor-pointer">
+                        Event Summary #{{ loop.index }}
+                        {% if detail.header and detail.header.competitions %}
+                        &mdash; {{ detail.header.competitions[0].date if detail.header.competitions[0].date else '' }}
+                        {% endif %}
+                    </button>
+                    <div class="collapsible-content mt-2">
+                        <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(detail) }}</pre>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Boxing Calendar -->
+            {% if espn.boxing_calendar %}
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 mb-8">
+                <button onclick="toggleRaw(this)" class="toggle-btn font-staatliches text-lg text-text-secondary cursor-pointer">
+                    BOXING CALENDAR
+                </button>
+                <div class="collapsible-content mt-2">
+                    <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(espn.boxing_calendar) }}</pre>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Boxing News -->
+            {% if espn.boxing_news and espn.boxing_news.articles %}
+            <div class="bg-dark-card border border-dark-border rounded-lg p-4 mb-8">
+                <h3 class="font-staatliches text-lg text-text-secondary mb-3">BOXING NEWS ({{ espn.boxing_news.articles|length }} articles)</h3>
+                <div class="space-y-2">
+                    {% for article in espn.boxing_news.articles[:10] %}
+                    <div class="bg-dark-elevated rounded p-3 border border-dark-border">
+                        <div class="font-semibold text-sm">{{ article.headline }}</div>
+                        <div class="text-text-tertiary text-xs mt-1">{{ article.published or '' }} | {{ article.type or '' }}</div>
+                        {% if article.description %}
+                        <div class="text-text-secondary text-xs mt-1">{{ article.description[:200] }}{% if article.description|length > 200 %}...{% endif %}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <button onclick="toggleRaw(this)" class="toggle-btn text-xs text-accent-orange hover:text-accent-red cursor-pointer mt-3">
+                    Raw JSON
+                </button>
+                <div class="collapsible-content mt-2">
+                    <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-96">{{ to_json(espn.boxing_news) }}</pre>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- DATA COVERAGE ANALYSIS -->
+        <!-- ============================================================ -->
+        <section>
+            <h2 class="font-staatliches text-2xl tracking-wide mb-4 text-accent-red">DATA COVERAGE ANALYSIS</h2>
+            <div class="bg-dark-card border border-dark-border rounded-lg p-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- MMA Coverage -->
+                    <div>
+                        <h3 class="font-staatliches text-lg text-text-secondary mb-3">MMA DATA FIELDS</h3>
+                        <div class="space-y-2 text-sm" id="mma-fields">
+                            <div class="text-text-tertiary italic">Analyzing...</div>
+                        </div>
+                    </div>
+                    <!-- Boxing Coverage -->
+                    <div>
+                        <h3 class="font-staatliches text-lg text-text-secondary mb-3">BOXING DATA FIELDS</h3>
+                        <div class="space-y-2 text-sm" id="boxing-fields">
+                            <div class="text-text-tertiary italic">Analyzing...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison with current data model -->
+                <div class="mt-6 pt-6 border-t border-dark-border">
+                    <h3 class="font-staatliches text-lg text-text-secondary mb-3">VS CURRENT SCRAPER DATA MODEL</h3>
+                    <div class="grid md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <h4 class="text-accent-orange font-semibold mb-2">Current scraper fields:</h4>
+                            <ul class="text-text-secondary space-y-1">
+                                <li>fighter1, fighter2</li>
+                                <li>date (YYYY-MM-DD)</li>
+                                <li>time (HH:MM UTC)</li>
+                                <li>venue, location</li>
+                                <li>sport (UFC/Boxing)</li>
+                                <li>event_name</li>
+                                <li>weight_class</li>
+                                <li>card_type (Main/Prelims)</li>
+                                <li>rounds (boxing only)</li>
+                                <li>is_main_event (boxing only)</li>
+                                <li>streaming (boxing only)</li>
+                                <li>time_estimated (boxing only)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-accent-orange font-semibold mb-2">ESPN could add:</h4>
+                            <ul class="text-text-secondary space-y-1" id="espn-extras">
+                                <li class="text-text-tertiary italic">Check raw data above to compare...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- RAW FULL DUMPS -->
+        <!-- ============================================================ -->
+        <section>
+            <h2 class="font-staatliches text-2xl tracking-wide mb-4 text-accent-red">FULL RAW DATA DUMPS</h2>
+            <div class="space-y-4">
+                <div class="bg-dark-card border border-dark-border rounded-lg p-4">
+                    <button onclick="toggleRaw(this)" class="toggle-btn font-staatliches text-lg text-text-secondary cursor-pointer">
+                        MMA SCOREBOARD (FULL)
+                    </button>
+                    <div class="collapsible-content mt-2">
+                        <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-[600px]">{{ to_json(espn.mma_scoreboard) }}</pre>
+                    </div>
+                </div>
+                <div class="bg-dark-card border border-dark-border rounded-lg p-4">
+                    <button onclick="toggleRaw(this)" class="toggle-btn font-staatliches text-lg text-text-secondary cursor-pointer">
+                        BOXING SCOREBOARD (FULL)
+                    </button>
+                    <div class="collapsible-content mt-2">
+                        <pre class="bg-dark-bg border border-dark-border rounded p-3 text-text-secondary overflow-auto max-h-[600px]">{{ to_json(espn.boxing_scoreboard) }}</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-dark-border mt-12 py-6 text-center text-text-tertiary text-xs">
+        ESPN Hidden API Explorer &mdash; Internal tool for evaluating ESPN as a data source
+    </footer>
+
+    <script>
+        function toggleRaw(btn) {
+            const content = btn.nextElementSibling;
+            if (!content || !content.classList.contains('collapsible-content')) {
+                // Find sibling
+                const parent = btn.parentElement;
+                const contentEl = parent.querySelector('.collapsible-content');
+                if (contentEl) {
+                    contentEl.classList.toggle('open');
+                    btn.classList.toggle('open');
+                }
+                return;
+            }
+            content.classList.toggle('open');
+            btn.classList.toggle('open');
+        }
+
+        // Analyze data coverage on load
+        function analyzeFields(data, containerId) {
+            const container = document.getElementById(containerId);
+            if (!data || !data.events || data.events.length === 0) {
+                container.innerHTML = '<div class="text-text-tertiary">No data to analyze</div>';
+                return;
+            }
+
+            const fields = new Set();
+            function collectKeys(obj, prefix = '') {
+                if (!obj || typeof obj !== 'object') return;
+                if (Array.isArray(obj)) {
+                    if (obj.length > 0) collectKeys(obj[0], prefix + '[]');
+                    return;
+                }
+                for (const [key, val] of Object.entries(obj)) {
+                    const path = prefix ? `${prefix}.${key}` : key;
+                    fields.add(path);
+                    if (val && typeof val === 'object') {
+                        collectKeys(val, path);
+                    }
+                }
+            }
+
+            // Analyze first event
+            collectKeys(data.events[0]);
+
+            const sortedFields = [...fields].sort();
+            container.innerHTML = sortedFields.map(f =>
+                `<div class="text-text-secondary font-mono text-xs">${f}</div>`
+            ).join('');
+        }
+
+        // Run analysis
+        try {
+            const mmaData = {{ to_json(espn.mma_scoreboard) }};
+            analyzeFields(mmaData, 'mma-fields');
+        } catch(e) {
+            document.getElementById('mma-fields').innerHTML = '<div class="text-red-400">Error analyzing MMA data</div>';
+        }
+
+        try {
+            const boxingData = {{ to_json(espn.boxing_scoreboard) }};
+            analyzeFields(boxingData, 'boxing-fields');
+        } catch(e) {
+            document.getElementById('boxing-fields').innerHTML = '<div class="text-red-400">Error analyzing Boxing data</div>';
+        }
+
+        // Analyze ESPN extras
+        function analyzeExtras() {
+            const currentFields = ['fighter1', 'fighter2', 'date', 'time', 'venue', 'location', 'sport', 'event_name', 'weight_class', 'card_type', 'rounds', 'is_main_event', 'streaming'];
+            const espnExtras = [];
+
+            try {
+                const mmaData = {{ to_json(espn.mma_scoreboard) }};
+                if (mmaData && mmaData.events && mmaData.events[0]) {
+                    const event = mmaData.events[0];
+                    if (event.competitions && event.competitions[0]) {
+                        const comp = event.competitions[0];
+                        if (comp.competitors && comp.competitors[0]) {
+                            const c = comp.competitors[0];
+                            if (c.athlete) {
+                                if (c.athlete.headshot) espnExtras.push('Fighter headshot images (URL)');
+                                if (c.athlete.displayName) espnExtras.push('Fighter display names (standardized)');
+                                if (c.athlete.flag) espnExtras.push('Fighter nationality/flag');
+                            }
+                            if (c.records) espnExtras.push('Fighter records (W-L-D)');
+                            if (c.winner !== undefined) espnExtras.push('Winner indicator');
+                        }
+                        if (comp.status) espnExtras.push('Live fight status (scheduled/in-progress/final)');
+                        if (comp.type) espnExtras.push('Fight type classification');
+                        if (comp.broadcasts) espnExtras.push('Broadcast/streaming info');
+                        if (comp.odds) espnExtras.push('Betting odds');
+                    }
+                    if (event.id) espnExtras.push('Stable event IDs (for linking/tracking)');
+                    if (event.links) espnExtras.push('ESPN event URLs');
+                }
+            } catch(e) {}
+
+            const container = document.getElementById('espn-extras');
+            if (espnExtras.length > 0) {
+                container.innerHTML = espnExtras.map(f =>
+                    `<li class="text-green-400">+ ${f}</li>`
+                ).join('');
+            } else {
+                container.innerHTML = '<li class="text-text-tertiary">Unable to determine (check raw data)</li>';
+            }
+        }
+        analyzeExtras();
+    </script>
+</body>
+</html>
