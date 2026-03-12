@@ -66,6 +66,16 @@ app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB max file size
 app.config['DATA_DIR'] = DATA_DIR  # Make available to admin views
 Compress(app)  # Enable gzip compression for all responses
 
+@app.context_processor
+def inject_current_date():
+    now = datetime.now()
+    month_names = ['January', 'February', 'March', 'April', 'May', 'June',
+                   'July', 'August', 'September', 'October', 'November', 'December']
+    return {
+        'current_year': now.year,
+        'current_month_year': f"{month_names[now.month - 1]} {now.year}"
+    }
+
 # Setup Flask-Admin
 admin = setup_admin(app)
 
@@ -1097,12 +1107,14 @@ def espn_data():
 @app.route('/sitemap.xml')
 def sitemap():
     """Generate dynamic sitemap"""
-    from datetime import datetime
+    from xml.sax.saxutils import escape as xml_escape
     fights = fetch_fights()
-    
+    today = datetime.now().strftime('%Y-%m-%d')
+
     pages = []
-    pages.append({'loc': 'https://fightschedule.live/', 'lastmod': datetime.now().strftime('%Y-%m-%d'), 'changefreq': 'daily', 'priority': '1.0'})
-    
+    pages.append({'loc': 'https://fightschedule.live/', 'lastmod': today, 'changefreq': 'daily', 'priority': '1.0'})
+    pages.append({'loc': 'https://fightschedule.live/privacy', 'lastmod': today, 'changefreq': 'yearly', 'priority': '0.3'})
+
     # UFC events
     ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
     seen = set()
@@ -1111,23 +1123,24 @@ def sitemap():
         if slug not in seen:
             pages.append({'loc': f"https://fightschedule.live/event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.8'})
             seen.add(slug)
-    
-    # Boxing events - only main events
+
+    # Boxing events - all main events
     boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event')]
     seen = set()
-    for fight in boxing_fights[:20]:
+    for fight in boxing_fights:
         f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
         f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
         slug = f"{f1}-vs-{f2}-{fight['date']}"
         if slug not in seen:
             pages.append({'loc': f"https://fightschedule.live/boxing-event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.7'})
             seen.add(slug)
-    
+
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for p in pages:
-        xml += f'  <url>\n    <loc>{p["loc"]}</loc>\n    <lastmod>{p["lastmod"]}</lastmod>\n    <changefreq>{p["changefreq"]}</changefreq>\n    <priority>{p["priority"]}</priority>\n  </url>\n'
+        loc = xml_escape(p['loc'])
+        xml += f'  <url>\n    <loc>{loc}</loc>\n    <lastmod>{p["lastmod"]}</lastmod>\n    <changefreq>{p["changefreq"]}</changefreq>\n    <priority>{p["priority"]}</priority>\n  </url>\n'
     xml += '</urlset>'
-    
+
     response = make_response(xml)
     response.headers['Content-Type'] = 'application/xml'
     return response
