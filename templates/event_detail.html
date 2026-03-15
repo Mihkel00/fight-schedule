@@ -60,13 +60,23 @@
         ]
         {% if event.main_card|length > 1 or event.prelims %}
         ,"subEvent": [
-            {% set all_fights = [] %}
             {% for fight in event.main_card %}
             {% if not loop.first %},{% endif %}
             {
                 "@type": "SportsEvent",
                 "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
                 "sport": "Mixed Martial Arts",
+                "eventStatus": "https://schema.org/EventScheduled",
+                {% if event.date and event.main_card_time and event.main_card_time != 'TBA' %}
+                "startDate": "{{ event.date }}T{{ '%02d'|format(event.main_card_time.split(':')[0]|int) }}:{{ '%02d'|format(event.main_card_time.split(':')[1]|default('00', true)|int) }}:00Z",
+                {% elif event.date %}
+                "startDate": "{{ event.date }}",
+                {% endif %}
+                "location": {
+                    "@type": "Place",
+                    "name": "{{ event.venue|e }}",
+                    "address": "{{ event.venue|e }}"
+                },
                 "competitor": [
                     {"@type": "Person", "name": "{{ fight.fighter1|e }}"},
                     {"@type": "Person", "name": "{{ fight.fighter2|e }}"}
@@ -78,6 +88,17 @@
                 "@type": "SportsEvent",
                 "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
                 "sport": "Mixed Martial Arts",
+                "eventStatus": "https://schema.org/EventScheduled",
+                {% if event.date and event.prelim_time and event.prelim_time != 'TBA' %}
+                "startDate": "{{ event.date }}T{{ '%02d'|format(event.prelim_time.split(':')[0]|int) }}:{{ '%02d'|format(event.prelim_time.split(':')[1]|default('00', true)|int) }}:00Z",
+                {% elif event.date %}
+                "startDate": "{{ event.date }}",
+                {% endif %}
+                "location": {
+                    "@type": "Place",
+                    "name": "{{ event.venue|e }}",
+                    "address": "{{ event.venue|e }}"
+                },
                 "competitor": [
                     {"@type": "Person", "name": "{{ fight.fighter1|e }}"},
                     {"@type": "Person", "name": "{{ fight.fighter2|e }}"}

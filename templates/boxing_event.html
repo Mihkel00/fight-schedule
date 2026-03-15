@@ -65,6 +65,17 @@
                 "@type": "SportsEvent",
                 "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
                 "sport": "Boxing",
+                "eventStatus": "https://schema.org/EventScheduled",
+                {% if event.date and event.time and event.time != 'TBA' %}
+                "startDate": "{{ event.date }}T{{ '%02d'|format(event.time.split(':')[0]|int) }}:{{ '%02d'|format(event.time.split(':')[1]|default('00', true)|int) }}:00Z",
+                {% elif event.date %}
+                "startDate": "{{ event.date }}",
+                {% endif %}
+                "location": {
+                    "@type": "Place",
+                    "name": "{{ event.venue|e }}",
+                    "address": "{{ event.location|e }}"
+                },
                 {% if fight.weight_class %}
                 "description": "{{ fight.weight_class|e }}",
                 {% endif %}

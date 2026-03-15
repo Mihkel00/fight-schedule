@@ -67,7 +67,8 @@
                     {% endif %}
                     "location": {
                         "@type": "Place",
-                        "name": "{{ fight.venue|e }}"
+                        "name": "{{ fight.venue|e }}",
+                        "address": "{{ fight.venue|e }}"
                     },
                     {% if fight.sport == 'UFC' %}
                     "url": "https://fightschedule.live/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}",
