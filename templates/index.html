@@ -113,16 +113,16 @@
                         'work': ['"Work Sans"', 'sans-serif'],
                     },
                     colors: {
-                        // Warmer, softer dark palette (Apple-inspired)
-                        'dark-bg': '#0a0a0a',
-                        'dark-card': '#141414',
-                        'dark-elevated': '#1a1a1a',
-                        'dark-border': '#252525',
-                        'text-primary': '#f5f5f5',
-                        'text-secondary': '#a8a8a8',
-                        'text-tertiary': '#737373',
-                        // Refined accent colors
-                        'accent-red': '#ef4444',
+                        // WCAG-validated dark palette (tokven-generated, 27/27 contrast pass)
+                        'dark-bg': '#130807',
+                        'dark-card': '#1e100e',
+                        'dark-elevated': '#261918',
+                        'dark-border': '#352826',
+                        'text-primary': '#efe5e4',
+                        'text-secondary': '#998c8a',
+                        'text-tertiary': '#847c7a',
+                        // WCAG-validated accent colors
+                        'accent-red': '#ff333b',
                         'accent-orange': '#fb923c',
                     }
                 }
@@ -173,7 +173,7 @@
         .card-hover:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
-            border-color: #3a3a3a; /* Neutral light gray border on hover */
+            border-color: #524442; /* Neutral light gray border on hover */
         }
         
         /* Prevent carousel overflow from cropping hover effects */
@@ -191,8 +191,8 @@
             top: 50%;
             transform: translateY(-50%);
             z-index: 10;
-            background: rgba(18, 18, 18, 0.9);
-            border: 1px solid #2a2a2a;
+            background: rgba(30, 16, 14, 0.9);
+            border: 1px solid #352826;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -203,8 +203,8 @@
             transition: all 0.2s;
         }
         .scroll-btn:hover {
-            background: rgba(36, 36, 36, 0.95);
-            border-color: #ef4444;
+            background: rgba(38, 25, 24, 0.95);
+            border-color: #ff333b;
         }
         .scroll-btn-left {
             left: -20px;
@@ -221,8 +221,8 @@
         /* Rounded, friendly inputs */
         input:focus {
             outline: none;
-            border-color: #ef4444;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+            border-color: #ff333b;
+            box-shadow: 0 0 0 3px rgba(255, 51, 59, 0.1);
         }
         
         /* Softer borders everywhere */
