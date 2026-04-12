@@ -14,7 +14,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ event.page_title }}</title>
     <meta name="description" content="{{ event.meta_description }}">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="theme-color" content="#0a0a0a">
     <link rel="canonical" href="{{ event.canonical_url }}">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ event.canonical_url }}">
+    <meta property="og:title" content="{{ event.page_title }}">
+    <meta property="og:description" content="{{ event.meta_description }}">
+    <meta property="og:image" content="https://fightschedule.live/static/og-image.png">
+    <meta property="og:site_name" content="FightSchedule">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ event.page_title }}">
+    <meta name="twitter:description" content="{{ event.meta_description }}">
+    <meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
+
+    <!-- BreadcrumbList -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://fightschedule.live/"},
+            {"@type": "ListItem", "position": 2, "name": "UFC Events", "item": "https://fightschedule.live/"},
+            {"@type": "ListItem", "position": 3, "name": "{{ event.event_name|e }}"}
+        ]
+    }
+    </script>
 
     <!-- Structured Data: SportsEvent (JSON-LD) -->
     <script type="application/ld+json">

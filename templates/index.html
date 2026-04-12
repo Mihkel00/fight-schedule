@@ -15,31 +15,95 @@
     <title>UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar & Event Times</title>
     <meta name="description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Get live updates on fight dates, times, venues, and AI-powered previews for all major events.">
     <meta name="keywords" content="UFC schedule, boxing schedule, MMA fights, fight calendar, upcoming fights, UFC events, boxing matches">
-    
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="theme-color" content="#0a0a0a">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://fightschedule.live/">
-    <meta property="og:title" content="Fight Schedule - UFC & Boxing Events Calendar">
-    <meta property="og:description" content="Complete schedule of upcoming UFC and Boxing fights with dates, venues, and AI fight previews.">
+    <meta property="og:title" content="UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar">
+    <meta property="og:description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Fight dates, times, venues, and AI-powered previews.">
     <meta property="og:image" content="https://fightschedule.live/static/og-image.png">
-    
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="FightSchedule — UFC and boxing fight calendar showing upcoming events">
+    <meta property="og:site_name" content="FightSchedule">
+    <meta property="og:locale" content="en_US">
+
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://fightschedule.live/">
-    <meta property="twitter:title" content="Fight Schedule - UFC & Boxing Events Calendar">
-    <meta property="twitter:description" content="Complete schedule of upcoming UFC and Boxing fights with dates, venues, and AI fight previews.">
-    <meta property="twitter:image" content="https://fightschedule.live/static/og-image.png">
-    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar">
+    <meta name="twitter:description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Fight dates, times, venues, and AI-powered previews.">
+    <meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
+
     <link rel="canonical" href="https://fightschedule.live/">
 
-    <!-- Structured Data: WebSite + ItemList of upcoming events (JSON-LD) -->
+    <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "name": "Fight Schedule",
-        "url": "https://fightschedule.live/",
+        "name": "FightSchedule",
+        "url": "https://fightschedule.live",
         "description": "Complete UFC and Boxing fight schedule with automatic timezone conversion, AI-powered previews, and live updates."
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "FightSchedule",
+        "url": "https://fightschedule.live",
+        "logo": "https://fightschedule.live/static/FS_icon.svg",
+        "description": "Live fight calendar for UFC, boxing, and MMA events with automatic timezone conversion and AI-powered previews."
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "What time is the UFC fight tonight?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "FightSchedule automatically converts all UFC event times to your local timezone. Visit fightschedule.live to see tonight's main card, prelims, and early prelims start times in your timezone."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What boxing fights are on this weekend?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "FightSchedule lists all upcoming boxing events including main card bouts, undercard fights, venues, and broadcast information. Check fightschedule.live to see this weekend's schedule."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "How do I find upcoming UFC events?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Visit fightschedule.live for a complete calendar of all confirmed UFC events. Each event page shows the full fight card, venue, date and time in your timezone, and AI-powered fight previews."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does FightSchedule cover boxing and UFC?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes. FightSchedule covers UFC, boxing, and other major MMA promotions. All events include full fight cards, venues, dates, and timezone-adjusted start times."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "What timezone are the fight times shown in?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "All fight times on FightSchedule are automatically converted to your local timezone using your browser settings. No manual conversion needed."
+                }
+            }
+        ]
     }
     </script>
     <script type="application/ld+json">

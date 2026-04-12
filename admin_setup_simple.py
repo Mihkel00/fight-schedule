@@ -431,7 +431,7 @@ def setup_admin(app):
             # on the per-route limits set below
             pass
 
-    # ---- Security headers ----
+    # ---- Security + cache headers ----
     @app.after_request
     def _set_security_headers(response):
         response.headers['X-Frame-Options'] = 'DENY'
@@ -439,6 +439,12 @@ def setup_admin(app):
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         if os.environ.get('RAILWAY_ENVIRONMENT') or os.environ.get('HTTPS_ONLY'):
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        # Cache-Control for static assets
+        path = request.path
+        if path.startswith('/static/'):
+            response.headers.setdefault('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800')
+        elif path == '/sitemap.xml':
+            response.headers.setdefault('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400')
         return response
 
     # ---- Auth gate for app.py admin routes ----
