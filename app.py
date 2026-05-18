@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
 import os
 import shutil
+import unicodedata
 import requests
 from datetime import datetime, timedelta
 import json
@@ -112,6 +113,14 @@ console_handler.setFormatter(formatter)
 # Add handlers to logger
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
+
+
+def _to_slug(name):
+    """Convert a fighter name to a URL slug, stripping diacritics and punctuation."""
+    normalized = unicodedata.normalize('NFD', name)
+    ascii_name = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    return ascii_name.lower().replace(' ', '-').replace("'", '').replace('.', '')
+
 
 logger.info("="*70)
 logger.info("FIGHT SCHEDULE APP STARTING")
@@ -823,9 +832,7 @@ def home():
         
         # Generate slugs for URLs
         if fight.get('sport') == 'Boxing':
-            f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
-            f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
-            fight['slug'] = f"{f1}-vs-{f2}-{fight['date']}"
+            fight['slug'] = f"{_to_slug(fight['fighter1'])}-vs-{_to_slug(fight['fighter2'])}-{fight['date']}"
     
     return render_template('index.html',
                          featured_fights=featured_fights,
@@ -1011,25 +1018,27 @@ def boxing_event_detail(event_slug):
     else:
         return "Invalid event URL", 404
     
-    # Find main event matching this slug
-    main_event_fight = None
+    # Find any fight matching this slug (not restricted to main event)
+    target_fight = None
     for fight in boxing_fights:
-        if fight['date'] == date_str and fight.get('is_main_event'):
-            f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
-            f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
+        if fight['date'] == date_str:
+            f1 = _to_slug(fight['fighter1'])
+            f2 = _to_slug(fight['fighter2'])
             fight_slug = f"{f1}-vs-{f2}"
-            
             if fight_slug == fighter_slug:
-                main_event_fight = fight
+                target_fight = fight
                 break
-    
-    if not main_event_fight:
+
+    if not target_fight:
         logger.warning(f"No boxing fight found for {event_slug}")
         return "Event not found", 404
-    
+
     # Get all fights from same venue/date
-    event_fights = [f for f in boxing_fights 
-                    if f['date'] == date_str and f['venue'] == main_event_fight['venue']]
+    event_fights = [f for f in boxing_fights
+                    if f['date'] == date_str and f['venue'] == target_fight['venue']]
+
+    # Use the actual main event if available, otherwise fall back to the matched fight
+    main_event_fight = next((f for f in event_fights if f.get('is_main_event')), target_fight)
     
     logger.info(f"Found {len(event_fights)} fights for this event")
     
