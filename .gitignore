@@ -6,3 +6,6 @@ logs/
 
 # Ephemeral cache (regenerated at runtime)
 fights_cache.json
+
+# Node (Tailwind build tooling)
+node_modules/
