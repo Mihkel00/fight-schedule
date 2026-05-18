@@ -1039,7 +1039,17 @@ def boxing_event_detail(event_slug):
 
     # Use the actual main event if available, otherwise fall back to the matched fight
     main_event_fight = next((f for f in event_fights if f.get('is_main_event')), target_fight)
-    
+
+    # Re-fetch images live from fighters.json so newly added images are always visible
+    # (the cache may predate the image being added)
+    for fight in event_fights:
+        for key in ('fighter1', 'fighter2'):
+            img_key = f'{key}_image'
+            if not fight.get(img_key):
+                img = get_fighter_image(fight[key])
+                if img:
+                    fight[img_key] = img
+
     logger.info(f"Found {len(event_fights)} fights for this event")
     
     event_fights_sorted = sorted(event_fights, key=lambda x: not x.get('is_main_event', False))
