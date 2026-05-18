@@ -407,13 +407,85 @@ def _boxer_to_slug(name: str) -> str:
     return re.sub(r'[^a-z0-9\-]', '', slug)
 
 
+_ESPN_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+_BOT_UA  = 'FightScheduleBot/1.0 (https://fightschedule.live)'
+
+
+def _espn_image_url(name: str) -> str | None:
+    """
+    Search ESPN for a boxer by name and return their headshot URL.
+    ESPN athlete headshots live at:
+      https://a.espncdn.com/i/headshots/boxing/players/full/{athlete_id}.png
+    """
+    try:
+        resp = http_requests.get(
+            'https://site.web.api.espn.com/apis/common/v3/search',
+            params={'query': name, 'sport': 'boxing', 'type': 'athlete', 'limit': 5, 'lang': 'en'},
+            headers={'User-Agent': _ESPN_UA},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+        for result in data.get('results', []):
+            if result.get('type') != 'athlete':
+                continue
+            for item in result.get('contents', []):
+                athlete = item.get('data', {})
+                athlete_id = athlete.get('id')
+                if not athlete_id:
+                    continue
+
+                # Verify the name is a reasonable match (avoid totally wrong fighters)
+                espn_name = athlete.get('displayName', '').lower()
+                search_parts = name.lower().split()
+                # At least one word of the search name should appear in the ESPN name
+                if not any(part in espn_name for part in search_parts if len(part) > 2):
+                    continue
+
+                img_url = f'https://a.espncdn.com/i/headshots/boxing/players/full/{athlete_id}.png'
+
+                # Verify the image actually exists (ESPN returns a placeholder for unknown athletes)
+                head = http_requests.head(img_url, headers={'User-Agent': _ESPN_UA}, timeout=8)
+                if head.status_code == 200 and int(head.headers.get('content-length', 0)) > 5000:
+                    return img_url
+    except Exception:
+        pass
+    return None
+
+
 def _wikipedia_image_url(name: str) -> str | None:
-    """Query Wikipedia pageimages API for a fighter's thumbnail."""
-    session_http = http_requests.Session()
-    session_http.headers['User-Agent'] = 'FightScheduleBot/1.0 (https://fightschedule.live)'
-    for title in [name, f"{name} (boxer)"]:
+    """
+    Query Wikipedia for a fighter's thumbnail, using the search API so
+    name variations and alternate spellings are handled gracefully.
+    """
+    try:
+        # Use the search API first to find the best-matching page title
+        resp = http_requests.get(
+            'https://en.wikipedia.org/w/api.php',
+            params={
+                'action': 'query',
+                'list': 'search',
+                'srsearch': f'{name} boxer',
+                'srlimit': 3,
+                'format': 'json',
+            },
+            headers={'User-Agent': _BOT_UA},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        search_results = resp.json().get('query', {}).get('search', [])
+        candidate_titles = [r['title'] for r in search_results]
+    except Exception:
+        candidate_titles = []
+
+    # Fall back to exact-title attempts if search failed
+    if not candidate_titles:
+        candidate_titles = [name, f'{name} (boxer)']
+
+    for title in candidate_titles[:3]:
         try:
-            resp = session_http.get(
+            resp = http_requests.get(
                 'https://en.wikipedia.org/w/api.php',
                 params={
                     'action': 'query',
@@ -423,6 +495,7 @@ def _wikipedia_image_url(name: str) -> str | None:
                     'format': 'json',
                     'redirects': 1,
                 },
+                headers={'User-Agent': _BOT_UA},
                 timeout=10,
             )
             resp.raise_for_status()
@@ -436,6 +509,11 @@ def _wikipedia_image_url(name: str) -> str | None:
         except Exception:
             pass
     return None
+
+
+def _fetch_boxer_image(name: str) -> str | None:
+    """Try ESPN first, then Wikipedia. Returns a direct image URL or None."""
+    return _espn_image_url(name) or _wikipedia_image_url(name)
 
 
 def _ext_from_url(url: str) -> str:
@@ -461,14 +539,24 @@ def _download_image(url: str, dest: str) -> bool:
         return False
 
 
+def _is_broken_local_path(path: str) -> bool:
+    """Return True if path is a local reference pointing to a missing file."""
+    if not path:
+        return False
+    if path.startswith('/static/fighters/'):
+        abs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), path.lstrip('/'))
+        return not os.path.exists(abs_path)
+    if path.startswith('/persisted-fighters/'):
+        filename = path.split('/')[-1]
+        return not os.path.exists(data_path(os.path.join('fighters', filename)))
+    return False
+
+
 class FetchBoxerImagesView(ProtectedBaseView):
-    """Admin view: auto-fetch missing boxer images from Wikipedia."""
+    """Admin view: auto-fetch missing boxer images from ESPN then Wikipedia."""
 
     @expose('/', methods=['GET', 'POST'])
     def index(self):
-        static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'fighters')
-        os.makedirs(static_dir, exist_ok=True)
-
         # Load current boxer DB
         fighters_path = data_path('fighters.json')
         try:
@@ -477,8 +565,9 @@ class FetchBoxerImagesView(ProtectedBaseView):
         except Exception:
             db = {}
 
-        # Collect names missing images
+        # Missing = null entries OR local paths whose file was lost on redeploy
         null_entries = [k for k, v in db.items() if not v]
+        broken_entries = [k for k, v in db.items() if v and _is_broken_local_path(v)]
 
         # Also check schedule cache for boxers not in DB at all
         cache_path = data_path('fights_cache.json')
@@ -496,28 +585,32 @@ class FetchBoxerImagesView(ProtectedBaseView):
                 pass
 
         missing_from_db = [n for n in schedule_names if n not in db]
-        all_missing = sorted(set(null_entries + missing_from_db))
+        all_missing = sorted(set(null_entries + broken_entries + missing_from_db))
 
         results = None
 
         if request.method == 'POST':
             found, not_found, errors = [], [], []
+            # Save to the persistent data volume so images survive redeployment
+            persist_dir = data_path('fighters')
+            os.makedirs(persist_dir, exist_ok=True)
 
             for name in all_missing:
-                img_url = _wikipedia_image_url(name)
+                img_url = _fetch_boxer_image(name)
                 if not img_url:
                     not_found.append(name)
                     if name not in db:
                         db[name] = None
                     continue
 
+                source = 'espn' if 'espncdn.com' in img_url else 'wikipedia'
                 ext = _ext_from_url(img_url)
                 filename = f"{_boxer_to_slug(name)}{ext}"
-                dest = os.path.join(static_dir, filename)
+                dest = os.path.join(persist_dir, filename)
 
                 if _download_image(img_url, dest):
-                    db[name] = f"/static/fighters/{filename}"
-                    found.append({'name': name, 'path': db[name]})
+                    db[name] = f"/persisted-fighters/{filename}"
+                    found.append({'name': name, 'path': db[name], 'source': source})
                 else:
                     errors.append(name)
                     if name not in db:
@@ -533,9 +626,11 @@ class FetchBoxerImagesView(ProtectedBaseView):
                 logger.error(f"Failed to save fighters.json: {e}")
 
             results = {'found': found, 'not_found': not_found, 'errors': errors}
-            all_missing = []  # re-compute after save
-            null_entries2 = [k for k, v in db.items() if not v]
-            all_missing = sorted(set(null_entries2))
+            # Recompute missing count after save
+            broken_after = [k for k, v in db.items() if v and _is_broken_local_path(v)]
+            all_missing = sorted(set(
+                [k for k, v in db.items() if not v] + broken_after
+            ))
 
         return self.render(
             'admin/fetch_boxer_images.html',

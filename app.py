@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, make_response, send_file
+from flask import Flask, render_template, request, redirect, make_response, send_file, send_from_directory
 from flask_compress import Compress
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
@@ -726,6 +726,13 @@ def fetch_fights():
         save_cache(fights)
     
     return fights
+
+@app.route('/persisted-fighters/<path:filename>')
+def persisted_fighter_image(filename):
+    """Serve fighter images stored in the persistent data volume."""
+    fighters_dir = data_path('fighters')
+    return send_from_directory(fighters_dir, filename)
+
 
 @app.route('/')
 def home():

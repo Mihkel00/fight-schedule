@@ -67,47 +67,88 @@ def boxers_from_schedule() -> list[str]:
     return sorted(names)
 
 
+_ESPN_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+_BOT_UA  = 'FightScheduleBot/1.0 (https://fightschedule.live)'
+
+
+def espn_image(name: str) -> str | None:
+    """Search ESPN for a boxer and return their headshot URL."""
+    try:
+        resp = requests.get(
+            'https://site.web.api.espn.com/apis/common/v3/search',
+            params={'query': name, 'sport': 'boxing', 'type': 'athlete', 'limit': 5, 'lang': 'en'},
+            headers={'User-Agent': _ESPN_UA},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        for result in resp.json().get('results', []):
+            if result.get('type') != 'athlete':
+                continue
+            for item in result.get('contents', []):
+                athlete_id = item.get('data', {}).get('id')
+                if not athlete_id:
+                    continue
+                espn_name = item.get('data', {}).get('displayName', '').lower()
+                if not any(p in espn_name for p in name.lower().split() if len(p) > 2):
+                    continue
+                img_url = f'https://a.espncdn.com/i/headshots/boxing/players/full/{athlete_id}.png'
+                head = requests.head(img_url, headers={'User-Agent': _ESPN_UA}, timeout=8)
+                if head.status_code == 200 and int(head.headers.get('content-length', 0)) > 5000:
+                    return img_url
+    except Exception as e:
+        print(f"  ESPN error for '{name}': {e}")
+    return None
+
+
 def wikipedia_image(name: str) -> str | None:
-    """
-    Query Wikipedia for a fighter's page image.
-    Tries the exact name first, then with "(boxer)" disambiguation.
-    Returns a direct image URL or None.
-    """
-    session = requests.Session()
-    session.headers['User-Agent'] = 'FightScheduleBot/1.0 (https://fightschedule.live)'
+    """Query Wikipedia for a fighter's page image using search API for better name matching."""
+    try:
+        resp = requests.get(
+            'https://en.wikipedia.org/w/api.php',
+            params={'action': 'query', 'list': 'search', 'srsearch': f'{name} boxer',
+                    'srlimit': 3, 'format': 'json'},
+            headers={'User-Agent': _BOT_UA},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        candidate_titles = [r['title'] for r in resp.json().get('query', {}).get('search', [])]
+    except Exception:
+        candidate_titles = []
 
-    candidates = [name, f"{name} (boxer)"]
+    if not candidate_titles:
+        candidate_titles = [name, f'{name} (boxer)']
 
-    for title in candidates:
+    for title in candidate_titles[:3]:
         try:
-            # MediaWiki API — pageimages prop gives the page's lead image
-            params = {
-                'action': 'query',
-                'titles': title,
-                'prop': 'pageimages',
-                'pithumbsize': 400,
-                'format': 'json',
-                'redirects': 1,
-            }
-            resp = session.get(
+            resp = requests.get(
                 'https://en.wikipedia.org/w/api.php',
-                params=params,
+                params={'action': 'query', 'titles': title, 'prop': 'pageimages',
+                        'pithumbsize': 400, 'format': 'json', 'redirects': 1},
+                headers={'User-Agent': _BOT_UA},
                 timeout=10,
             )
             resp.raise_for_status()
-            data = resp.json()
-
-            pages = data.get('query', {}).get('pages', {})
+            pages = resp.json().get('query', {}).get('pages', {})
             for page in pages.values():
                 if page.get('pageid', -1) == -1:
-                    continue  # page doesn't exist
+                    continue
                 thumb = page.get('thumbnail', {}).get('source')
                 if thumb:
                     return thumb
         except Exception as e:
-            print(f"  Wikipedia API error for '{title}': {e}")
-
+            print(f"  Wikipedia error for '{title}': {e}")
     return None
+
+
+def fetch_image(name: str) -> tuple[str | None, str]:
+    """Try ESPN first, then Wikipedia. Returns (url, source) or (None, '')."""
+    url = espn_image(name)
+    if url:
+        return url, 'espn'
+    url = wikipedia_image(name)
+    if url:
+        return url, 'wikipedia'
+    return None, ''
 
 
 def download_image(url: str, dest: Path) -> bool:
@@ -137,27 +178,35 @@ def ext_from_url(url: str) -> str:
     return '.jpg'
 
 
+def is_broken_local_path(path: str) -> bool:
+    """Return True if path is a /static/fighters/ reference pointing to a missing file."""
+    if not path or not path.startswith('/static/fighters/'):
+        return False
+    abs_path = ROOT / path.lstrip('/')
+    return not abs_path.exists()
+
+
 def process(names: list[str], db: dict, dry_run: bool) -> dict:
     found = 0
     not_found = 0
 
     for name in names:
         existing = db.get(name)
-        if existing:
-            # Already has a non-null image — skip
+        if existing and not is_broken_local_path(existing):
+            # Already has a working image — skip
             continue
 
         print(f"\n→ {name}")
 
-        img_url = wikipedia_image(name)
+        img_url, source = fetch_image(name)
         if not img_url:
-            print(f"  ✗ Not found on Wikipedia")
+            print(f"  ✗ Not found on ESPN or Wikipedia")
             not_found += 1
             if name not in db:
-                db[name] = None  # add null entry so we know we tried
+                db[name] = None
             continue
 
-        print(f"  ✓ Found: {img_url}")
+        print(f"  ✓ Found via {source}: {img_url}")
 
         if dry_run:
             found += 1
@@ -165,24 +214,26 @@ def process(names: list[str], db: dict, dry_run: bool) -> dict:
 
         ext = ext_from_url(img_url)
         filename = f"{to_slug(name)}{ext}"
-        dest = STATIC_DIR / filename
+        # Save to the persistent data volume so files survive redeployment
+        persist_dir = DATA_DIR / 'fighters'
+        persist_dir.mkdir(parents=True, exist_ok=True)
+        dest = persist_dir / filename
 
         if download_image(img_url, dest):
-            static_path = f"/static/fighters/{filename}"
-            db[name] = static_path
-            print(f"  Saved → {static_path}")
+            db[name] = f"/persisted-fighters/{filename}"
+            print(f"  Saved → {db[name]}")
             found += 1
         else:
             print(f"  ✗ Download failed")
             not_found += 1
 
-        time.sleep(0.3)  # be polite to Wikipedia
+        time.sleep(0.3)
 
     return {'found': found, 'not_found': not_found}
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Fetch missing boxer images from Wikipedia')
+    parser = argparse.ArgumentParser(description='Fetch missing boxer images from ESPN then Wikipedia')
     parser.add_argument('names', nargs='*', help='Specific fighter names (default: all missing)')
     parser.add_argument('--dry-run', action='store_true', help='Show what would be fetched without downloading')
     args = parser.parse_args()

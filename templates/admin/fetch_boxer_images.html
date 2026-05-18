@@ -126,6 +126,9 @@
                 <li class="found">
                     <span class="dot dot-green"></span>
                     {{ item.name }}
+                    <span style="margin-left:auto;font-size:0.75rem;color:{% if item.source == 'espn' %}#fb923c{% else %}#998c8a{% endif %}">
+                        {{ item.source }}
+                    </span>
                 </li>
                 {% endfor %}
             </ul>
