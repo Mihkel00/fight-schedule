@@ -42,17 +42,41 @@
     .btn-fetch:hover { opacity: 0.85; }
     .btn-fetch:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .spinner {
-        display: none;
-        width: 18px; height: 18px;
-        border: 3px solid #0d0d0d44;
-        border-top-color: #0d0d0d;
-        border-radius: 50%;
-        animation: spin 0.7s linear infinite;
-        vertical-align: middle;
-        margin-left: 10px;
+    /* Progress bar */
+    .progress-wrap {
+        background: #161616;
+        border: 1px solid #2e2d2d;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #998c8a;
+        margin-bottom: 10px;
+    }
+    .progress-bar-bg {
+        background: #2e2d2d;
+        border-radius: 99px;
+        height: 10px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        background: #fb923c;
+        height: 100%;
+        border-radius: 99px;
+        transition: width 0.4s ease;
+    }
+    .progress-current {
+        margin-top: 10px;
+        font-size: 0.85rem;
+        color: #847c7a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
     .results { margin-top: 28px; }
     .result-section { margin-bottom: 20px; }
@@ -76,21 +100,97 @@
         align-items: center;
         gap: 8px;
     }
-    .fighter-list li.found { border-color: #22c55e44; }
+    .fighter-list li.found   { border-color: #22c55e44; }
     .fighter-list li.missing { border-color: #998c8a44; color: #998c8a; }
-    .fighter-list li.error { border-color: #ef444444; color: #ef4444; }
+    .fighter-list li.error   { border-color: #ef444444; color: #ef4444; }
     .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .dot-green { background: #22c55e; }
     .dot-gray  { background: #998c8a; }
     .dot-red   { background: #ef4444; }
+    .source-tag { margin-left: auto; font-size: 0.75rem; color: #fb923c; }
 
     .empty-state { color: #998c8a; font-style: italic; font-size: 0.9rem; }
 </style>
 
 <div class="page-wrap">
     <h1>Auto-Fetch Boxer Images</h1>
-    <p class="subtitle">Searches Wikipedia for every boxer that's missing a photo and downloads it automatically.</p>
+    <p class="subtitle">Searches ESPN then Wikipedia for every boxer missing a photo and downloads it to the persistent volume.</p>
 
+    {% if status and status.state == 'running' %}
+    {# ── RUNNING ── auto-refresh every 3s #}
+    <meta http-equiv="refresh" content="3">
+    {% set pct = ((status.done / status.total * 100) | int) if status.total else 0 %}
+    <div class="progress-wrap">
+        <div class="progress-label">
+            <span>Fetching images…</span>
+            <span>{{ status.done }} / {{ status.total }}</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width: {{ pct }}%"></div>
+        </div>
+        {% if status.current %}
+        <div class="progress-current">→ {{ status.current }}</div>
+        {% endif %}
+    </div>
+
+    {% elif status and status.state == 'done' %}
+    {# ── DONE ── show results #}
+    <div class="info-card" style="border-color:#22c55e44">
+        <h2>Finished</h2>
+        <p>Found {{ status.found | length }} image(s). {{ status.not_found | length }} not found. {{ status.errors | length }} download error(s).</p>
+    </div>
+
+    <div class="results">
+        {% if status.found %}
+        <div class="result-section">
+            <h3>✅ Saved ({{ status.found | length }})</h3>
+            <ul class="fighter-list">
+                {% for item in status.found %}
+                <li class="found">
+                    <span class="dot dot-green"></span>
+                    {{ item.name }}
+                    <span class="source-tag">{{ item.source }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if status.not_found %}
+        <div class="result-section">
+            <h3>⬜ Not found ({{ status.not_found | length }})</h3>
+            <ul class="fighter-list">
+                {% for name in status.not_found %}
+                <li class="missing"><span class="dot dot-gray"></span>{{ name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% if status.errors %}
+        <div class="result-section">
+            <h3>❌ Download failed ({{ status.errors | length }})</h3>
+            <ul class="fighter-list">
+                {% for name in status.errors %}
+                <li class="error"><span class="dot dot-red"></span>{{ name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if missing_count > 0 %}
+    <div class="info-card" style="margin-top:24px">
+        <h2>Still missing <span class="count-badge">{{ missing_count }}</span></h2>
+        <p>These fighters were not found on ESPN or Wikipedia. You can try again later or add images manually.</p>
+    </div>
+    {% endif %}
+
+    <form method="POST" style="margin-top:20px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn-fetch">Run again</button>
+    </form>
+
+    {% else %}
+    {# ── IDLE ── show count and start button #}
     <div class="info-card">
         <h2>
             Boxers missing images
@@ -98,93 +198,25 @@
         </h2>
         <p>
             {% if missing_count == 0 %}
-                All boxers in the schedule have images. Nothing to fetch.
+                All boxers in the schedule have images.
             {% else %}
-                {{ missing_count }} boxer(s) have no image yet. Click the button below to fetch them all from Wikipedia.
-                Well-known fighters are usually found; obscure undercard fighters may not be on Wikipedia.
+                {{ missing_count }} boxer(s) have no image yet. The job runs in the background — this page refreshes automatically every 3 seconds while it's running.
             {% endif %}
         </p>
     </div>
 
-    {% if missing_count > 0 or not results %}
+    {% if missing_count > 0 %}
     <form method="POST" id="fetch-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn-fetch" id="fetch-btn">
-            Fetch images from Wikipedia
-            <span class="spinner" id="spinner"></span>
-        </button>
+        <button type="submit" class="btn-fetch">Fetch images from ESPN + Wikipedia</button>
     </form>
-    {% endif %}
 
-    {% if results %}
-    <div class="results">
-        {% if results.found %}
-        <div class="result-section">
-            <h3>✅ Found &amp; saved ({{ results.found | length }})</h3>
-            <ul class="fighter-list">
-                {% for item in results.found %}
-                <li class="found">
-                    <span class="dot dot-green"></span>
-                    {{ item.name }}
-                    <span style="margin-left:auto;font-size:0.75rem;color:{% if item.source == 'espn' %}#fb923c{% else %}#998c8a{% endif %}">
-                        {{ item.source }}
-                    </span>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        {% if results.not_found %}
-        <div class="result-section">
-            <h3>⬜ Not on Wikipedia ({{ results.not_found | length }})</h3>
-            <ul class="fighter-list">
-                {% for name in results.not_found %}
-                <li class="missing">
-                    <span class="dot dot-gray"></span>
-                    {{ name }}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        {% if results.errors %}
-        <div class="result-section">
-            <h3>❌ Download failed ({{ results.errors | length }})</h3>
-            <ul class="fighter-list">
-                {% for name in results.errors %}
-                <li class="error">
-                    <span class="dot dot-red"></span>
-                    {{ name }}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        {% if not results.found and not results.not_found and not results.errors %}
-        <p class="empty-state">Nothing was processed.</p>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    {% if missing_count > 0 and not results %}
     <div style="margin-top: 20px; color: #998c8a; font-size: 0.85rem;">
         <strong>Missing:</strong>
         {% for name in missing_names[:30] %}{{ name }}{% if not loop.last %}, {% endif %}{% endfor %}
         {% if missing_names | length > 30 %}&hellip; and {{ missing_names | length - 30 }} more{% endif %}
     </div>
     {% endif %}
+    {% endif %}
 </div>
-
-<script>
-document.getElementById('fetch-form')?.addEventListener('submit', function() {
-    const btn = document.getElementById('fetch-btn');
-    const spinner = document.getElementById('spinner');
-    btn.disabled = true;
-    btn.childNodes[0].textContent = 'Fetching… this may take a minute ';
-    spinner.style.display = 'inline-block';
-});
-</script>
 {% endblock %}

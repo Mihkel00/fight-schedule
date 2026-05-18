@@ -552,12 +552,76 @@ def _is_broken_local_path(path: str) -> bool:
     return False
 
 
+import threading
+
+_fetch_lock = threading.Lock()
+
+
+def _run_fetch_job(names: list, fighters_path: str, persist_dir: str):
+    """Background thread: fetch images and write results to a status file."""
+    status_path = data_path('fetch_status.json')
+
+    def _save_status(state, found, not_found, errors, current='', done=0, total=0):
+        with open(status_path, 'w') as f:
+            json.dump({
+                'state': state,       # 'running' | 'done'
+                'current': current,
+                'done': done,
+                'total': total,
+                'found': found,
+                'not_found': not_found,
+                'errors': errors,
+            }, f)
+
+    try:
+        with open(fighters_path) as f:
+            db = json.load(f)
+    except Exception:
+        db = {}
+
+    found, not_found, errors = [], [], []
+    os.makedirs(persist_dir, exist_ok=True)
+    total = len(names)
+
+    _save_status('running', found, not_found, errors, total=total, done=0)
+
+    for idx, name in enumerate(names):
+        _save_status('running', found, not_found, errors,
+                     current=name, done=idx, total=total)
+
+        img_url = _fetch_boxer_image(name)
+        if not img_url:
+            not_found.append(name)
+            if name not in db:
+                db[name] = None
+        else:
+            source = 'espn' if 'espncdn.com' in img_url else 'wikipedia'
+            ext = _ext_from_url(img_url)
+            filename = f"{_boxer_to_slug(name)}{ext}"
+            dest = os.path.join(persist_dir, filename)
+            if _download_image(img_url, dest):
+                db[name] = f"/persisted-fighters/{filename}"
+                found.append({'name': name, 'path': db[name], 'source': source})
+            else:
+                errors.append(name)
+                if name not in db:
+                    db[name] = None
+
+        time.sleep(0.3)
+
+    try:
+        with open(fighters_path, 'w') as f:
+            json.dump(db, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"fetch job: failed to save fighters.json: {e}")
+
+    _save_status('done', found, not_found, errors, done=total, total=total)
+
+
 class FetchBoxerImagesView(ProtectedBaseView):
     """Admin view: auto-fetch missing boxer images from ESPN then Wikipedia."""
 
-    @expose('/', methods=['GET', 'POST'])
-    def index(self):
-        # Load current boxer DB
+    def _get_missing(self):
         fighters_path = data_path('fighters.json')
         try:
             with open(fighters_path) as f:
@@ -565,11 +629,9 @@ class FetchBoxerImagesView(ProtectedBaseView):
         except Exception:
             db = {}
 
-        # Missing = null entries OR local paths whose file was lost on redeploy
-        null_entries = [k for k, v in db.items() if not v]
+        null_entries   = [k for k, v in db.items() if not v]
         broken_entries = [k for k, v in db.items() if v and _is_broken_local_path(v)]
 
-        # Also check schedule cache for boxers not in DB at all
         cache_path = data_path('fights_cache.json')
         schedule_names = []
         if os.path.exists(cache_path):
@@ -578,65 +640,59 @@ class FetchBoxerImagesView(ProtectedBaseView):
                     cache = json.load(f)
                 for fight in cache.get('fights', []):
                     if fight.get('sport') == 'Boxing':
-                        for name in [fight.get('fighter1'), fight.get('fighter2')]:
-                            if name and name != 'TBA':
-                                schedule_names.append(name)
+                        for nm in [fight.get('fighter1'), fight.get('fighter2')]:
+                            if nm and nm != 'TBA':
+                                schedule_names.append(nm)
             except Exception:
                 pass
 
         missing_from_db = [n for n in schedule_names if n not in db]
-        all_missing = sorted(set(null_entries + broken_entries + missing_from_db))
+        return sorted(set(null_entries + broken_entries + missing_from_db))
 
-        results = None
+    @expose('/', methods=['GET', 'POST'])
+    def index(self):
+        fighters_path = data_path('fighters.json')
+        persist_dir   = data_path('fighters')
+        status_path   = data_path('fetch_status.json')
+
+        # Load current job status if any
+        status = None
+        if os.path.exists(status_path):
+            try:
+                with open(status_path) as f:
+                    status = json.load(f)
+            except Exception:
+                pass
 
         if request.method == 'POST':
-            found, not_found, errors = [], [], []
-            # Save to the persistent data volume so images survive redeployment
-            persist_dir = data_path('fighters')
-            os.makedirs(persist_dir, exist_ok=True)
+            if status and status.get('state') == 'running':
+                # Job already running — just show status page
+                pass
+            else:
+                # Clear previous status and kick off background thread
+                if os.path.exists(status_path):
+                    os.remove(status_path)
+                names = self._get_missing()
+                if names:
+                    t = threading.Thread(
+                        target=_run_fetch_job,
+                        args=(names, fighters_path, persist_dir),
+                        daemon=True,
+                    )
+                    t.start()
+                    # Brief sleep so status file is written before we redirect
+                    time.sleep(0.3)
+                    if os.path.exists(status_path):
+                        with open(status_path) as f:
+                            status = json.load(f)
 
-            for name in all_missing:
-                img_url = _fetch_boxer_image(name)
-                if not img_url:
-                    not_found.append(name)
-                    if name not in db:
-                        db[name] = None
-                    continue
-
-                source = 'espn' if 'espncdn.com' in img_url else 'wikipedia'
-                ext = _ext_from_url(img_url)
-                filename = f"{_boxer_to_slug(name)}{ext}"
-                dest = os.path.join(persist_dir, filename)
-
-                if _download_image(img_url, dest):
-                    db[name] = f"/persisted-fighters/{filename}"
-                    found.append({'name': name, 'path': db[name], 'source': source})
-                else:
-                    errors.append(name)
-                    if name not in db:
-                        db[name] = None
-
-                time.sleep(0.3)
-
-            # Save updated DB
-            try:
-                with open(fighters_path, 'w') as f:
-                    json.dump(db, f, indent=2, ensure_ascii=False)
-            except Exception as e:
-                logger.error(f"Failed to save fighters.json: {e}")
-
-            results = {'found': found, 'not_found': not_found, 'errors': errors}
-            # Recompute missing count after save
-            broken_after = [k for k, v in db.items() if v and _is_broken_local_path(v)]
-            all_missing = sorted(set(
-                [k for k, v in db.items() if not v] + broken_after
-            ))
+        all_missing = self._get_missing() if (not status or status.get('state') == 'done') else []
 
         return self.render(
             'admin/fetch_boxer_images.html',
             missing_count=len(all_missing),
             missing_names=all_missing,
-            results=results,
+            status=status,
         )
 
 
