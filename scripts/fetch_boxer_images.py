@@ -178,14 +178,22 @@ def ext_from_url(url: str) -> str:
     return '.jpg'
 
 
+def is_broken_local_path(path: str) -> bool:
+    """Return True if path is a /static/fighters/ reference pointing to a missing file."""
+    if not path or not path.startswith('/static/fighters/'):
+        return False
+    abs_path = ROOT / path.lstrip('/')
+    return not abs_path.exists()
+
+
 def process(names: list[str], db: dict, dry_run: bool) -> dict:
     found = 0
     not_found = 0
 
     for name in names:
         existing = db.get(name)
-        if existing:
-            # Already has a non-null image — skip
+        if existing and not is_broken_local_path(existing):
+            # Already has a working image — skip
             continue
 
         print(f"\n→ {name}")
@@ -206,12 +214,14 @@ def process(names: list[str], db: dict, dry_run: bool) -> dict:
 
         ext = ext_from_url(img_url)
         filename = f"{to_slug(name)}{ext}"
-        dest = STATIC_DIR / filename
+        # Save to the persistent data volume so files survive redeployment
+        persist_dir = DATA_DIR / 'fighters'
+        persist_dir.mkdir(parents=True, exist_ok=True)
+        dest = persist_dir / filename
 
         if download_image(img_url, dest):
-            static_path = f"/static/fighters/{filename}"
-            db[name] = static_path
-            print(f"  Saved → {static_path}")
+            db[name] = f"/persisted-fighters/{filename}"
+            print(f"  Saved → {db[name]}")
             found += 1
         else:
             print(f"  ✗ Download failed")

@@ -539,14 +539,24 @@ def _download_image(url: str, dest: str) -> bool:
         return False
 
 
+def _is_broken_local_path(path: str) -> bool:
+    """Return True if path is a local reference pointing to a missing file."""
+    if not path:
+        return False
+    if path.startswith('/static/fighters/'):
+        abs_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), path.lstrip('/'))
+        return not os.path.exists(abs_path)
+    if path.startswith('/persisted-fighters/'):
+        filename = path.split('/')[-1]
+        return not os.path.exists(data_path(os.path.join('fighters', filename)))
+    return False
+
+
 class FetchBoxerImagesView(ProtectedBaseView):
     """Admin view: auto-fetch missing boxer images from ESPN then Wikipedia."""
 
     @expose('/', methods=['GET', 'POST'])
     def index(self):
-        static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'fighters')
-        os.makedirs(static_dir, exist_ok=True)
-
         # Load current boxer DB
         fighters_path = data_path('fighters.json')
         try:
@@ -555,8 +565,9 @@ class FetchBoxerImagesView(ProtectedBaseView):
         except Exception:
             db = {}
 
-        # Collect names missing images
+        # Missing = null entries OR local paths whose file was lost on redeploy
         null_entries = [k for k, v in db.items() if not v]
+        broken_entries = [k for k, v in db.items() if v and _is_broken_local_path(v)]
 
         # Also check schedule cache for boxers not in DB at all
         cache_path = data_path('fights_cache.json')
@@ -574,12 +585,15 @@ class FetchBoxerImagesView(ProtectedBaseView):
                 pass
 
         missing_from_db = [n for n in schedule_names if n not in db]
-        all_missing = sorted(set(null_entries + missing_from_db))
+        all_missing = sorted(set(null_entries + broken_entries + missing_from_db))
 
         results = None
 
         if request.method == 'POST':
             found, not_found, errors = [], [], []
+            # Save to the persistent data volume so images survive redeployment
+            persist_dir = data_path('fighters')
+            os.makedirs(persist_dir, exist_ok=True)
 
             for name in all_missing:
                 img_url = _fetch_boxer_image(name)
@@ -592,10 +606,10 @@ class FetchBoxerImagesView(ProtectedBaseView):
                 source = 'espn' if 'espncdn.com' in img_url else 'wikipedia'
                 ext = _ext_from_url(img_url)
                 filename = f"{_boxer_to_slug(name)}{ext}"
-                dest = os.path.join(static_dir, filename)
+                dest = os.path.join(persist_dir, filename)
 
                 if _download_image(img_url, dest):
-                    db[name] = f"/static/fighters/{filename}"
+                    db[name] = f"/persisted-fighters/{filename}"
                     found.append({'name': name, 'path': db[name], 'source': source})
                 else:
                     errors.append(name)
@@ -612,9 +626,11 @@ class FetchBoxerImagesView(ProtectedBaseView):
                 logger.error(f"Failed to save fighters.json: {e}")
 
             results = {'found': found, 'not_found': not_found, 'errors': errors}
-            all_missing = []  # re-compute after save
-            null_entries2 = [k for k, v in db.items() if not v]
-            all_missing = sorted(set(null_entries2))
+            # Recompute missing count after save
+            broken_after = [k for k, v in db.items() if v and _is_broken_local_path(v)]
+            all_missing = sorted(set(
+                [k for k, v in db.items() if not v] + broken_after
+            ))
 
         return self.render(
             'admin/fetch_boxer_images.html',
