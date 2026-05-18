@@ -16,6 +16,10 @@ from datetime import timedelta
 import os
 import logging
 import time
+import json
+import re
+import unicodedata
+import requests as http_requests
 from admin_models import FighterImageOverride, BigNameFighter, ManualEvent, TimeOverride, data_path
 
 logger = logging.getLogger('fight_schedule')
@@ -393,6 +397,155 @@ class MissingFighterImagesView(ProtectedBaseView):
 # ============================================================================
 # SETUP
 # ============================================================================
+# FETCH BOXER IMAGES VIEW
+# ============================================================================
+
+def _boxer_to_slug(name: str) -> str:
+    normalized = unicodedata.normalize('NFD', name)
+    ascii_name = ''.join(c for c in normalized if unicodedata.category(c) != 'Mn')
+    slug = ascii_name.lower().replace(' ', '-').replace("'", '').replace('.', '')
+    return re.sub(r'[^a-z0-9\-]', '', slug)
+
+
+def _wikipedia_image_url(name: str) -> str | None:
+    """Query Wikipedia pageimages API for a fighter's thumbnail."""
+    session_http = http_requests.Session()
+    session_http.headers['User-Agent'] = 'FightScheduleBot/1.0 (https://fightschedule.live)'
+    for title in [name, f"{name} (boxer)"]:
+        try:
+            resp = session_http.get(
+                'https://en.wikipedia.org/w/api.php',
+                params={
+                    'action': 'query',
+                    'titles': title,
+                    'prop': 'pageimages',
+                    'pithumbsize': 400,
+                    'format': 'json',
+                    'redirects': 1,
+                },
+                timeout=10,
+            )
+            resp.raise_for_status()
+            pages = resp.json().get('query', {}).get('pages', {})
+            for page in pages.values():
+                if page.get('pageid', -1) == -1:
+                    continue
+                thumb = page.get('thumbnail', {}).get('source')
+                if thumb:
+                    return thumb
+        except Exception:
+            pass
+    return None
+
+
+def _ext_from_url(url: str) -> str:
+    path = url.split('?')[0].lower()
+    for ext in ('.jpg', '.jpeg', '.png', '.webp'):
+        if path.endswith(ext):
+            return ext
+    return '.jpg'
+
+
+def _download_image(url: str, dest: str) -> bool:
+    try:
+        resp = http_requests.get(url, timeout=15, headers={
+            'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'
+        })
+        resp.raise_for_status()
+        if 'image' not in resp.headers.get('content-type', ''):
+            return False
+        with open(dest, 'wb') as f:
+            f.write(resp.content)
+        return True
+    except Exception:
+        return False
+
+
+class FetchBoxerImagesView(ProtectedBaseView):
+    """Admin view: auto-fetch missing boxer images from Wikipedia."""
+
+    @expose('/', methods=['GET', 'POST'])
+    def index(self):
+        static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'fighters')
+        os.makedirs(static_dir, exist_ok=True)
+
+        # Load current boxer DB
+        fighters_path = data_path('fighters.json')
+        try:
+            with open(fighters_path) as f:
+                db = json.load(f)
+        except Exception:
+            db = {}
+
+        # Collect names missing images
+        null_entries = [k for k, v in db.items() if not v]
+
+        # Also check schedule cache for boxers not in DB at all
+        cache_path = data_path('fights_cache.json')
+        schedule_names = []
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path) as f:
+                    cache = json.load(f)
+                for fight in cache.get('fights', []):
+                    if fight.get('sport') == 'Boxing':
+                        for name in [fight.get('fighter1'), fight.get('fighter2')]:
+                            if name and name != 'TBA':
+                                schedule_names.append(name)
+            except Exception:
+                pass
+
+        missing_from_db = [n for n in schedule_names if n not in db]
+        all_missing = sorted(set(null_entries + missing_from_db))
+
+        results = None
+
+        if request.method == 'POST':
+            found, not_found, errors = [], [], []
+
+            for name in all_missing:
+                img_url = _wikipedia_image_url(name)
+                if not img_url:
+                    not_found.append(name)
+                    if name not in db:
+                        db[name] = None
+                    continue
+
+                ext = _ext_from_url(img_url)
+                filename = f"{_boxer_to_slug(name)}{ext}"
+                dest = os.path.join(static_dir, filename)
+
+                if _download_image(img_url, dest):
+                    db[name] = f"/static/fighters/{filename}"
+                    found.append({'name': name, 'path': db[name]})
+                else:
+                    errors.append(name)
+                    if name not in db:
+                        db[name] = None
+
+                time.sleep(0.3)
+
+            # Save updated DB
+            try:
+                with open(fighters_path, 'w') as f:
+                    json.dump(db, f, indent=2, ensure_ascii=False)
+            except Exception as e:
+                logger.error(f"Failed to save fighters.json: {e}")
+
+            results = {'found': found, 'not_found': not_found, 'errors': errors}
+            all_missing = []  # re-compute after save
+            null_entries2 = [k for k, v in db.items() if not v]
+            all_missing = sorted(set(null_entries2))
+
+        return self.render(
+            'admin/fetch_boxer_images.html',
+            missing_count=len(all_missing),
+            missing_names=all_missing,
+            results=results,
+        )
+
+
+# ============================================================================
 
 def setup_admin(app):
     """Setup Flask-Admin with security hardening"""
@@ -478,5 +631,6 @@ def setup_admin(app):
     admin.add_view(BigNameFighterView(name='Big Name Fighters', endpoint='big_names'))
     admin.add_view(ManualEventView(name='Manual Events', endpoint='manual_events'))
     admin.add_view(TimeOverrideView(name='Time Overrides', endpoint='time_overrides'))
+    admin.add_view(FetchBoxerImagesView(name='Auto-Fetch Images', endpoint='fetch_boxer_images'))
 
     return admin
