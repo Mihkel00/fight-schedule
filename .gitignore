@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 logs/
+node_modules/
 
 # Ephemeral cache (regenerated at runtime)
 fights_cache.json

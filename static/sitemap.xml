@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!--
+    STATIC pages — update lastmod when content changes.
+    EVENT pages should be generated dynamically (see generate-sitemap.js).
+  -->
+
+  <!-- Main schedule page -->
+  <url>
+    <loc>https://fightschedule.live/</loc>
+    <lastmod>2026-04-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- UFC schedule filter -->
+  <url>
+    <loc>https://fightschedule.live/ufc</loc>
+    <lastmod>2026-04-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Boxing schedule filter -->
+  <url>
+    <loc>https://fightschedule.live/boxing</loc>
+    <lastmod>2026-04-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!--
+    DYNAMIC EVENT PAGES
+    Generate these from your database. Example entries below.
+    Ideally run generate-sitemap.js on a cron (daily) or at build time.
+  -->
+
+  <!-- Example UFC event -->
+  <url>
+    <loc>https://fightschedule.live/ufc-event/ufc-315-jones-vs-aspinall-2026-04-18</loc>
+    <lastmod>2026-04-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Example boxing event -->
+  <url>
+    <loc>https://fightschedule.live/boxing-event/aznaur-kalsynov-vs-gabriel-tapales-2026-02-13</loc>
+    <lastmod>2026-02-10</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>
