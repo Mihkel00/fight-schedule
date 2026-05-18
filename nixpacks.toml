@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ['nodejs_22']
+
+[phases.build]
+cmds = ['npm install', 'npx tailwindcss -i static/css/input.css -o static/css/styles.css --minify', 'pip install -r requirements.txt']
