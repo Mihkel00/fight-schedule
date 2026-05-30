@@ -661,15 +661,13 @@ def fetch_fights():
         log(f"Total: {total_count}")
         log("\n⚠️  Using stale cache data instead of failed scrape")
         log("="*60 + "\n")
-        
-        # Return old cache instead
         debug_log.close()
-        
-        old_cache = load_cache(max_age_hours=72)  # Accept up to 3-day old cache
+
+        old_cache = load_cache(max_age_hours=72)
         if old_cache:
             return old_cache
         else:
-            log("❌ No old cache available - returning empty results")
+            print("❌ No old cache available - returning empty results")
             return []
     
     log(f"\n✓ Validation passed: UFC={ufc_count}, Boxing={boxing_count}, Total={total_count}\n")
