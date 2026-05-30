@@ -5,8 +5,9 @@ __pycache__/
 logs/
 node_modules/
 
-# Ephemeral cache (regenerated at runtime)
+# Ephemeral files (regenerated at runtime)
 fights_cache.json
+data_sources_comparison.txt
 
 # Node (Tailwind build tooling)
 node_modules/
