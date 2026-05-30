@@ -264,8 +264,18 @@ def _scrape_espn():
                 )
                 all_fights.extend(detail_fights)
 
-    print(f"ESPN API: Found {len(all_fights)} UFC fights")
-    return all_fights
+    # Deduplicate by (fighter1, fighter2, date) — ESPN can return the same
+    # event across multiple monthly queries with different IDs.
+    seen_fights = set()
+    unique_fights = []
+    for f in all_fights:
+        key = (f['fighter1'].lower(), f['fighter2'].lower(), f['date'])
+        if key not in seen_fights:
+            seen_fights.add(key)
+            unique_fights.append(f)
+
+    print(f"ESPN API: Found {len(unique_fights)} UFC fights ({len(all_fights) - len(unique_fights)} dupes removed)")
+    return unique_fights
 
 
 def _scrape_mmafighting():
