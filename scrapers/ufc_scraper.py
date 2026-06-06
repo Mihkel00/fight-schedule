@@ -184,10 +184,13 @@ def _scrape_espn():
             continue
 
         events = data.get('events', [])
+        print(f"[DEBUG] month={month} events={len(events)} top_keys={list(data.keys())[:8]}")
 
         for event in events:
             event_id = str(event.get('id', ''))
-            if event_id in events_seen:
+            already_seen = event_id in events_seen
+            print(f"[DEBUG]   event_id={event_id!r} name={event.get('name','')!r} already_seen={already_seen} comps={len(event.get('competitions', []))}")
+            if already_seen:
                 continue
             events_seen.add(event_id)
 
@@ -268,6 +271,13 @@ def _scrape_espn():
     # multiple monthly queries, sometimes with slightly different dates, so
     # keying on names alone is more reliable. The same two fighters won't be
     # booked against each other twice within a 6-month window.
+    from collections import Counter
+    raw_keys = [tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])) for f in all_fights]
+    key_counts = Counter(raw_keys)
+    for key, count in key_counts.most_common(5):
+        if count > 1:
+            print(f"[DEBUG] dedup: {key} appears {count}x")
+
     seen_fights = set()
     unique_fights = []
     for f in all_fights:
