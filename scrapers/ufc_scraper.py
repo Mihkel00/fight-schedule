@@ -264,12 +264,14 @@ def _scrape_espn():
                 )
                 all_fights.extend(detail_fights)
 
-    # Deduplicate by (fighter1, fighter2, date) — ESPN can return the same
-    # event across multiple monthly queries with different IDs.
+    # Deduplicate by sorted fighter name pair — ESPN returns the same event in
+    # multiple monthly queries, sometimes with slightly different dates, so
+    # keying on names alone is more reliable. The same two fighters won't be
+    # booked against each other twice within a 6-month window.
     seen_fights = set()
     unique_fights = []
     for f in all_fights:
-        key = (f['fighter1'].lower(), f['fighter2'].lower(), f['date'])
+        key = tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()]))
         if key not in seen_fights:
             seen_fights.add(key)
             unique_fights.append(f)
