@@ -172,7 +172,7 @@ def _scrape_espn():
     for month in months:
         try:
             resp = requests.get(
-                'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/schedule',
+                'https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
                 params={'dates': month},
                 headers={'User-Agent': _ESPN_UA},
                 timeout=15,
@@ -349,23 +349,30 @@ def _scrape_mmafighting():
                         return date_formatted, None
                     return utc_dt.strftime('%Y-%m-%d'), utc_dt.strftime('%H:%M')
 
-                fight_container = ec.find_next_sibling('div')
-                if not fight_container:
+                # Search broadly for fight links — any <a> whose text has " vs "
+                search_root = ec.find_next_sibling('div') or ec.parent
+                if not search_root:
                     continue
 
-                for fight_card in fight_container.find_all('div', class_=re.compile(r'_[0-9a-f]+')):
-                    fight_link = fight_card.find('a')
-                    if not fight_link:
-                        continue
+                seen_in_event = set()
+                for fight_link in search_root.find_all('a'):
                     fight_text = fight_link.get_text(strip=True)
-                    fighters = fight_text.split(' vs ')
+                    if ' vs ' not in fight_text:
+                        continue
+                    fighters = fight_text.split(' vs ', 1)
                     if len(fighters) != 2:
                         continue
 
                     f1 = re.sub(r'\s+\d+$', '', fighters[0].strip())
                     f2 = re.sub(r'\s+\d+$', '', fighters[1].strip())
+                    if not f1 or not f2:
+                        continue
 
-                    # Determine card type based on position — simplified
+                    pair = tuple(sorted([f1.lower(), f2.lower()]))
+                    if pair in seen_in_event:
+                        continue
+                    seen_in_event.add(pair)
+
                     mc_date, mc_time = fmt(main_card_utc_dt)
                     fights.append({
                         'fighter1': f1,
@@ -387,6 +394,21 @@ def _scrape_mmafighting():
     return fights
 
 
+def _dedup(fights):
+    """Remove duplicate fights, keeping the first occurrence of each matchup."""
+    seen = set()
+    out = []
+    for f in fights:
+        key = tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()]))
+        if key not in seen:
+            seen.add(key)
+            out.append(f)
+    removed = len(fights) - len(out)
+    if removed:
+        print(f"Dedup: removed {removed} duplicate fights, {len(out)} unique remain")
+    return out
+
+
 def scrape_ufc_events():
     """
     Scrape UFC schedule. Tries ESPN API first, falls back to mmafighting.com.
@@ -403,4 +425,4 @@ def scrape_ufc_events():
         if len(fallback) > len(fights):
             fights = fallback
 
-    return fights
+    return _dedup(fights)
