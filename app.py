@@ -589,7 +589,9 @@ INDEXNOW_KEY = os.environ.get('INDEXNOW_KEY', '')
 
 def public_event_urls(fights):
     """All public page URLs, same set as the sitemap."""
-    urls = ['https://fightschedule.live/']
+    urls = ['https://fightschedule.live/',
+            'https://fightschedule.live/ufc',
+            'https://fightschedule.live/boxing']
     seen = set()
     for fight in fights:
         if fight.get('sport') == 'UFC' and fight.get('card_type') != 'Prelims':
@@ -954,6 +956,139 @@ def home():
                          boxing_fights=boxing_scroll,
                          coming_soon=coming_soon)
 
+# ============================================================================
+# SPORT LANDING PAGES — /ufc and /boxing
+# ============================================================================
+
+_MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December']
+
+
+def _group_events_for_landing(fights, sport):
+    """Build a per-event summary list for the /ufc or /boxing landing pages."""
+    events = []
+    if sport == 'UFC':
+        seen = set()
+        # Count all fights (incl. prelims) per event
+        counts = {}
+        for f in fights:
+            if f.get('sport') == 'UFC':
+                counts[f.get('event_name', '')] = counts.get(f.get('event_name', ''), 0) + 1
+        for f in fights:
+            if f.get('sport') != 'UFC' or f.get('card_type') == 'Prelims':
+                continue
+            name = f.get('event_name', '')
+            if name in seen:
+                continue
+            seen.add(name)
+            slug = f"{name.lower().replace(' ', '-').replace(':', '').replace(',', '')}-{f['date']}"
+            events.append({
+                'title': name,
+                'fighter1': f['fighter1'],
+                'fighter2': f['fighter2'],
+                'fighter1_image': f.get('fighter1_image') or get_fighter_image(f['fighter1']),
+                'fighter2_image': f.get('fighter2_image') or get_fighter_image(f['fighter2']),
+                'date': f['date'],
+                'time': f.get('time'),
+                'time_estimated': f.get('time_estimated', False),
+                'venue': f.get('venue', ''),
+                'location': f.get('location', ''),
+                'streaming': '',
+                'fight_count': counts.get(name, 1),
+                'path': f"/event/{slug}",
+                'url': f"https://fightschedule.live/event/{slug}",
+            })
+    else:
+        # Boxing: one entry per main event; count undercard via venue+date
+        counts = {}
+        for f in fights:
+            if f.get('sport') == 'Boxing':
+                key = (f.get('venue', ''), f.get('date', ''))
+                counts[key] = counts.get(key, 0) + 1
+        for f in fights:
+            if f.get('sport') != 'Boxing' or not f.get('is_main_event'):
+                continue
+            slug = f"{_to_slug(f['fighter1'])}-vs-{_to_slug(f['fighter2'])}-{f['date']}"
+            events.append({
+                'title': f"{f['fighter1']} vs {f['fighter2']}",
+                'fighter1': f['fighter1'],
+                'fighter2': f['fighter2'],
+                'fighter1_image': f.get('fighter1_image') or get_fighter_image(f['fighter1']),
+                'fighter2_image': f.get('fighter2_image') or get_fighter_image(f['fighter2']),
+                'date': f['date'],
+                'time': f.get('time'),
+                'time_estimated': f.get('time_estimated', False),
+                'venue': f.get('venue', ''),
+                'location': f.get('location', ''),
+                'streaming': f.get('streaming', ''),
+                'fight_count': counts.get((f.get('venue', ''), f.get('date', '')), 1),
+                'path': f"/boxing-event/{slug}",
+                'url': f"https://fightschedule.live/boxing-event/{slug}",
+            })
+
+    events.sort(key=lambda e: (e['date'] or '9999', e['time'] or '99:99'))
+
+    # Group by month for display
+    months = []
+    for ev in events:
+        try:
+            y, m = int(ev['date'][:4]), int(ev['date'][5:7])
+            label = f"{_MONTH_NAMES[m - 1]} {y}"
+        except Exception:
+            label = 'Upcoming'
+        if not months or months[-1]['label'] != label:
+            months.append({'label': label, 'events': []})
+        months[-1]['events'].append(ev)
+
+    return events, months
+
+
+@app.route('/ufc')
+def ufc_schedule():
+    """UFC schedule landing page."""
+    fights = fetch_fights()
+    all_events, months = _group_events_for_landing(fights, 'UFC')
+    now = datetime.now()
+    page = {
+        'sport': 'UFC',
+        'title': f"UFC Schedule {now.year} — Upcoming UFC Events, Dates & Fight Cards",
+        'heading': 'UFC Schedule',
+        'breadcrumb': 'UFC Schedule',
+        'meta_description': f"Full UFC schedule for {now.year}: every upcoming UFC event with dates, start times in your timezone, full fight cards, main events and venues. Updated daily.",
+        'canonical_url': 'https://fightschedule.live/ufc',
+        'intro': f"Every upcoming UFC event in one place — {len(all_events)} events with full fight cards, main card and prelim times shown in your local timezone.",
+        'footer_text': "The UFC schedule is updated daily from live event data. Dates and times can shift as cards are finalized — subscribe to the calendar feed to stay current automatically.",
+        'ics_path': '/calendar/ufc.ics',
+        'placeholder': '/static/placeholder-fighter-mma.svg',
+        'other_path': '/boxing',
+        'other_label': 'boxing schedule',
+    }
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events)
+
+
+@app.route('/boxing')
+def boxing_schedule():
+    """Boxing schedule landing page."""
+    fights = fetch_fights()
+    all_events, months = _group_events_for_landing(fights, 'Boxing')
+    now = datetime.now()
+    page = {
+        'sport': 'Boxing',
+        'title': f"Boxing Schedule {now.year} — Upcoming Fights, Dates & Fight Cards",
+        'heading': 'Boxing Schedule',
+        'breadcrumb': 'Boxing Schedule',
+        'meta_description': f"Full boxing schedule for {now.year}: every upcoming boxing match with dates, start times in your timezone, undercards, venues and where to watch. Updated daily.",
+        'canonical_url': 'https://fightschedule.live/boxing',
+        'intro': f"Every upcoming boxing event in one place — {len(all_events)} fight nights with main events, undercards and streaming info, times shown in your local timezone.",
+        'footer_text': "The boxing schedule is updated daily from live event data. Dates and times can shift as promotions finalize cards — subscribe to the calendar feed to stay current automatically.",
+        'ics_path': '/calendar/boxing.ics',
+        'placeholder': '/static/placeholder-fighter-boxing.svg',
+        'other_path': '/ufc',
+        'other_label': 'UFC schedule',
+    }
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events)
+
+
 @app.route('/event/<event_slug>')
 def event_detail(event_slug):
     """Show detailed page for a specific event with full card"""
@@ -1238,6 +1373,8 @@ def sitemap():
 
     pages = []
     pages.append({'loc': 'https://fightschedule.live/', 'lastmod': today, 'changefreq': 'daily', 'priority': '1.0'})
+    pages.append({'loc': 'https://fightschedule.live/ufc', 'lastmod': today, 'changefreq': 'daily', 'priority': '0.9'})
+    pages.append({'loc': 'https://fightschedule.live/boxing', 'lastmod': today, 'changefreq': 'daily', 'priority': '0.9'})
     pages.append({'loc': 'https://fightschedule.live/privacy', 'lastmod': today, 'changefreq': 'yearly', 'priority': '0.3'})
 
     # UFC events — one URL per event (first non-prelim fight defines the
