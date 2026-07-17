@@ -575,6 +575,67 @@ def save_cache(fights):
         logger.info(f"[OK] Cache saved: {len(fights)} fights at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
         logger.error(f"Error saving cache: {e}")
+        return
+    ping_indexnow(fights)
+
+
+# ============================================================================
+# INDEXNOW — notify search engines (Bing, Yandex, etc.) when content changes.
+# Requires INDEXNOW_KEY env var; silently disabled otherwise.
+# ============================================================================
+
+INDEXNOW_KEY = os.environ.get('INDEXNOW_KEY', '')
+
+
+def public_event_urls(fights):
+    """All public page URLs, same set as the sitemap."""
+    urls = ['https://fightschedule.live/']
+    seen = set()
+    for fight in fights:
+        if fight.get('sport') == 'UFC' and fight.get('card_type') != 'Prelims':
+            if fight['event_name'] in seen:
+                continue
+            seen.add(fight['event_name'])
+            slug = f"{fight['event_name'].lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
+            urls.append(f"https://fightschedule.live/event/{slug}")
+        elif fight.get('sport') == 'Boxing' and fight.get('is_main_event'):
+            slug = f"{_to_slug(fight['fighter1'])}-vs-{_to_slug(fight['fighter2'])}-{fight['date']}"
+            if slug in seen:
+                continue
+            seen.add(slug)
+            urls.append(f"https://fightschedule.live/boxing-event/{slug}")
+    return urls
+
+
+def ping_indexnow(fights):
+    """Submit current URLs to IndexNow after a successful scrape. Best-effort."""
+    if not INDEXNOW_KEY:
+        return
+    try:
+        urls = public_event_urls(fights)
+        resp = requests.post(
+            'https://api.indexnow.org/indexnow',
+            json={
+                'host': 'fightschedule.live',
+                'key': INDEXNOW_KEY,
+                'keyLocation': 'https://fightschedule.live/indexnow-key.txt',
+                'urlList': urls[:500],
+            },
+            timeout=10,
+        )
+        logger.info(f"IndexNow ping: {resp.status_code} for {len(urls)} URLs")
+    except Exception as e:
+        logger.warning(f"IndexNow ping failed: {e}")
+
+
+@app.route('/indexnow-key.txt')
+def indexnow_key_file():
+    """Key file proving domain ownership to IndexNow."""
+    if not INDEXNOW_KEY:
+        abort(404)
+    response = make_response(INDEXNOW_KEY)
+    response.headers['Content-Type'] = 'text/plain'
+    return response
 
 
 _scrape_lock = threading.Lock()
@@ -946,43 +1007,35 @@ def event_detail(event_slug):
     
     # PRIORITY 2: Match by event name slug (fallback)
     if not event_fights_list:
+        norm_url_slug = re.sub(r'[^a-z0-9-]', '', event_name_slug or '')
         for event_name, fights_list in ufc_events.items():
             # Create slug from this event name
             test_slug = event_name.lower().replace(' ', '-').replace(':', '').replace(',', '')
             test_slug = re.sub(r'[^a-z0-9-]', '', test_slug)
-            
-            # Check if slug matches
-            if test_slug in event_name_slug or event_name_slug in test_slug:
+
+            # Check if slug matches (guard against empty name matching everything)
+            if norm_url_slug and (test_slug in norm_url_slug or norm_url_slug in test_slug):
                 event_fights_list = fights_list
                 matched_event_name = event_name
                 logger.info(f"  [OK] Matched by NAME: {matched_event_name}")
                 break
     
-    # PRIORITY 3: Fallback to first event (last resort)
-    if not event_fights_list and ufc_events:
-        matched_event_name = list(ufc_events.keys())[0]
-        event_fights_list = ufc_events[matched_event_name]
-        logger.warning(f"  [!] No match found, using first event: {matched_event_name}")
-    
-    if not ufc_events:
-        # Fallback to dummy data if no UFC events
-        event_fights = {
-            'event_name': 'No UFC Events Found',
-            'date': '2025-01-01',
-            'venue': 'TBA',
-            'main_event': {
-                'fighter1': 'TBA',
-                'fighter2': 'TBA',
-                'fighter1_image': '/static/placeholder-fighter-mma.png',
-                'fighter2_image': '/static/placeholder-fighter-mma.png',
-                'weight_class': 'TBA',
-                'time': '00:00'
-            },
-            'main_card': [],
-            'prelims': []
-        }
-        return render_template('event_detail.html', event=event_fights)
-    
+    # No match — return a real 404. Falling back to another event made every
+    # stale/mistyped URL render identical content, which search engines flag
+    # as mass duplicate titles/descriptions.
+    if not event_fights_list:
+        logger.info(f"  [404] No UFC event matches slug: {event_slug}")
+        abort(404)
+
+    # Canonical URL enforcement: one URL per event. Slug variants (e.g. the
+    # prelims date when a card crosses midnight UTC) 301 to the canonical slug.
+    non_prelims = [f for f in event_fights_list if f.get('card_type') != 'Prelims'] or event_fights_list
+    canonical_date = non_prelims[0].get('date')
+    canonical_slug = f"{matched_event_name.lower().replace(' ', '-').replace(':', '').replace(',', '')}-{canonical_date}"
+    if event_slug != canonical_slug:
+        return redirect(f"/event/{canonical_slug}", code=301)
+
+
     # Separate main card and prelims
     main_card_fights = [f for f in event_fights_list if f.get('card_type') == 'Main Card']
     prelim_fights = [f for f in event_fights_list if f.get('card_type') == 'Prelims']
@@ -1187,22 +1240,24 @@ def sitemap():
     pages.append({'loc': 'https://fightschedule.live/', 'lastmod': today, 'changefreq': 'daily', 'priority': '1.0'})
     pages.append({'loc': 'https://fightschedule.live/privacy', 'lastmod': today, 'changefreq': 'yearly', 'priority': '0.3'})
 
-    # UFC events
+    # UFC events — one URL per event (first non-prelim fight defines the
+    # canonical date; must stay in sync with the redirect in event_detail)
     ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
     seen = set()
     for fight in ufc_fights:
+        if fight['event_name'] in seen:
+            continue
+        seen.add(fight['event_name'])
         slug = f"{fight['event_name'].lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
-        if slug not in seen:
-            pages.append({'loc': f"https://fightschedule.live/event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.8'})
-            seen.add(slug)
+        pages.append({'loc': f"https://fightschedule.live/event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.8'})
 
     # Boxing events - all main events
     boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event')]
     seen = set()
     for fight in boxing_fights:
-        f1 = fight['fighter1'].lower().replace(' ', '-').replace("'", '')
-        f2 = fight['fighter2'].lower().replace(' ', '-').replace("'", '')
-        slug = f"{f1}-vs-{f2}-{fight['date']}"
+        # Must use the same slug rules as the boxing_event_detail matcher,
+        # otherwise the sitemap emits URLs that 404 (e.g. names with periods)
+        slug = f"{_to_slug(fight['fighter1'])}-vs-{_to_slug(fight['fighter2'])}-{fight['date']}"
         if slug not in seen:
             pages.append({'loc': f"https://fightschedule.live/boxing-event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.7'})
             seen.add(slug)
