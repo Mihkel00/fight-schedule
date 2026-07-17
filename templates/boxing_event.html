@@ -231,6 +231,24 @@
             </div>
         </div>
 
+        <!-- Add to Calendar -->
+        <div class="flex flex-wrap items-center gap-3 mb-8">
+            {% set cal_title = (event.main_event.fighter1 ~ ' vs ' ~ event.main_event.fighter2 ~ ' — Boxing') | urlencode %}
+            {% set cal_details = ('Full card and times: ' ~ event.canonical_url) | urlencode %}
+            {% if event.date and event.time and event.time != 'TBA' %}
+            {% set cal_start = event.date | replace('-', '') ~ 'T' ~ event.time | replace(':', '') ~ '00Z' %}
+            <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ cal_title }}&dates={{ cal_start }}/{{ cal_start }}&details={{ cal_details }}&location={{ event.venue | urlencode }}"
+               target="_blank" rel="noopener"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-card border border-dark-border text-text-primary font-work text-sm hover:border-accent-red-custom transition-colors">
+                📅 Add to Google Calendar
+            </a>
+            {% endif %}
+            <a href="/calendar/boxing.ics"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-card border border-dark-border text-text-primary font-work text-sm hover:border-accent-red-custom transition-colors">
+                🗓️ Subscribe to boxing calendar (.ics)
+            </a>
+        </div>
+
         <!-- Main Event Fighters -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 relative">
             <!-- Fighter 1 -->
