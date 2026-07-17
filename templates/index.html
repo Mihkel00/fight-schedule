@@ -513,10 +513,16 @@
         <div class="mb-12">
             <!-- Logo + Search (side by side on desktop, stacked on mobile) -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                <a href="/" class="inline-block self-start">
-                    <img src="/static/FS_icon.svg" alt="Fight Schedule" class="h-12 w-auto">
-                </a>
-                
+                <div class="flex items-center gap-6 self-start">
+                    <a href="/" class="inline-block">
+                        <img src="/static/FS_icon.svg" alt="Fight Schedule" class="h-12 w-auto">
+                    </a>
+                    <nav class="flex items-center gap-4 font-work text-sm">
+                        <a href="/ufc" class="text-text-secondary hover:text-accent-red transition-colors">UFC</a>
+                        <a href="/boxing" class="text-text-secondary hover:text-accent-orange transition-colors">Boxing</a>
+                    </nav>
+                </div>
+
                 <!-- Search bar -->
                 <div class="flex-1 max-w-md sm:ml-6">
                     <div class="relative">
