@@ -77,6 +77,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/styles.css">
+    <style>
+        /* Same hover treatment as the homepage cards */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.24);
+            border-color: #524442;
+        }
+    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -119,7 +130,7 @@
     </script>
 </head>
 <body class="bg-dark-bg text-text-primary">
-    <div class="max-w-5xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
 
         <!-- Header -->
         <div class="mb-10">
@@ -134,7 +145,7 @@
                 </nav>
             </div>
 
-            <h1 class="font-staatliches text-5xl md:text-6xl uppercase mb-3">{{ page.heading }}</h1>
+            <h1 class="font-staatliches text-4xl md:text-5xl uppercase mb-3">{{ page.heading }}</h1>
             <p class="text-text-secondary font-work text-base max-w-3xl mb-4">{{ page.intro }}</p>
 
             <div class="flex flex-wrap items-center gap-3">
@@ -146,43 +157,43 @@
             </div>
         </div>
 
-        <!-- Events by month -->
+        <!-- Events by month — same cards as the homepage, in a grid -->
         {% for month in months %}
-        <div class="mb-12">
-            <h2 class="font-staatliches text-3xl uppercase mb-6 text-text-primary">{{ month.label }}</h2>
-            <div class="bg-dark-card rounded-3xl border border-dark-border overflow-hidden">
+        <div class="mb-16 fight-section">
+            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">{{ month.label }}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {% for ev in month.events %}
                 <a href="{{ ev.path }}"
-                   class="block p-5 {% if not loop.last %}border-b border-dark-border{% endif %} hover:bg-dark-elevated/30 transition-all duration-300">
-                    <div class="flex flex-col md:flex-row md:items-center gap-4">
-                        <!-- Fighter thumbnails -->
-                        <div class="flex items-center flex-shrink-0">
-                            <div class="w-14 h-14 rounded-full bg-dark-elevated overflow-hidden border-2 border-dark-bg">
-                                <img src="{{ ev.fighter1_image or page.placeholder }}" alt="{{ ev.fighter1 }}"
+                   class="block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
+                    <div class="flex items-center justify-center gap-6 mb-4">
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="{{ ev.fighter1_image or page.placeholder }}"
+                                     alt="{{ ev.fighter1 }}"
                                      class="w-full h-full object-cover {% if not ev.fighter1_image %}opacity-30{% endif %}" loading="lazy">
                             </div>
-                            <div class="w-14 h-14 rounded-full bg-dark-elevated overflow-hidden border-2 border-dark-bg -ml-4">
-                                <img src="{{ ev.fighter2_image or page.placeholder }}" alt="{{ ev.fighter2 }}"
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter1.split()[-1] }}</p>
+                        </div>
+                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="{{ ev.fighter2_image or page.placeholder }}"
+                                     alt="{{ ev.fighter2 }}"
                                      class="w-full h-full object-cover {% if not ev.fighter2_image %}opacity-30{% endif %}" loading="lazy">
                             </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter2.split()[-1] }}</p>
                         </div>
-
-                        <!-- Event info -->
-                        <div class="flex-1 min-w-0">
-                            <p class="font-work font-semibold text-text-primary text-base mb-1">{{ ev.title }}</p>
-                            <p class="font-work text-sm text-text-tertiary truncate">
-                                {{ ev.venue }}{% if ev.fight_count > 1 %} • {{ ev.fight_count }} fights{% endif %}{% if ev.streaming %} • {{ ev.streaming }}{% endif %}
-                            </p>
-                        </div>
-
-                        <!-- Date/time -->
-                        <div class="flex-shrink-0 text-left md:text-right">
-                            <p class="font-work font-semibold text-{{ 'accent-red' if page.sport == 'UFC' else 'accent-orange' }} text-sm">
-                                <span class="fight-date">{{ ev.date|format_date }}</span>
-                            </p>
-                            <p class="font-work text-sm text-text-secondary">
-                                <span class="fight-time" data-utc-time="{{ ev.time }}" data-date="{{ ev.date }}" data-estimated="{{ ev.time_estimated|default(false)|lower }}">{{ '~' if ev.time_estimated }}{{ ev.time or 'TBA' }}</span>
-                            </p>
+                    </div>
+                    <div class="border-t border-dark-border pt-5">
+                        <p class="text-{{ 'accent-red' if page.sport == 'UFC' else 'accent-orange' }} font-work font-semibold mb-3 text-sm">
+                            <span class="fight-date">{{ ev.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ ev.time }}" data-date="{{ ev.date }}" data-estimated="{{ ev.time_estimated|default(false)|lower }}">{{ '~' if ev.time_estimated else '' }}{{ ev.time or 'TBA' }}</span>
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="font-work text-xs text-text-tertiary truncate">{{ ev.venue }}</span>
+                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
+                                <span class="w-2 h-2 rounded-full bg-{{ 'accent-red' if page.sport == 'UFC' else 'accent-orange' }}"></span>
+                                <span class="font-work text-xs uppercase text-text-secondary">{{ page.sport|upper }}</span>
+                            </span>
                         </div>
                     </div>
                 </a>
