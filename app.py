@@ -1,4 +1,6 @@
-from flask import Flask, render_template, request, redirect, make_response, send_file, send_from_directory
+from flask import Flask, render_template, request, redirect, make_response, send_file, send_from_directory, session, jsonify, abort
+from functools import wraps
+import hmac
 from flask_compress import Compress
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
@@ -79,6 +81,16 @@ def inject_current_date():
 
 # Setup Flask-Admin
 admin = setup_admin(app)
+
+
+def admin_required(f):
+    """Require the Flask-Admin session login for app-level /admin/* routes."""
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not session.get('admin_authenticated'):
+            return redirect('/admin/')
+        return f(*args, **kwargs)
+    return wrapper
 
 @app.before_request
 def redirect_www():
@@ -1293,6 +1305,7 @@ A: Yes, completely free with no account required.
     return response
 
 @app.route('/admin/clear-cache')
+@admin_required
 def clear_cache():
     """Clear the fights cache file"""
     cache_file = CACHE_FILE
@@ -1305,6 +1318,7 @@ def clear_cache():
 ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
 
 @app.route('/admin/upload-images', methods=['GET', 'POST'])
+@admin_required
 def upload_fighter_images():
     """Admin interface for uploading fighter images"""
     from werkzeug.utils import secure_filename
@@ -1427,6 +1441,7 @@ def upload_fighter_images():
     return render_template('admin/upload_images.html', missing=unique_missing, search_mode=False)
 
 @app.route('/admin/manage-fighters', methods=['GET', 'POST'])
+@admin_required
 def manage_fighters():
     """Manage fighter names and big name fighters"""
     try:
@@ -1538,6 +1553,7 @@ def manage_fighters():
         return "An error occurred. Please try again.", 500
 
 @app.route('/admin/download-jsons')
+@admin_required
 def download_jsons():
     """Download updated fighter JSONs as zip"""
     import zipfile
@@ -1555,6 +1571,83 @@ def download_jsons():
         as_attachment=True,
         download_name='fighters_updated.zip'
     )
+
+# ============================================================================
+# DEBUG DATA API — token-protected read-only access for remote diagnostics.
+# Requires DEBUG_API_TOKEN env var to be set; returns 404 otherwise so the
+# endpoint is invisible without the secret.
+# ============================================================================
+
+_DEBUG_PARTS = {
+    'cache': 'fights_cache.json',
+    'fighters': 'fighters.json',
+    'fighters_ufc': 'fighters_ufc.json',
+    'overrides': 'time_overrides.json',
+    'fetch_status': 'fetch_status.json',
+}
+
+
+@app.route('/api/debug/state')
+def debug_state():
+    expected = os.environ.get('DEBUG_API_TOKEN', '')
+    provided = request.args.get('token', '')
+    if not expected or not hmac.compare_digest(provided, expected):
+        abort(404)
+
+    part = request.args.get('part')
+    if part:
+        filename = _DEBUG_PARTS.get(part)
+        if not filename:
+            return jsonify({'error': f'unknown part, valid: {sorted(_DEBUG_PARTS)}'}), 400
+        path = data_path(filename)
+        if not os.path.exists(path):
+            return jsonify({'error': f'{filename} does not exist'}), 404
+        with open(path) as f:
+            return jsonify(json.load(f))
+
+    # Default: summary overview
+    summary = {'files': {}}
+    for name, filename in _DEBUG_PARTS.items():
+        path = data_path(filename)
+        if os.path.exists(path):
+            stat = os.stat(path)
+            summary['files'][name] = {
+                'size_bytes': stat.st_size,
+                'modified_utc': datetime.utcfromtimestamp(stat.st_mtime).isoformat() + 'Z',
+            }
+        else:
+            summary['files'][name] = None
+
+    try:
+        with open(CACHE_FILE) as f:
+            cache = json.load(f)
+        fights = cache.get('fights', [])
+        by_sport = {}
+        pairs = {}
+        for fight in fights:
+            by_sport[fight.get('sport', '?')] = by_sport.get(fight.get('sport', '?'), 0) + 1
+            key = ' vs '.join(sorted([fight.get('fighter1', '').lower(), fight.get('fighter2', '').lower()]))
+            pairs[key] = pairs.get(key, 0) + 1
+        dupes = {k: v for k, v in pairs.items() if v > 1}
+        with_images = sum(1 for f_ in fights if f_.get('fighter1_image') or f_.get('fighter2_image'))
+        summary['cache'] = {
+            'timestamp': cache.get('timestamp'),
+            'total_fights': len(fights),
+            'by_sport': by_sport,
+            'duplicate_matchups': dupes,
+            'fights_with_any_image': with_images,
+            'sample_fight': fights[0] if fights else None,
+        }
+    except Exception as e:
+        summary['cache'] = {'error': str(e)}
+
+    summary['persisted_fighter_images'] = []
+    fighters_dir = data_path('fighters')
+    if os.path.isdir(fighters_dir):
+        summary['persisted_fighter_images'] = sorted(os.listdir(fighters_dir))
+
+    return jsonify(summary)
+
 
 @app.route('/privacy')
 def privacy():
