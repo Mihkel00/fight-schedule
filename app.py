@@ -9,7 +9,7 @@ import os
 import shutil
 import unicodedata
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import json
 import re
 import logging
@@ -553,8 +553,13 @@ def load_cache(max_age_hours=None):
             # Apply time overrides to cached data
             fights = cache_data['fights']
             fights = apply_time_overrides(fights)
-            
-            logger.info(f"  Loaded {len(fights)} fights from cache")
+
+            # Drop events that have already happened. Without this, stale cache
+            # served during a scraper outage would show past fights.
+            today_iso = date.today().isoformat()
+            fights = [f for f in fights if f.get('date', '') >= today_iso]
+
+            logger.info(f"  Loaded {len(fights)} upcoming fights from cache")
             return fights
         else:
             logger.info(f"[X] Cache expired (age: {age.seconds//3600} hours), fetching new data...")
@@ -643,10 +648,15 @@ def indexnow_key_file():
 _scrape_lock = threading.Lock()
 
 
-def _refresh_cache():
-    """Run the full scrape and save the cache. Only one scrape runs at a time;
-    returns None immediately if another thread is already scraping."""
-    if not _scrape_lock.acquire(blocking=False):
+def _refresh_cache(wait=False):
+    """Run the full scrape and save the cache. Only one scrape runs at a time.
+    With wait=False returns None immediately if another scrape is running;
+    with wait=True blocks briefly so a cold-start request can use the result."""
+    if wait:
+        acquired = _scrape_lock.acquire(timeout=90)
+    else:
+        acquired = _scrape_lock.acquire(blocking=False)
+    if not acquired:
         logger.info("Scrape already in progress in another thread, skipping")
         return None
     try:
@@ -663,19 +673,21 @@ def fetch_fights():
     cache is expired but usable, serve it immediately and refresh in a
     background thread so visitors never wait on a scrape."""
     cached_fights = load_cache()
-    if cached_fights is not None:
+    if cached_fights:
         return cached_fights
 
-    stale_fights = load_cache(max_age_hours=168)
-    if stale_fights is not None:
+    # Any surviving upcoming fights beat making the visitor wait on a scrape.
+    # load_cache() strips past events, so an all-past cache falls through.
+    stale_fights = load_cache(max_age_hours=24 * 365)
+    if stale_fights:
         threading.Thread(target=_refresh_cache, daemon=True).start()
-        logger.info("Serving stale cache while refreshing in background")
+        logger.info(f"Serving {len(stale_fights)} stale fights while refreshing in background")
         return stale_fights
 
-    # No cache at all (first boot) — must scrape synchronously
-    fights = _refresh_cache()
-    if fights is None:
-        fights = load_cache(max_age_hours=168) or []
+    # Nothing usable cached — scrape synchronously, waiting on any in-flight run
+    fights = _refresh_cache(wait=True)
+    if not fights:
+        fights = load_cache(max_age_hours=24 * 365) or []
     return fights
 
 
@@ -740,47 +752,38 @@ def _scrape_all_sources():
     # Add MMA Fighting UFC fights
     fights.extend(mma_fighting_ufc)
     
-    # VALIDATION: Check if scrapers failed
+    # VALIDATION: check each scraper independently. A single broken source
+    # must never blank the whole site, so failed sports fall back to the last
+    # known-good cached data for that sport instead of discarding everything.
     ufc_count = len(mma_fighting_ufc)
     boxing_count = len(boxingschedule_fights)
-    total_count = len(fights)
-    
-    scraper_failed = False
-    failure_reasons = []
-    
-    if total_count == 0:
-        scraper_failed = True
-        failure_reasons.append("CRITICAL: No fights scraped at all")
-    elif ufc_count < 10:
-        scraper_failed = True
-        failure_reasons.append(f"UFC scraper: Only {ufc_count} fights (expected 50+)")
-    elif boxing_count < 5:
-        scraper_failed = True
-        failure_reasons.append(f"Boxing scraper: Only {boxing_count} fights (expected 10+)")
-    
-    if scraper_failed:
-        log("\n" + "="*60)
-        log("🚨🚨🚨 SCRAPER FAILURE DETECTED 🚨🚨🚨")
-        log("="*60)
-        for reason in failure_reasons:
-            log(f"❌ {reason}")
-            logger.error(f"SCRAPER FAILURE: {reason}")
-        
-        log(f"\nUFC fights: {ufc_count}")
-        log(f"Boxing fights: {boxing_count}")
-        log(f"Total: {total_count}")
-        log("\n⚠️  Using stale cache data instead of failed scrape")
-        log("="*60 + "\n")
-        debug_log.close()
 
-        old_cache = load_cache(max_age_hours=72)
-        if old_cache:
-            return old_cache
-        else:
-            print("❌ No old cache available - returning empty results")
-            return []
-    
-    log(f"\n✓ Validation passed: UFC={ufc_count}, Boxing={boxing_count}, Total={total_count}\n")
+    ufc_ok = ufc_count >= 10
+    boxing_ok = boxing_count >= 5
+
+    if not ufc_ok:
+        log(f"\n[X] UFC scraper returned only {ufc_count} fights (expected 50+)")
+        logger.error(f"SCRAPER FAILURE: UFC scraper returned only {ufc_count} fights")
+    if not boxing_ok:
+        log(f"\n[X] Boxing scraper returned only {boxing_count} fights (expected 10+)")
+        logger.error(f"SCRAPER FAILURE: Boxing scraper returned only {boxing_count} fights")
+
+    if not (ufc_ok and boxing_ok):
+        # Carry forward the previous cache for whichever sport failed
+        previous = load_cache(max_age_hours=24 * 365) or []
+        if not ufc_ok:
+            carried = [f for f in previous if f.get('sport') == 'UFC']
+            fights = [f for f in fights if f.get('sport') != 'UFC'] + carried
+            log(f"  -> carried forward {len(carried)} cached UFC fights")
+        if not boxing_ok:
+            carried = [f for f in previous if f.get('sport') == 'Boxing']
+            fights = [f for f in fights if f.get('sport') != 'Boxing'] + carried
+            log(f"  -> carried forward {len(carried)} cached Boxing fights")
+        if not ufc_ok and not boxing_ok:
+            logger.error("SCRAPER FAILURE: both scrapers failed, serving cached data only")
+
+    log(f"\n[OK] Validation: UFC={ufc_count} ({'ok' if ufc_ok else 'FAILED'}), "
+        f"Boxing={boxing_count} ({'ok' if boxing_ok else 'FAILED'}), Total={len(fights)}\n")
     
     # TheSportsDB merge disabled
     merged_count = 0
@@ -805,9 +808,7 @@ def _scrape_all_sources():
     
     # Sort fights by date
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
-    
     # Filter out past fights
-    from datetime import date
     today = date.today().isoformat()
     fights_before_filter = len(fights)
     fights = [f for f in fights if f.get('date', '') >= today]
@@ -1953,6 +1954,43 @@ def debug_state():
         abort(404)
 
     part = request.args.get('part')
+
+    if part == 'scrape_test':
+        # Run each scraper in isolation and report what it returns. Diagnostic
+        # only: nothing is written to the cache.
+        import traceback
+        out = {}
+        for name, fn in (('boxing', scrape_boxing_events), ('ufc', scrape_ufc_events)):
+            started = datetime.now()
+            try:
+                got = fn()
+                dates = sorted(f.get('date', '') for f in got if f.get('date'))
+                out[name] = {
+                    'count': len(got),
+                    'elapsed_seconds': round((datetime.now() - started).total_seconds(), 1),
+                    'date_range': [dates[0], dates[-1]] if dates else None,
+                    'upcoming_count': sum(1 for d in dates if d >= date.today().isoformat()),
+                    'sample': got[:3],
+                }
+            except Exception as e:
+                out[name] = {
+                    'error': str(e),
+                    'traceback': traceback.format_exc()[-2000:],
+                    'elapsed_seconds': round((datetime.now() - started).total_seconds(), 1),
+                }
+        out['thresholds'] = {'ufc_min': 10, 'boxing_min': 5}
+        return jsonify(out)
+
+    if part == 'scrape_log':
+        path = data_path('data_sources_comparison.txt')
+        if not os.path.exists(path):
+            return jsonify({'error': 'no scrape log yet'}), 404
+        with open(path, encoding='utf-8', errors='replace') as f:
+            body = f.read()
+        resp = make_response(body[-20000:])
+        resp.headers['Content-Type'] = 'text/plain; charset=utf-8'
+        return resp
+
     if part:
         filename = _DEBUG_PARTS.get(part)
         if not filename:
