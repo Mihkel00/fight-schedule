@@ -1981,6 +1981,33 @@ def debug_state():
         out['thresholds'] = {'ufc_min': 10, 'boxing_min': 5}
         return jsonify(out)
 
+    if part == 'boxing_probe':
+        # Fetch the boxing source directly and report what came back, so the
+        # parser can be diagnosed without reaching the site from elsewhere.
+        import traceback
+        url = 'https://boxingschedule.co'
+        try:
+            r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=20)
+            html = r.text
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(r.content, 'html.parser')
+            text = soup.get_text('\n', strip=True)
+            marker_pos = html.find('\U0001F4C5')
+            return jsonify({
+                'status_code': r.status_code,
+                'final_url': r.url,
+                'content_length': len(html),
+                'content_type': r.headers.get('content-type'),
+                'p_with_data_start': len(soup.find_all('p', attrs={'data-start': True})),
+                'any_data_start': len(soup.find_all(attrs={'data-start': True})),
+                'calendar_emoji_count': html.count('\U0001F4C5'),
+                'html_around_first_emoji': html[max(0, marker_pos - 400):marker_pos + 400] if marker_pos > -1 else None,
+                'tag_histogram': {t: len(soup.find_all(t)) for t in ('p', 'div', 'li', 'tr', 'h2', 'h3', 'article', 'script')},
+                'text_head': text[:1500],
+            })
+        except Exception as e:
+            return jsonify({'error': str(e), 'traceback': traceback.format_exc()[-1500:]})
+
     if part == 'scrape_log':
         path = data_path('data_sources_comparison.txt')
         if not os.path.exists(path):
