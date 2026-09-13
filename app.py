@@ -2008,6 +2008,40 @@ def debug_state():
         except Exception as e:
             return jsonify({'error': str(e), 'traceback': traceback.format_exc()[-1500:]})
 
+    if part == 'source_probe':
+        # Test candidate boxing data sources from the deployed environment.
+        # Fixed candidate list (no user-supplied URLs).
+        import traceback
+        year = date.today().year
+        candidates = [
+            ('wikipedia_year', f'https://en.wikipedia.org/w/api.php?action=parse&page={year}_in_boxing&prop=wikitext&format=json'),
+            ('wikipedia_search', 'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=in%20boxing%20schedule&format=json'),
+            ('thesportsdb_leagues', 'https://www.thesportsdb.com/api/v1/json/3/all_leagues.php'),
+            ('espn_boxing_a', 'https://site.api.espn.com/apis/site/v2/sports/boxing/boxing/scoreboard'),
+            ('espn_boxing_b', 'https://sports.core.api.espn.com/v2/sports/boxing/leagues'),
+            ('espn_boxing_c', 'https://site.web.api.espn.com/apis/common/v3/sports/boxing/boxing/scoreboard'),
+            ('boxingschedule_co', 'https://boxingschedule.co'),
+            ('boxing_schedule_com', 'https://boxing-schedule.com'),
+        ]
+        out = {}
+        for name, url in candidates:
+            started = datetime.now()
+            try:
+                r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; FightScheduleBot/1.0)'}, timeout=20)
+                body = r.text
+                out[name] = {
+                    'url': url,
+                    'status': r.status_code,
+                    'length': len(body),
+                    'content_type': (r.headers.get('content-type') or '')[:60],
+                    'elapsed': round((datetime.now() - started).total_seconds(), 1),
+                    'sample': body[:700],
+                }
+            except Exception as e:
+                out[name] = {'url': url, 'error': str(e)[:300],
+                             'elapsed': round((datetime.now() - started).total_seconds(), 1)}
+        return jsonify(out)
+
     if part == 'scrape_log':
         path = data_path('data_sources_comparison.txt')
         if not os.path.exists(path):
