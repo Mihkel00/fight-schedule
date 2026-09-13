@@ -294,6 +294,7 @@ def _parse_cards(soup):
             if bc_el:
                 bc = bc_el.get_text(' ', strip=True)
                 bc = re.sub(r'^\s*live\s+on\s+', '', bc, flags=re.IGNORECASE).strip()
+                bc = re.sub(r'\s*[-–—|]\s*click here.*$', '', bc, flags=re.IGNORECASE).strip()
                 if bc and 'unconfirmed' not in bc.lower():
                     streaming = bc
 

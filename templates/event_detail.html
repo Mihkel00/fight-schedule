@@ -323,20 +323,19 @@
         {{ tr.tale_of_the_tape(event.main_event, 'accent-red-custom') }}
 
         <!-- Streaming Links -->
+        {% from '_watch.html' import watch_link %}
+        {% set ufc_slug = event.canonical_url.rsplit('/', 1)[-1] %}
         <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-12">
-            <div class="flex items-center justify-center gap-4">
+            <div class="flex flex-wrap items-center justify-center gap-4">
                 <svg class="w-5 h-5 text-accent-red-custom" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                 </svg>
                 <span class="font-work text-text-primary">Watch on:</span>
-                <a href="https://plus.espn.com" target="_blank" class="font-work font-semibold text-text-primary hover:text-accent-red-custom transition-colors">
-                    ESPN+
-                </a>
+                {{ watch_link('ESPN+', ufc_slug, 'UFC', 'event', 'font-work font-semibold text-text-primary hover:text-accent-red-custom transition-colors') }}
                 <span class="text-text-tertiary">|</span>
-                <a href="https://ufcfightpass.com" target="_blank" class="font-work font-semibold text-text-primary hover:text-accent-red-custom transition-colors">
-                    UFC FIGHT PASS
-                </a>
+                {{ watch_link('UFC Fight Pass', ufc_slug, 'UFC', 'event', 'font-work font-semibold text-text-primary hover:text-accent-red-custom transition-colors') }}
             </div>
+            <p class="text-center text-[11px] text-text-tertiary font-work mt-3">We may earn a commission if you subscribe through these links. <a href="/privacy#affiliate" class="underline">Details</a></p>
         </div>
 
         <!-- AI Fight Preview -->
