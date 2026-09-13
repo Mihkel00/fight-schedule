@@ -206,6 +206,36 @@
         </div>
         {% endfor %}
 
+        {% if recent_events %}
+        <!-- Recent results -->
+        <div class="mb-16 fight-section">
+            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Recent Results</h2>
+            <div class="bg-dark-card rounded-3xl border border-dark-border overflow-hidden">
+                {% for ev in recent_events %}
+                <a href="{{ ev.path }}" class="block p-4 {% if not loop.last %}border-b border-dark-border{% endif %} hover:bg-dark-elevated/30 transition-all duration-300">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="font-work font-semibold text-text-primary">
+                                {% if ev.result and ev.result.outcome == 'win' %}
+                                    {{ ev.result.winner }} <span class="text-{{ 'accent-red' if page.sport == 'UFC' else 'accent-orange' }}">def.</span> {{ ev.result.loser }}
+                                {% else %}
+                                    {{ ev.fighter1 }} vs {{ ev.fighter2 }}
+                                {% endif %}
+                            </p>
+                            <p class="font-work text-xs text-text-tertiary truncate">
+                                {% if page.sport == 'UFC' %}{{ ev.title }} · {% endif %}
+                                {% if ev.result %}{{ ev.result.method or '' }}{% if ev.result.round %} · R{{ ev.result.round }}{% endif %}{% if ev.result.time %} {{ ev.result.time }}{% endif %}
+                                {% elif ev.is_past %}Result pending{% endif %}
+                            </p>
+                        </div>
+                        <span class="font-work text-sm text-text-secondary flex-shrink-0">{{ ev.date|format_date }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- SEO footer text + cross-link -->
         <div class="border-t border-dark-border pt-8 mt-4 mb-10">
             <p class="font-work text-sm text-text-tertiary max-w-3xl mb-3">{{ page.footer_text }}</p>
