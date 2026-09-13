@@ -804,9 +804,14 @@ def _tape(profile_entry):
     record = None
     if wins is not None and losses is not None:
         record = f"{wins}-{losses}" + (f"-{draws}" if draws else '')
-    nationality = p.get('nationality')
-    if not nationality and p.get('birthplace'):
+    # Prefer the birthplace country so the row reads "Brazil / South Africa" rather
+    # than a mix of adjectives ("Filipino") and countries.
+    nationality = None
+    if p.get('birthplace'):
         nationality = p['birthplace'].split(',')[-1].strip()
+        nationality = {'U.S.': 'United States', 'US': 'United States', 'USA': 'United States', 'UK': 'United Kingdom'}.get(nationality, nationality)
+    if not nationality:
+        nationality = p.get('nationality')
     return {
         'record': record, 'wins': wins, 'losses': losses, 'draws': draws,
         'ko_wins': rec.get('ko_wins'), 'sub_wins': rec.get('sub_wins'), 'dec_wins': rec.get('dec_wins'),
