@@ -2045,6 +2045,25 @@ def debug_state():
                              'elapsed': round((datetime.now() - started).total_seconds(), 1)}
         return jsonify(out)
 
+    if part == 'wiki_raw':
+        # Rendered HTML of one Wikipedia article (host fixed), for offline parser tests
+        page = (request.args.get('page') or '')[:200]
+        if not page:
+            return jsonify({'error': 'page required'}), 400
+        try:
+            r = requests.get('https://en.wikipedia.org/w/api.php',
+                             params={'action': 'parse', 'page': page, 'prop': 'text', 'format': 'json', 'redirects': 1},
+                             headers={'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'}, timeout=25)
+            payload = r.json()
+            if 'error' in payload:
+                return jsonify({'page': page, 'api_error': payload['error']}), 404
+            resp = make_response(payload['parse']['text']['*'][:400000])
+            resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+            resp.headers['X-Resolved-Title'] = payload['parse'].get('title', '')
+            return resp
+        except Exception as e:
+            return jsonify({'page': page, 'error': str(e)})
+
     if part == 'wiki_search':
         # Search Wikipedia titles (host fixed; only the query string is user-supplied)
         q = (request.args.get('q') or 'boxing')[:200]
