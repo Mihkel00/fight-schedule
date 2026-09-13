@@ -1277,6 +1277,8 @@ def _group_events_for_landing(fights, sport):
                 'location': f.get('location', ''),
                 'streaming': '',
                 'fight_count': counts.get(name, 1),
+                'weight_class': f.get('weight_class', ''),
+                'event_name': f.get('event_name', ''),
                 'path': f"/event/{slug}",
                 'url': f"https://fightschedule.live/event/{slug}",
                 'is_past': f.get('is_past', False),
@@ -1306,6 +1308,8 @@ def _group_events_for_landing(fights, sport):
                 'location': f.get('location', ''),
                 'streaming': f.get('streaming', ''),
                 'fight_count': counts.get((f.get('venue', ''), f.get('date', '')), 1),
+                'weight_class': f.get('weight_class', ''),
+                'event_name': f.get('event_name', ''),
                 'path': f"/boxing-event/{slug}",
                 'url': f"https://fightschedule.live/boxing-event/{slug}",
                 'is_past': f.get('is_past', False),
@@ -1334,8 +1338,9 @@ def ufc_schedule():
     """UFC schedule landing page."""
     fights = fetch_fights()
     all_events, months = _group_events_for_landing(upcoming_only(fights), 'UFC')
-    recent_events, _ = _group_events_for_landing(recent_results(fights), 'UFC')
-    recent_events = sorted(recent_events, key=lambda e: e['date'], reverse=True)[:12]
+    recent_events, recent_months = _group_events_for_landing(recent_results(fights), 'UFC')
+    recent_months = [{'label': m['label'], 'events': sorted(m['events'], key=lambda e: e['date'], reverse=True)}
+                     for m in reversed(recent_months)]
     now = datetime.now()
     page = {
         'sport': 'UFC',
@@ -1351,7 +1356,7 @@ def ufc_schedule():
         'other_path': '/boxing',
         'other_label': 'boxing schedule',
     }
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events)
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events, recent_months=recent_months)
 
 
 @app.route('/boxing')
@@ -1359,8 +1364,9 @@ def boxing_schedule():
     """Boxing schedule landing page."""
     fights = fetch_fights()
     all_events, months = _group_events_for_landing(upcoming_only(fights), 'Boxing')
-    recent_events, _ = _group_events_for_landing(recent_results(fights), 'Boxing')
-    recent_events = sorted(recent_events, key=lambda e: e['date'], reverse=True)[:12]
+    recent_events, recent_months = _group_events_for_landing(recent_results(fights), 'Boxing')
+    recent_months = [{'label': m['label'], 'events': sorted(m['events'], key=lambda e: e['date'], reverse=True)}
+                     for m in reversed(recent_months)]
     now = datetime.now()
     page = {
         'sport': 'Boxing',
@@ -1376,7 +1382,7 @@ def boxing_schedule():
         'other_path': '/ufc',
         'other_label': 'UFC schedule',
     }
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events)
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events, recent_months=recent_months)
 
 
 @app.route('/event/<event_slug>')

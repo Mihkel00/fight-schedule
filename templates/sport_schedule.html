@@ -157,84 +157,120 @@
             </div>
         </div>
 
-        <!-- Events by month — same cards as the homepage, in a grid -->
-        {% for month in months %}
-        <div class="mb-16 fight-section">
-            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">{{ month.label }}</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {% for ev in month.events %}
-                <a href="{{ ev.path }}"
-                   class="block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
-                    <div class="flex items-center justify-center gap-6 mb-4">
-                        <div class="text-center w-32">
-                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ ev.fighter1_image or page.placeholder }}"
-                                     alt="{{ ev.fighter1 }}"
-                                     class="w-full h-full object-cover {% if not ev.fighter1_image %}opacity-30{% endif %}" loading="lazy">
-                            </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter1|surname }}</p>
-                        </div>
-                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
-                        <div class="text-center w-32">
-                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ ev.fighter2_image or page.placeholder }}"
-                                     alt="{{ ev.fighter2 }}"
-                                     class="w-full h-full object-cover {% if not ev.fighter2_image %}opacity-30{% endif %}" loading="lazy">
-                            </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter2|surname }}</p>
-                        </div>
+        {% set accent = 'accent-red' if page.sport == 'UFC' else 'accent-orange' %}
+        {% macro event_card(ev, mode) %}
+        <a href="{{ ev.path }}" class="block bg-dark-card rounded-2xl border border-dark-border card-hover overflow-hidden">
+            <div class="px-4 pt-5 pb-4">
+                <p class="text-center text-[11px] uppercase tracking-[0.12em] text-text-tertiary font-work mb-3">
+                    {% if mode == 'results' %}Result{% else %}Main Event{% endif %}
+                </p>
+                <div class="flex items-center gap-3">
+                    <div class="w-20 h-20 rounded-full bg-dark-elevated overflow-hidden flex-shrink-0">
+                        <img src="{{ ev.fighter1_image or page.placeholder }}" alt="{{ ev.fighter1 }}" loading="lazy"
+                             class="w-full h-full object-cover {% if not ev.fighter1_image %}opacity-30{% endif %}">
                     </div>
-                    <div class="border-t border-dark-border pt-5">
-                        <p class="text-{{ 'accent-red' if page.sport == 'UFC' else 'accent-orange' }} font-work font-semibold mb-3 text-sm">
-                            <span class="fight-date">{{ ev.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ ev.time }}" data-date="{{ ev.date }}" data-estimated="{{ ev.time_estimated|default(false)|lower }}">{{ '~' if ev.time_estimated else '' }}{{ ev.time or 'TBA' }}</span>
+                    <div class="flex-1 min-w-0 text-center">
+                        <h3 class="font-staatliches uppercase leading-none text-3xl sm:text-4xl break-words">{{ ev.fighter1|surname }}</h3>
+                        <span class="block font-work italic text-[11px] uppercase text-text-tertiary my-1">vs</span>
+                        <h3 class="font-staatliches uppercase leading-none text-3xl sm:text-4xl break-words">{{ ev.fighter2|surname }}</h3>
+                        <p class="font-work text-sm text-text-secondary mt-2 truncate">
+                            {% if page.sport == 'UFC' %}{{ ev.event_name }}{% if ev.weight_class %} · {{ ev.weight_class }}{% endif %}
+                            {% else %}{{ ev.weight_class or 'Boxing' }}{% endif %}
                         </p>
-                        <div class="flex items-center justify-between">
-                            <span class="font-work text-xs text-text-tertiary truncate">{{ ev.venue }}</span>
-                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
-                                <span class="w-2 h-2 rounded-full bg-{{ 'accent-red' if page.sport == 'UFC' else 'accent-orange' }}"></span>
-                                <span class="font-work text-xs uppercase text-text-secondary">{{ page.sport|upper }}</span>
-                            </span>
-                        </div>
                     </div>
-                </a>
-                {% endfor %}
+                    <div class="w-20 h-20 rounded-full bg-dark-elevated overflow-hidden flex-shrink-0">
+                        <img src="{{ ev.fighter2_image or page.placeholder }}" alt="{{ ev.fighter2 }}" loading="lazy"
+                             class="w-full h-full object-cover {% if not ev.fighter2_image %}opacity-30{% endif %}">
+                    </div>
+                </div>
             </div>
-        </div>
-        {% else %}
-        <div class="bg-dark-card rounded-3xl border border-dark-border p-10 text-center">
-            <p class="font-work text-text-secondary">No upcoming events right now — check back soon.</p>
+            <div class="border-t border-dark-border px-5 py-4 font-work text-sm space-y-2">
+                {% if mode == 'results' %}
+                <p class="flex items-start gap-2 text-text-primary">
+                    <svg class="w-4 h-4 mt-0.5 flex-shrink-0 text-{{ accent }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 21h8m-4-4v4m-6-17h12v5a6 6 0 01-12 0V4zM4 6h2v3a3 3 0 01-2-3zm16 0h-2v3a3 3 0 002-3z"/></svg>
+                    <span>
+                        {% if ev.result and ev.result.outcome == 'win' %}<span class="font-semibold">{{ ev.result.winner }}</span> <span class="text-text-secondary">def.</span> {{ ev.result.loser }}
+                        {% elif ev.result and ev.result.outcome == 'draw' %}Draw{% elif ev.result %}No contest
+                        {% else %}<span class="text-text-secondary">Result pending</span>{% endif %}
+                        {% if ev.result and ev.result.method %}<span class="block text-xs text-text-tertiary mt-0.5">{{ ev.result.method }}{% if ev.result.round %} · Round {{ ev.result.round }}{% endif %}{% if ev.result.time %}, {{ ev.result.time }}{% endif %}</span>{% endif %}
+                    </span>
+                </p>
+                {% endif %}
+                <p class="flex items-center gap-2 text-text-secondary">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span class="truncate">{{ ev.venue }}</span>
+                </p>
+                {% if mode != 'results' %}
+                <p class="flex items-center gap-2 text-text-secondary">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 2"/></svg>
+                    <span class="fight-time" data-utc-time="{{ ev.time }}" data-date="{{ ev.date }}" data-estimated="{{ ev.time_estimated|default(false)|lower }}">{{ '~' if ev.time_estimated else '' }}{{ ev.time or 'TBA' }}</span>
+                    {% if ev.streaming %}<span class="text-text-tertiary">· {{ ev.streaming }}</span>{% endif %}
+                </p>
+                {% endif %}
+                <span class="block mt-3 text-center rounded-full border border-dark-border py-2 text-text-primary font-medium">See details</span>
+            </div>
+        </a>
+        {% endmacro %}
+
+        {% macro month_blocks(month_list, mode) %}
+        {% for month in month_list %}
+        <div class="mb-14">
+            <h2 class="font-staatliches text-4xl uppercase mb-6 text-text-primary">{{ month.label }}</h2>
+            {% for ev in month.events %}
+            {% if loop.first or ev.date != loop.previtem.date %}
+            {% if not loop.first %}</div>{% endif %}
+            <p class="font-work text-sm text-text-secondary mb-3 {% if not loop.first %}mt-8{% endif %}">{{ ev.date|format_date }}</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {% endif %}
+            {{ event_card(ev, mode) }}
+            {% if loop.last %}</div>{% endif %}
+            {% endfor %}
         </div>
         {% endfor %}
+        {% endmacro %}
 
-        {% if recent_events %}
-        <!-- Recent results -->
-        <div class="mb-16 fight-section">
-            <h2 class="font-staatliches text-4xl uppercase mb-8 text-text-primary">Recent Results</h2>
-            <div class="bg-dark-card rounded-3xl border border-dark-border overflow-hidden">
-                {% for ev in recent_events %}
-                <a href="{{ ev.path }}" class="block p-4 {% if not loop.last %}border-b border-dark-border{% endif %} hover:bg-dark-elevated/30 transition-all duration-300">
-                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                        <div class="min-w-0">
-                            <p class="font-work font-semibold text-text-primary">
-                                {% if ev.result and ev.result.outcome == 'win' %}
-                                    {{ ev.result.winner }} <span class="text-{{ 'accent-red' if page.sport == 'UFC' else 'accent-orange' }}">def.</span> {{ ev.result.loser }}
-                                {% else %}
-                                    {{ ev.fighter1 }} vs {{ ev.fighter2 }}
-                                {% endif %}
-                            </p>
-                            <p class="font-work text-xs text-text-tertiary truncate">
-                                {% if page.sport == 'UFC' %}{{ ev.title }} · {% endif %}
-                                {% if ev.result %}{{ ev.result.method or '' }}{% if ev.result.round %} · R{{ ev.result.round }}{% endif %}{% if ev.result.time %} {{ ev.result.time }}{% endif %}
-                                {% elif ev.is_past %}Result pending{% endif %}
-                            </p>
-                        </div>
-                        <span class="font-work text-sm text-text-secondary flex-shrink-0">{{ ev.date|format_date }}</span>
-                    </div>
-                </a>
-                {% endfor %}
-            </div>
+        <!-- Results / Upcoming toggle -->
+        <div class="inline-flex bg-dark-card border border-dark-border rounded-full p-1 mb-10 font-work text-sm">
+            <button type="button" data-tab="results" class="tab-btn px-5 py-2 rounded-full text-text-secondary">Results</button>
+            <button type="button" data-tab="upcoming" class="tab-btn px-5 py-2 rounded-full bg-{{ accent }} text-dark-bg font-semibold">Upcoming</button>
         </div>
-        {% endif %}
+
+        <section id="tab-upcoming">
+            {% if months %}{{ month_blocks(months, 'upcoming') }}
+            {% else %}
+            <div class="bg-dark-card rounded-3xl border border-dark-border p-10 text-center">
+                <p class="font-work text-text-secondary">No upcoming events right now — check back soon.</p>
+            </div>
+            {% endif %}
+        </section>
+
+        <section id="tab-results" hidden>
+            {% if recent_months %}{{ month_blocks(recent_months, 'results') }}
+            {% else %}
+            <div class="bg-dark-card rounded-3xl border border-dark-border p-10 text-center">
+                <p class="font-work text-text-secondary">No results in the last 30 days yet.</p>
+            </div>
+            {% endif %}
+        </section>
+
+        <script>
+            (function () {
+                const accent = '{{ 'bg-accent-red' if page.sport == 'UFC' else 'bg-accent-orange' }}';
+                const btns = document.querySelectorAll('.tab-btn');
+                function show(tab) {
+                    document.getElementById('tab-upcoming').hidden = tab !== 'upcoming';
+                    document.getElementById('tab-results').hidden = tab !== 'results';
+                    btns.forEach(b => {
+                        const on = b.dataset.tab === tab;
+                        b.classList.toggle(accent, on); b.classList.toggle('text-dark-bg', on); b.classList.toggle('font-semibold', on);
+                        b.classList.toggle('text-text-secondary', !on);
+                    });
+                    if (history.replaceState) history.replaceState(null, '', tab === 'results' ? '#results' : location.pathname);
+                }
+                btns.forEach(b => b.addEventListener('click', () => show(b.dataset.tab)));
+                if (location.hash === '#results') show('results');
+            })();
+        </script>
 
         <!-- SEO footer text + cross-link -->
         <div class="border-t border-dark-border pt-8 mt-4 mb-10">
