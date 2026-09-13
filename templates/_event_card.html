@@ -12,14 +12,14 @@
             {% if mode == 'results' %}Result{% else %}Main Event{% endif %}
         </p>
         <div class="flex items-center gap-3">
-            <div class="{{ 'w-16 h-16 sm:w-24 sm:h-24' if lg else 'w-16 h-16 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w1 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
+            <div class="{{ 'w-12 h-12 sm:w-24 sm:h-24' if lg else 'w-12 h-12 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w1 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
                 <img src="{{ ev.fighter1_image or placeholder }}" alt="{{ ev.fighter1 }}" loading="lazy"
                      class="w-full h-full object-cover {% if not ev.fighter1_image %}opacity-30{% endif %}">
             </div>
             <div class="flex-1 min-w-0 text-center">
-                <h3 class="font-staatliches uppercase leading-none {{ 'text-2xl sm:text-4xl' if lg else 'text-2xl sm:text-3xl' }} break-words {% if w1 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter1|surname }}</h3>
+                <h3 class="font-staatliches uppercase leading-none {{ 'text-xl sm:text-4xl' if lg else 'text-xl sm:text-3xl' }} break-words {% if w1 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter1|surname }}</h3>
                 <span class="block font-work italic text-[11px] uppercase text-text-tertiary my-1">vs</span>
-                <h3 class="font-staatliches uppercase leading-none {{ 'text-2xl sm:text-4xl' if lg else 'text-2xl sm:text-3xl' }} break-words {% if w2 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter2|surname }}</h3>
+                <h3 class="font-staatliches uppercase leading-none {{ 'text-xl sm:text-4xl' if lg else 'text-xl sm:text-3xl' }} break-words {% if w2 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter2|surname }}</h3>
                 {% if mode == 'results' and ev.result %}
                 <span class="inline-block mt-2 px-3 py-1 rounded-full bg-accent-green text-dark-bg font-work text-xs font-semibold">
                     {% if ev.result.outcome == 'win' %}{{ ev.result.method or 'Win' }}{% if ev.result.round %} · Round {{ ev.result.round }}{% endif %}
@@ -27,20 +27,19 @@
                 </span>
                 {% elif mode == 'results' %}
                 <span class="inline-block mt-2 px-3 py-1 rounded-full bg-dark-elevated text-text-secondary font-work text-xs">Result pending</span>
-                {% else %}
-                <p class="font-work text-sm text-text-secondary mt-2 truncate">
-                    {% if sport == 'UFC' %}{{ ev.event_name }}{% if ev.weight_class %} · {{ ev.weight_class }}{% endif %}
-                    {% else %}{{ ev.weight_class or 'Boxing' }}{% endif %}
-                </p>
                 {% endif %}
             </div>
-            <div class="{{ 'w-16 h-16 sm:w-24 sm:h-24' if lg else 'w-16 h-16 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w2 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
+            <div class="{{ 'w-12 h-12 sm:w-24 sm:h-24' if lg else 'w-12 h-12 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w2 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
                 <img src="{{ ev.fighter2_image or placeholder }}" alt="{{ ev.fighter2 }}" loading="lazy"
                      class="w-full h-full object-cover {% if not ev.fighter2_image %}opacity-30{% endif %}">
             </div>
         </div>
     </div>
     <div class="border-t border-dark-border px-5 py-4 font-work text-sm space-y-2">
+        <p class="text-text-primary font-medium truncate">
+            {% if sport == 'UFC' %}{{ ev.event_name }}{% if ev.weight_class %} <span class="text-text-tertiary">· {{ ev.weight_class }}</span>{% endif %}
+            {% else %}{{ ev.weight_class or 'Boxing' }}{% endif %}
+        </p>
         <p class="flex items-center gap-2 text-text-secondary">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
             <span class="truncate">{{ ev.venue }}</span>
