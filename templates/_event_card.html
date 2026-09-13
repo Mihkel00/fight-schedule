@@ -12,14 +12,14 @@
             {% if mode == 'results' %}Result{% else %}Main Event{% endif %}
         </p>
         <div class="flex items-center gap-3">
-            <div class="{{ 'w-20 h-20 sm:w-28 sm:h-28' if lg else 'w-16 h-16 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w1 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
+            <div class="{{ 'w-16 h-16 sm:w-24 sm:h-24' if lg else 'w-16 h-16 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w1 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
                 <img src="{{ ev.fighter1_image or placeholder }}" alt="{{ ev.fighter1 }}" loading="lazy"
                      class="w-full h-full object-cover {% if not ev.fighter1_image %}opacity-30{% endif %}">
             </div>
             <div class="flex-1 min-w-0 text-center">
-                <h3 class="font-staatliches uppercase leading-none {{ 'text-3xl sm:text-5xl' if lg else 'text-2xl sm:text-3xl' }} break-words {% if w1 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter1|surname }}</h3>
+                <h3 class="font-staatliches uppercase leading-none {{ 'text-2xl sm:text-4xl' if lg else 'text-2xl sm:text-3xl' }} break-words {% if w1 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter1|surname }}</h3>
                 <span class="block font-work italic text-[11px] uppercase text-text-tertiary my-1">vs</span>
-                <h3 class="font-staatliches uppercase leading-none {{ 'text-3xl sm:text-5xl' if lg else 'text-2xl sm:text-3xl' }} break-words {% if w2 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter2|surname }}</h3>
+                <h3 class="font-staatliches uppercase leading-none {{ 'text-2xl sm:text-4xl' if lg else 'text-2xl sm:text-3xl' }} break-words {% if w2 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter2|surname }}</h3>
                 {% if mode == 'results' and ev.result %}
                 <span class="inline-block mt-2 px-3 py-1 rounded-full bg-accent-green text-dark-bg font-work text-xs font-semibold">
                     {% if ev.result.outcome == 'win' %}{{ ev.result.method or 'Win' }}{% if ev.result.round %} · Round {{ ev.result.round }}{% endif %}
@@ -34,7 +34,7 @@
                 </p>
                 {% endif %}
             </div>
-            <div class="{{ 'w-20 h-20 sm:w-28 sm:h-28' if lg else 'w-16 h-16 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w2 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
+            <div class="{{ 'w-16 h-16 sm:w-24 sm:h-24' if lg else 'w-16 h-16 sm:w-20 sm:h-20' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w2 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
                 <img src="{{ ev.fighter2_image or placeholder }}" alt="{{ ev.fighter2 }}" loading="lazy"
                      class="w-full h-full object-cover {% if not ev.fighter2_image %}opacity-30{% endif %}">
             </div>
