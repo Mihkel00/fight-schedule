@@ -475,31 +475,38 @@
             const isUFC = fight.sport === 'UFC';
             const accentColor = isUFC ? 'accent-red' : 'accent-orange';
             const placeholder = isUFC ? '/static/placeholder-fighter-mma.svg' : '/static/placeholder-fighter-boxing.svg';
-            const eventUrl = fight.path || '#';
-            const sub = isUFC ? `${fight.event_name || ''}${fight.weight_class ? ' · ' + fight.weight_class : ''}` : (fight.weight_class || 'Boxing');
+            const eventUrl = isUFC 
+                ? `/event/${fight.event_name.toLowerCase().replace(/ /g, '-').replace(/:/g, '').replace(/,/g, '')}-${fight.date}`
+                : `/boxing-event/${fight.venue.toLowerCase().replace(/ /g, '-').replace(/,/g, '').replace(/\./g, '').replace(/'/g, '')}-${fight.date}`;
+            
             return `
-                <a href="${eventUrl}" class="block bg-dark-card rounded-2xl border border-dark-border card-hover overflow-hidden">
-                    <div class="px-4 pt-5 pb-4">
-                        <p class="text-center text-[11px] uppercase tracking-[0.12em] text-text-tertiary font-work mb-3">Main Event</p>
-                        <div class="flex items-center gap-3">
-                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-dark-elevated overflow-hidden flex-shrink-0">
+                <a href="${eventUrl}" class="block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
+                    <div class="flex items-center justify-center gap-6 mb-4">
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
-                            <div class="flex-1 min-w-0 text-center">
-                                <h3 class="font-staatliches uppercase leading-none text-2xl sm:text-3xl break-words">${surname(fight.fighter1)}</h3>
-                                <span class="block font-work italic text-[11px] uppercase text-text-tertiary my-1">vs</span>
-                                <h3 class="font-staatliches uppercase leading-none text-2xl sm:text-3xl break-words">${surname(fight.fighter2)}</h3>
-                                <p class="font-work text-sm text-text-secondary mt-2 truncate">${sub}</p>
-                            </div>
-                            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-dark-elevated overflow-hidden flex-shrink-0">
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${surname(fight.fighter1)}</p>
+                        </div>
+                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${surname(fight.fighter2)}</p>
                         </div>
                     </div>
-                    <div class="border-t border-dark-border px-5 py-4 font-work text-sm space-y-2">
-                        <p class="flex items-center gap-2 text-text-secondary"><span class="w-2 h-2 rounded-full bg-${accentColor} flex-shrink-0"></span><span class="truncate">${fight.venue}</span></p>
-                        <p class="flex items-center gap-2 text-text-secondary"><span class="fight-date">${fight.displayDate || formatDate(fight.date)}</span> · <span class="fight-time" data-utc-time="${fight.time}" data-date="${fight.date}" data-estimated="${fight.time_estimated || false}">${fight.displayTime || fight.time || 'TBA'}</span>${fight.streaming ? ` <span class="text-text-tertiary">· ${fight.streaming}</span>` : ''}</p>
-                        <span class="block mt-3 text-center rounded-full border border-dark-border py-2 text-text-primary font-medium">See details</span>
+                    <div class="border-t border-dark-border pt-5">
+                        <p class="text-${accentColor} font-work font-semibold mb-3 text-sm">
+                            <span class="fight-date">${fight.displayDate || formatDate(fight.date)}</span> • <span class="fight-time" data-utc-time="${fight.time}" data-date="${fight.date}" data-estimated="${fight.time_estimated || false}">${fight.displayTime || fight.time || 'TBA'}</span>
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="font-work text-xs text-text-tertiary truncate">${fight.venue}</span>
+                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
+                                <span class="w-2 h-2 rounded-full bg-${accentColor}"></span>
+                                <span class="font-work text-xs uppercase text-text-secondary">${fight.sport}</span>
+                            </span>
+                        </div>
                     </div>
                 </a>
             `;
@@ -507,7 +514,6 @@
     </script>
 </head>
 <body class="bg-dark-bg text-text-primary">
-    {% from '_event_card.html' import event_card %}
     <div class="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8">
         
         <!-- Compact Header -->
@@ -668,7 +674,40 @@
                 </button>
                 <div id="ufc-scroll" class="scroll-container pb-6">
                 {% for fight in ufc_fights %}
-                {{ event_card(fight, 'upcoming', 'UFC', '/static/placeholder-fighter-mma.svg', 'scroll-item w-80') }}
+                <a href="/event/{{ fight.event_name|lower|replace(' ', '-')|replace(':', '')|replace(',', '') }}-{{ fight.date }}" 
+                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
+                    <div class="flex items-center justify-center gap-6 mb-4">
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-mma.svg' }}" 
+                                     alt="{{ fight.fighter1 }}" 
+                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
+                            </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1|surname }}</p>
+                        </div>
+                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-mma.svg' }}" 
+                                     alt="{{ fight.fighter2 }}" 
+                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
+                            </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2|surname }}</p>
+                        </div>
+                    </div>
+                    <div class="border-t border-dark-border pt-5">
+                        <p class="text-accent-red font-work font-semibold mb-3 text-sm">
+                            <span class="fight-date">{{ fight.date|format_date }}</span>{% if fight.card_type %} • {{ fight.card_type }}: <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time or 'TBA' }}</span>{% else %} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time or 'TBA' }}</span>{% endif %}
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
+                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
+                                <span class="w-2 h-2 rounded-full bg-accent-red"></span>
+                                <span class="font-work text-xs uppercase text-text-secondary">UFC</span>
+                            </span>
+                        </div>
+                    </div>
+                </a>
                 {% endfor %}
             </div>
             </div>
@@ -692,7 +731,40 @@
                 </button>
                 <div id="boxing-scroll" class="scroll-container pb-6">
                 {% for fight in boxing_fights %}
-                {{ event_card(fight, 'upcoming', 'Boxing', '/static/placeholder-fighter-boxing.svg', 'scroll-item w-80') }}
+                <a href="/boxing-event/{{ fight.slug }}" 
+                   class="scroll-item w-80 block bg-dark-card rounded-2xl p-4 border border-dark-border card-hover">
+                    <div class="flex items-center justify-center gap-6 mb-4">
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-boxing.svg' }}" 
+                                     alt="{{ fight.fighter1 }}" 
+                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
+                            </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1|surname }}</p>
+                        </div>
+                        <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
+                        <div class="text-center w-32">
+                            <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
+                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-boxing.svg' }}" 
+                                     alt="{{ fight.fighter2 }}" 
+                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
+                            </div>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2|surname }}</p>
+                        </div>
+                    </div>
+                    <div class="border-t border-dark-border pt-5">
+                        <p class="text-accent-orange font-work font-semibold mb-3 text-sm">
+                            <span class="fight-date">{{ fight.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time or 'TBA' }}</span>
+                        </p>
+                        <div class="flex items-center justify-between">
+                            <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
+                            <span class="flex items-center gap-1.5 flex-shrink-0 ml-3">
+                                <span class="w-2 h-2 rounded-full bg-accent-orange"></span>
+                                <span class="font-work text-xs uppercase text-text-secondary">BOXING</span>
+                            </span>
+                        </div>
+                    </div>
+                </a>
                 {% endfor %}
             </div>
             </div>

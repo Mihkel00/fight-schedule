@@ -1227,13 +1227,9 @@ def home():
             if img:
                 fight['fighter2_image'] = img
         
-        # Generate slugs / detail-page paths for URLs
+        # Generate slugs for URLs
         if fight.get('sport') == 'Boxing':
             fight['slug'] = f"{_to_slug(fight['fighter1'])}-vs-{_to_slug(fight['fighter2'])}-{fight['date']}"
-            fight['path'] = f"/boxing-event/{fight['slug']}"
-        else:
-            ev_slug = f"{fight.get('event_name', '').lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
-            fight['path'] = f"/event/{ev_slug}"
     
     return render_template('index.html',
                          featured_fights=featured_fights,
