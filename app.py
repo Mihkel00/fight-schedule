@@ -2045,6 +2045,25 @@ def debug_state():
                              'elapsed': round((datetime.now() - started).total_seconds(), 1)}
         return jsonify(out)
 
+    if part == 'wiki_raw':
+        # Rendered HTML of one Wikipedia article (host fixed), for offline parser tests
+        page = (request.args.get('page') or '')[:200]
+        if not page:
+            return jsonify({'error': 'page required'}), 400
+        try:
+            r = requests.get('https://en.wikipedia.org/w/api.php',
+                             params={'action': 'parse', 'page': page, 'prop': 'text', 'format': 'json', 'redirects': 1},
+                             headers={'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'}, timeout=25)
+            payload = r.json()
+            if 'error' in payload:
+                return jsonify({'page': page, 'api_error': payload['error']}), 404
+            resp = make_response(payload['parse']['text']['*'][:400000])
+            resp.headers['Content-Type'] = 'text/html; charset=utf-8'
+            resp.headers['X-Resolved-Title'] = payload['parse'].get('title', '')
+            return resp
+        except Exception as e:
+            return jsonify({'page': page, 'error': str(e)})
+
     if part == 'wiki_search':
         # Search Wikipedia titles (host fixed; only the query string is user-supplied)
         q = (request.args.get('q') or 'boxing')[:200]
@@ -2174,18 +2193,25 @@ def debug_state():
         # Do completed UFC events expose winner/method? And what does an athlete profile hold?
         import traceback
         ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'}
-        days = int(request.args.get('days') or 30)
-        end = date.today(); start = end - timedelta(days=days)
-        out = {'range': f"{start:%Y%m%d}-{end:%Y%m%d}"}
+        dates = request.args.get('dates') or f"{date.today():%Y%m}"
+        if not re.fullmatch(r'\d{6}|\d{8}(-\d{8})?', dates):
+            return jsonify({'error': 'dates must be YYYYMM, YYYYMMDD or YYYYMMDD-YYYYMMDD'}), 400
+        out = {'range': dates}
         try:
             r = requests.get('https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
-                             params={'dates': out['range']}, headers=ua, timeout=20)
-            data = r.json()
+                             params={'dates': dates}, headers=ua, timeout=20)
+            try:
+                data = r.json()
+            except ValueError:
+                return jsonify({'range': dates, 'status': r.status_code, 'non_json_head': r.text[:600]})
             events = data.get('events', [])
             out['status'] = r.status_code; out['event_count'] = len(events)
             out['events'] = [{'id': e.get('id'), 'name': e.get('name'), 'date': e.get('date'),
-                              'competitions': len(e.get('competitions', []))} for e in events[:8]]
-            done = next((e for e in events if e.get('competitions')), None)
+                              'competitions': len(e.get('competitions', [])),
+                              'state': ((e.get('status') or {}).get('type') or {}).get('state')} for e in events[:12]]
+            done = next((e for e in events if e.get('competitions')
+                         and ((e.get('status') or {}).get('type') or {}).get('state') == 'post'), None) \
+                or next((e for e in events if e.get('competitions')), None)
             if done:
                 comps = done['competitions']
                 out['sample_event'] = done.get('name')
