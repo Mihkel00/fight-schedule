@@ -427,6 +427,13 @@
             });
         });
         
+        function surname(name) {
+            const suffixes = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
+            let parts = (name || '').replace(/["“”‘’'][^"“”‘’']+["“”‘’']/g, ' ').replace(/\s+\d+$/, '').trim().split(/\s+/);
+            while (parts.length > 1 && suffixes.has(parts[parts.length - 1].toLowerCase().replace(',', ''))) parts.pop();
+            return parts[parts.length - 1] || name;
+        }
+
         function displaySearchResults(results, query) {
             // Remove existing results
             document.getElementById('searchResults')?.remove();
@@ -479,14 +486,14 @@
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter1.split(' ').pop()}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${surname(fight.fighter1)}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
                                 <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${fight.fighter2.split(' ').pop()}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${surname(fight.fighter2)}</p>
                         </div>
                     </div>
                     <div class="border-t border-dark-border pt-5">
@@ -600,11 +607,11 @@
                             <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6">
                                 <div class="flex items-end justify-between mb-5">
                                     <div>
-                                        <h3 class="font-staatliches text-4xl md:text-5xl uppercase">{{ fight.fighter1.split()[-1] }}</h3>
+                                        <h3 class="font-staatliches text-4xl md:text-5xl uppercase">{{ fight.fighter1|surname }}</h3>
                                         <p class="font-work text-sm text-text-secondary mt-1">{{ fight.fighter1 }}</p>
                                     </div>
                                     <div class="text-right">
-                                        <h3 class="font-staatliches text-4xl md:text-5xl uppercase">{{ fight.fighter2.split()[-1] }}</h3>
+                                        <h3 class="font-staatliches text-4xl md:text-5xl uppercase">{{ fight.fighter2|surname }}</h3>
                                         <p class="font-work text-sm text-text-secondary mt-1">{{ fight.fighter2 }}</p>
                                     </div>
                                 </div>
@@ -676,7 +683,7 @@
                                      alt="{{ fight.fighter1 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1.split()[-1] }}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1|surname }}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
@@ -685,7 +692,7 @@
                                      alt="{{ fight.fighter2 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2.split()[-1] }}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2|surname }}</p>
                         </div>
                     </div>
                     <div class="border-t border-dark-border pt-5">
@@ -733,7 +740,7 @@
                                      alt="{{ fight.fighter1 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1.split()[-1] }}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1|surname }}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
@@ -742,7 +749,7 @@
                                      alt="{{ fight.fighter2 }}" 
                                      class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2.split()[-1] }}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2|surname }}</p>
                         </div>
                     </div>
                     <div class="border-t border-dark-border pt-5">

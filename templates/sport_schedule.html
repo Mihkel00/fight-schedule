@@ -172,7 +172,7 @@
                                      alt="{{ ev.fighter1 }}"
                                      class="w-full h-full object-cover {% if not ev.fighter1_image %}opacity-30{% endif %}" loading="lazy">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter1.split()[-1] }}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter1|surname }}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
@@ -181,7 +181,7 @@
                                      alt="{{ ev.fighter2 }}"
                                      class="w-full h-full object-cover {% if not ev.fighter2_image %}opacity-30{% endif %}" loading="lazy">
                             </div>
-                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter2.split()[-1] }}</p>
+                            <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ ev.fighter2|surname }}</p>
                         </div>
                     </div>
                     <div class="border-t border-dark-border pt-5">
