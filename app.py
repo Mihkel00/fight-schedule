@@ -2083,6 +2083,16 @@ def debug_state():
 
             sections = [h.get_text(' ', strip=True) for h in soup.find_all(['h2', 'h3'])]
 
+            infobox = []
+            ib = soup.find('table', class_='infobox')
+            if ib:
+                for tr in ib.find_all('tr'):
+                    th, td = tr.find('th'), tr.find('td')
+                    if th and td:
+                        infobox.append([th.get_text(' ', strip=True)[:40], td.get_text(' ', strip=True)[:120]])
+                    elif th:
+                        infobox.append(['#', th.get_text(' ', strip=True)[:60]])
+
             tables = []
             for t in soup.find_all('table', class_='wikitable')[:12]:
                 rows = t.find_all('tr')
@@ -2104,11 +2114,105 @@ def debug_state():
                 'status': r.status_code,
                 'html_length': len(html),
                 'section_headings': sections,
+                'infobox': infobox[:60],
                 'wikitable_count': len(soup.find_all('table', class_='wikitable')),
                 'tables': tables,
             })
         except Exception as e:
             return jsonify({'page': page, 'error': str(e), 'traceback': traceback.format_exc()[-1200:]})
+
+    if part == 'espn_boxer':
+        # Search ESPN for a boxer, then try profile endpoints for record/height/reach.
+        import traceback
+        name = (request.args.get('name') or 'Ryan Garcia')[:80]
+        ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'}
+        out = {'name': name}
+        try:
+            r = requests.get('https://site.web.api.espn.com/apis/common/v3/search',
+                             params={'query': name, 'sport': 'boxing', 'type': 'athlete', 'limit': 3, 'lang': 'en'},
+                             headers=ua, timeout=15)
+            hits = []
+            for res in r.json().get('results', []):
+                for item in res.get('contents', []):
+                    hits.append(item.get('data', item))
+            out['search_status'] = r.status_code
+            out['search_hits'] = hits[:3]
+            aid = next((h.get('id') for h in hits if h.get('id')), None)
+            out['athlete_id'] = aid
+            if aid:
+                cands = {
+                    'web_api_athlete': f'https://site.web.api.espn.com/apis/common/v3/sports/boxing/athletes/{aid}',
+                    'site_api_athlete': f'https://site.api.espn.com/apis/site/v2/sports/boxing/athletes/{aid}',
+                    'core_athlete': f'https://sports.core.api.espn.com/v2/sports/boxing/athletes/{aid}',
+                    'fighter_page_html': f'https://www.espn.com/boxing/fighter/_/id/{aid}',
+                }
+                out['endpoints'] = {}
+                for k, url in cands.items():
+                    try:
+                        rr = requests.get(url, headers=ua, timeout=15)
+                        body = rr.text
+                        info = {'status': rr.status_code, 'length': len(body)}
+                        if 'html' in (rr.headers.get('content-type') or ''):
+                            from bs4 import BeautifulSoup
+                            txt = BeautifulSoup(body, 'html.parser').get_text(' ', strip=True)
+                            snippets = []
+                            for kw in ('Record', 'Height', 'Reach', 'Stance', 'KO', 'Weight'):
+                                i = txt.find(kw)
+                                if i > -1:
+                                    snippets.append(txt[max(0, i - 80):i + 160])
+                            info['keyword_snippets'] = snippets[:6]
+                        else:
+                            info['sample'] = body[:1500]
+                        out['endpoints'][k] = info
+                    except Exception as e:
+                        out['endpoints'][k] = {'error': str(e)[:200]}
+        except Exception as e:
+            out['error'] = str(e); out['traceback'] = traceback.format_exc()[-1000:]
+        return jsonify(out)
+
+    if part == 'espn_mma_results':
+        # Do completed UFC events expose winner/method? And what does an athlete profile hold?
+        import traceback
+        ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'}
+        days = int(request.args.get('days') or 30)
+        end = date.today(); start = end - timedelta(days=days)
+        out = {'range': f"{start:%Y%m%d}-{end:%Y%m%d}"}
+        try:
+            r = requests.get('https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
+                             params={'dates': out['range']}, headers=ua, timeout=20)
+            data = r.json()
+            events = data.get('events', [])
+            out['status'] = r.status_code; out['event_count'] = len(events)
+            out['events'] = [{'id': e.get('id'), 'name': e.get('name'), 'date': e.get('date'),
+                              'competitions': len(e.get('competitions', []))} for e in events[:8]]
+            done = next((e for e in events if e.get('competitions')), None)
+            if done:
+                comps = done['competitions']
+                out['sample_event'] = done.get('name')
+                out['competition_keys'] = sorted(comps[0].keys())
+                out['sample_competitions'] = []
+                for c in comps[:3]:
+                    out['sample_competitions'].append({
+                        'status': c.get('status'),
+                        'competitors': [{'name': (x.get('athlete') or {}).get('displayName'), 'id': (x.get('athlete') or {}).get('id'),
+                                         'winner': x.get('winner'), 'keys': sorted(x.keys())} for x in c.get('competitors', [])],
+                        'format': c.get('format'), 'notes': c.get('notes'), 'type': c.get('type'),
+                    })
+                aid = ((comps[0].get('competitors') or [{}])[0].get('athlete') or {}).get('id')
+                if aid:
+                    ar = requests.get(f'https://site.web.api.espn.com/apis/common/v3/sports/mma/ufc/athletes/{aid}', headers=ua, timeout=15)
+                    out['athlete_status'] = ar.status_code
+                    try:
+                        a = ar.json().get('athlete', ar.json())
+                        out['athlete_keys'] = sorted(a.keys())[:60]
+                        out['athlete_fields'] = {k: a.get(k) for k in ('displayName', 'displayHeight', 'displayWeight', 'displayReach',
+                                                                       'age', 'dateOfBirth', 'stance', 'weightClass', 'records', 'citizenship',
+                                                                       'headshot', 'statsSummary') if k in a}
+                    except Exception:
+                        out['athlete_sample'] = ar.text[:800]
+        except Exception as e:
+            out['error'] = str(e); out['traceback'] = traceback.format_exc()[-1000:]
+        return jsonify(out)
 
     if part == 'scrape_log':
         path = data_path('data_sources_comparison.txt')
