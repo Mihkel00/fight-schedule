@@ -237,6 +237,25 @@ def recent_results(fights):
     past = [f for f in fights if f.get('date', '') < today_iso]
     return sorted(past, key=lambda f: f.get('date', ''), reverse=True)
 
+_NAME_SUFFIXES = {'jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v'}
+
+
+def surname(name):
+    """Display surname: 'Julio Cesar Chavez Jr.' -> 'Chavez', 'Isaac "Pitbull" Cruz' -> 'Cruz'."""
+    if not name:
+        return ''
+    # drop quoted nicknames and trailing rematch numbers ("Lopes 2")
+    cleaned = re.sub(r'[\"“”‘’\'][^\"“”‘’\']+[\"“”‘’\']', ' ', name)
+    cleaned = re.sub(r'\s+\d+$', '', cleaned).strip()
+    parts = cleaned.split()
+    while len(parts) > 1 and parts[-1].lower().strip(',') in _NAME_SUFFIXES:
+        parts.pop()
+    return parts[-1] if parts else name
+
+
+app.jinja_env.filters['surname'] = surname
+
+
 def format_fight_date(date_str):
     """Format date from YYYY-MM-DD to 'Sat, Dec 06'"""
     if not date_str:
