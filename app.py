@@ -2631,13 +2631,12 @@ CLICKS_FILE = data_path('clicks.jsonl')
 _clicks_lock = threading.Lock()
 
 
-@app.context_processor
-def _affiliate_helpers():
-    return {
-        'provider_key': _aff.resolve_provider,
-        'provider_name': lambda key: _aff.provider_name(key),
-        'clean_broadcaster': _aff.clean_broadcaster,
-    }
+# Globals (not context processors) so imported macros in _watch.html can use them
+app.jinja_env.globals.update({
+    'provider_key': _aff.resolve_provider,
+    'provider_name': _aff.provider_name,
+    'clean_broadcaster': _aff.clean_broadcaster,
+})
 
 
 @app.route('/go/<provider>')
