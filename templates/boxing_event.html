@@ -232,6 +232,7 @@
         </div>
 
         <!-- Add to Calendar -->
+        {% if not event.main_event.is_past %}
         <div class="flex flex-wrap items-center gap-3 mb-8">
             {% set cal_title = (event.main_event.fighter1 ~ ' vs ' ~ event.main_event.fighter2 ~ ' — Boxing') | urlencode %}
             {% set cal_details = ('Full card and times: ' ~ event.canonical_url) | urlencode %}
@@ -248,6 +249,10 @@
                 🗓️ Subscribe to boxing calendar (.ics)
             </a>
         </div>
+        {% endif %}
+
+        {% import '_tape_result.html' as tr %}
+        {{ tr.result_banner(event.main_event, 'accent-orange') }}
 
         <!-- Main Event Fighters -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 relative">
@@ -291,6 +296,8 @@
                 </div>
             </div>
         </div>
+
+        {{ tr.tale_of_the_tape(event.main_event, 'accent-orange') }}
 
         <!-- Streaming Links -->
         {% if event.streaming %}
@@ -370,6 +377,7 @@
                         {% if fight.weight_class %}
                         <p class="text-xs text-text-tertiary font-work ml-4 mt-1">{{ fight.weight_class }}</p>
                         {% endif %}
+                        {{ tr.row_result(fight, 'accent-orange') }}
                     </div>
                     {% endfor %}
                 </div>

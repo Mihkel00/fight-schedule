@@ -1,0 +1,73 @@
+{# Shared partials: fight result banner, tale of the tape, and per-row result.
+   accent is a Tailwind color token: 'accent-red-custom' (UFC) or 'accent-orange' (boxing). #}
+
+{% macro result_banner(fight, accent) -%}
+{% if fight and fight.result %}
+{% set r = fight.result %}
+<div class="bg-dark-card rounded-xl p-5 border border-{{ accent }} mb-8">
+    <p class="text-xs uppercase tracking-wide text-text-tertiary font-work mb-1">Result</p>
+    <p class="font-staatliches text-3xl uppercase text-text-primary">
+        {% if r.outcome == 'win' %}{{ r.winner }} <span class="text-{{ accent }}">def.</span> {{ r.loser }}
+        {% elif r.outcome == 'draw' %}Draw
+        {% else %}No contest{% endif %}
+    </p>
+    <p class="font-work text-text-secondary text-sm mt-1">
+        {% if r.method %}{{ r.method }}{% endif %}{% if r.round %} · Round {{ r.round }}{% endif %}{% if r.time %}, {{ r.time }}{% endif %}
+        {% if r.notes %}<span class="text-text-tertiary"> · {{ r.notes }}</span>{% endif %}
+    </p>
+</div>
+{% elif fight and fight.is_past %}
+<div class="bg-dark-card rounded-xl p-4 border border-dark-border mb-8">
+    <p class="font-work text-text-secondary text-sm">This event has taken place. Result not yet available.</p>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro _stat(label, v1, v2) -%}
+<div class="grid grid-cols-3 items-center py-2 border-t border-dark-border text-sm font-work">
+    <span class="text-text-primary text-right pr-3">{{ v1 if v1 is not none else '—' }}</span>
+    <span class="text-text-tertiary text-center text-xs uppercase tracking-wide">{{ label }}</span>
+    <span class="text-text-primary text-left pl-3">{{ v2 if v2 is not none else '—' }}</span>
+</div>
+{%- endmacro %}
+
+{% macro tale_of_the_tape(fight, accent) -%}
+{% if fight and (fight.fighter1_tape or fight.fighter2_tape) %}
+{% set t1 = fight.fighter1_tape or {} %}{% set t2 = fight.fighter2_tape or {} %}
+<div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-8">
+    <h3 class="font-staatliches text-2xl uppercase text-center mb-4">Tale of the Tape</h3>
+    <div class="grid grid-cols-3 items-end pb-2 font-staatliches uppercase text-lg">
+        <span class="text-right pr-3 truncate">{{ fight.fighter1 }}</span><span></span><span class="text-left pl-3 truncate">{{ fight.fighter2 }}</span>
+    </div>
+    {{ _stat('Record', t1.record, t2.record) }}
+    {% if fight.sport == 'UFC' %}
+    {{ _stat('KO / Sub / Dec', (t1.ko_wins ~ ' / ' ~ (t1.sub_wins or 0) ~ ' / ' ~ (t1.dec_wins or 0)) if t1.ko_wins is not none else none,
+                              (t2.ko_wins ~ ' / ' ~ (t2.sub_wins or 0) ~ ' / ' ~ (t2.dec_wins or 0)) if t2.ko_wins is not none else none) }}
+    {% else %}
+    {{ _stat('KO wins', t1.ko_wins, t2.ko_wins) }}
+    {% endif %}
+    {{ _stat('Age', t1.age, t2.age) }}
+    {{ _stat('Height', t1.height_display, t2.height_display) }}
+    {{ _stat('Reach', t1.reach_display, t2.reach_display) }}
+    {{ _stat('Stance', t1.stance, t2.stance) }}
+    {{ _stat('From', t1.nationality, t2.nationality) }}
+    <p class="text-xs text-text-tertiary font-work text-center mt-3">
+        Source:
+        {% if t1.url %}<a href="{{ t1.url }}" target="_blank" rel="noopener" class="hover:text-{{ accent }}">Wikipedia ({{ fight.fighter1 }})</a>{% endif %}
+        {% if t1.url and t2.url %} · {% endif %}
+        {% if t2.url %}<a href="{{ t2.url }}" target="_blank" rel="noopener" class="hover:text-{{ accent }}">Wikipedia ({{ fight.fighter2 }})</a>{% endif %}
+    </p>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro row_result(fight, accent) -%}
+{% if fight.result %}
+{% set r = fight.result %}
+<p class="text-xs font-work ml-4 mt-1">
+    {% if r.outcome == 'win' %}<span class="text-{{ accent }} font-semibold">{{ r.winner }}</span> <span class="text-text-secondary">won</span>
+    {% elif r.outcome == 'draw' %}<span class="text-text-secondary">Draw</span>{% else %}<span class="text-text-secondary">No contest</span>{% endif %}
+    <span class="text-text-tertiary">{% if r.method %}· {{ r.method }}{% endif %}{% if r.round %} · R{{ r.round }}{% endif %}{% if r.time %} {{ r.time }}{% endif %}</span>
+</p>
+{% endif %}
+{%- endmacro %}

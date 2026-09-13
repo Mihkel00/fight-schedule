@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, make_response, send
 from functools import wraps
 import hmac
 import threading
+import time
 from flask_compress import Compress
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
@@ -215,6 +216,26 @@ BIG_NAME_FIGHTERS = [
 # Cache file path (in persistent data directory)
 CACHE_FILE = data_path('fights_cache.json')
 CACHE_DURATION = timedelta(hours=6)  # Refresh every 6 hours
+
+# Past events are kept for this long so results can be shown and the event
+# URLs keep working (instead of vanishing the morning after).
+RESULTS_WINDOW_DAYS = 30
+
+
+def _retention_cutoff_iso():
+    return (date.today() - timedelta(days=RESULTS_WINDOW_DAYS)).isoformat()
+
+
+def upcoming_only(fights):
+    today_iso = date.today().isoformat()
+    return [f for f in fights if f.get('date', '') >= today_iso]
+
+
+def recent_results(fights):
+    """Past fights (newest first) within the retention window."""
+    today_iso = date.today().isoformat()
+    past = [f for f in fights if f.get('date', '') < today_iso]
+    return sorted(past, key=lambda f: f.get('date', ''), reverse=True)
 
 def format_fight_date(date_str):
     """Format date from YYYY-MM-DD to 'Sat, Dec 06'"""
@@ -554,12 +575,12 @@ def load_cache(max_age_hours=None):
             fights = cache_data['fights']
             fights = apply_time_overrides(fights)
 
-            # Drop events that have already happened. Without this, stale cache
-            # served during a scraper outage would show past fights.
-            today_iso = date.today().isoformat()
-            fights = [f for f in fights if f.get('date', '') >= today_iso]
+            # Drop events older than the results window so stale cache served
+            # during a scraper outage never shows ancient fights.
+            cutoff = _retention_cutoff_iso()
+            fights = [f for f in fights if f.get('date', '') >= cutoff]
 
-            logger.info(f"  Loaded {len(fights)} upcoming fights from cache")
+            logger.info(f"  Loaded {len(fights)} fights from cache (incl. last {RESULTS_WINDOW_DAYS}d results)")
             return fights
         else:
             logger.info(f"[X] Cache expired (age: {age.seconds//3600} hours), fetching new data...")
@@ -645,6 +666,219 @@ def indexnow_key_file():
     return response
 
 
+# ============================================================================
+# FIGHTER PROFILES — tale of the tape + results from Wikipedia, cached on the
+# volume and refreshed in the background (see scrapers/fighter_profiles.py)
+# ============================================================================
+
+from scrapers import fighter_profiles as _wiki
+
+PROFILES_FILE = data_path('fighter_profiles.json')
+PROFILE_TTL_HOURS = 24 * 7      # re-check a known fighter weekly
+RESULT_TTL_HOURS = 6            # ...but every 6h while one of their fights is recent
+NEGATIVE_TTL_HOURS = 24 * 7     # retry unknown names weekly
+PROFILE_JOB_MIN_INTERVAL_S = 30 * 60
+
+_profiles_lock = threading.Lock()
+_profiles_mem = {'mtime': None, 'data': {}}
+_profile_job_state = {'last_start': 0.0, 'running': False}
+
+
+def _profile_key(name):
+    return _wiki._norm(name)
+
+
+def load_profiles():
+    """Profiles dict keyed by normalized name, cached in memory by file mtime."""
+    try:
+        mtime = os.path.getmtime(PROFILES_FILE)
+    except OSError:
+        return {}
+    if _profiles_mem['mtime'] != mtime:
+        try:
+            with open(PROFILES_FILE) as f:
+                _profiles_mem['data'] = json.load(f)
+            _profiles_mem['mtime'] = mtime
+        except Exception as e:
+            logger.error(f"Error loading profiles: {e}")
+            return _profiles_mem['data'] or {}
+    return _profiles_mem['data']
+
+
+def save_profiles(data):
+    tmp = PROFILES_FILE + '.tmp'
+    with open(tmp, 'w') as f:
+        json.dump(data, f, ensure_ascii=False)
+    os.replace(tmp, PROFILES_FILE)
+
+
+def _hours_since(ts):
+    try:
+        return (datetime.now() - datetime.fromisoformat(ts)).total_seconds() / 3600
+    except Exception:
+        return 1e9
+
+
+def _profile_work_list(fights, profiles):
+    """Names to (re)fetch, most useful first: recent results, then soonest upcoming."""
+    today = date.today()
+    today_iso, recent_iso = today.isoformat(), (today - timedelta(days=4)).isoformat()
+    wanted = {}
+    for f in fights:
+        d = f.get('date', '')
+        for key in ('fighter1', 'fighter2'):
+            name = f.get(key, '')
+            if not name or name.upper() == 'TBA':
+                continue
+            k = _profile_key(name)
+            entry = profiles.get(k)
+            if recent_iso <= d < today_iso:
+                # results pending: refresh often, and only for fighters with an article
+                if entry and entry.get('title') and _hours_since(entry.get('fetched_at', '')) < RESULT_TTL_HOURS:
+                    continue
+                if entry and not entry.get('title') and _hours_since(entry.get('fetched_at', '')) < NEGATIVE_TTL_HOURS:
+                    continue
+                prio = (0, d)
+            else:
+                if entry and _hours_since(entry.get('fetched_at', '')) < (PROFILE_TTL_HOURS if entry.get('title') else NEGATIVE_TTL_HOURS):
+                    continue
+                prio = (1, d)
+            if k not in wanted or prio < wanted[k][0]:
+                wanted[k] = (prio, name, f.get('sport', 'Boxing'))
+    return [(name, sport) for _, name, sport in sorted(wanted.values(), key=lambda x: x[0])]
+
+
+def refresh_profiles(fights, max_fetch=60):
+    """Background job: fetch/refresh Wikipedia profiles for fighters in the schedule."""
+    if _profile_job_state['running']:
+        return
+    _profile_job_state['running'] = True
+    _profile_job_state['last_start'] = time.time()
+    try:
+        profiles = dict(load_profiles())
+        work = _profile_work_list(fights, profiles)[:max_fetch]
+        logger.info(f"Profile job: {len(work)} fighters to fetch")
+        fetched = 0
+        for name, sport in work:
+            k = _profile_key(name)
+            existing = profiles.get(k) or {}
+            title = existing.get('title') or _wiki.resolve_title(name, sport)
+            profile = _wiki.fetch_profile(title, sport) if title else None
+            if title and profile is None and existing.get('profile'):
+                profile = existing['profile']   # transient failure: keep what we had
+            profiles[k] = {
+                'name': name, 'sport': sport, 'title': title if profile else None,
+                'profile': profile, 'fetched_at': datetime.now().isoformat(),
+            }
+            fetched += 1
+            if fetched % 10 == 0:
+                with _profiles_lock:
+                    save_profiles(profiles)
+            time.sleep(0.3)
+        with _profiles_lock:
+            save_profiles(profiles)
+        logger.info(f"Profile job done: {fetched} fetched, {sum(1 for p in profiles.values() if p.get('title'))} with articles")
+    except Exception as e:
+        logger.error(f"Profile job failed: {e}", exc_info=True)
+    finally:
+        _profile_job_state['running'] = False
+
+
+def _maybe_start_profile_job(fights):
+    """Start a background profile refresh if there is work and none ran recently."""
+    if _profile_job_state['running'] or time.time() - _profile_job_state['last_start'] < PROFILE_JOB_MIN_INTERVAL_S:
+        return
+    if _profile_work_list(fights, load_profiles()):
+        threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
+
+
+def _tape(profile_entry):
+    """Slim tale-of-the-tape dict for templates, or None."""
+    p = (profile_entry or {}).get('profile')
+    if not p or not p.get('has_tape') and not p.get('record'):
+        return None
+    rec = p.get('record') or {}
+    wins, losses, draws, total = rec.get('wins'), rec.get('losses'), rec.get('draws'), rec.get('total')
+    if wins is not None and losses is None and total is not None:
+        losses = max(0, total - wins - (draws or 0) - (rec.get('no_contests') or 0))
+    record = None
+    if wins is not None and losses is not None:
+        record = f"{wins}-{losses}" + (f"-{draws}" if draws else '')
+    nationality = p.get('nationality')
+    if not nationality and p.get('birthplace'):
+        nationality = p['birthplace'].split(',')[-1].strip()
+    return {
+        'record': record, 'wins': wins, 'losses': losses, 'draws': draws,
+        'ko_wins': rec.get('ko_wins'), 'sub_wins': rec.get('sub_wins'), 'dec_wins': rec.get('dec_wins'),
+        'age': p.get('age'), 'height': p.get('height_text'), 'height_cm': p.get('height_cm'),
+        'reach': p.get('reach_text'), 'reach_in': p.get('reach_in'),
+        'stance': p.get('stance'), 'nationality': nationality, 'nickname': p.get('nickname'),
+        'height_display': _height_display(p.get('height_cm')),
+        'reach_display': _reach_display(p.get('reach_in'), p.get('reach_cm')),
+        'url': p.get('url'),
+    }
+
+
+def _height_display(cm):
+    if not cm:
+        return None
+    total_in = cm / 2.54
+    ft, inch = int(total_in // 12), int(round(total_in % 12))
+    if inch == 12:
+        ft, inch = ft + 1, 0
+    return f"{ft}'{inch}\" ({cm} cm)"
+
+
+def _reach_display(inches, cm):
+    if not inches and not cm:
+        return None
+    if inches and not cm:
+        cm = int(round(inches * 2.54))
+    if cm and not inches:
+        inches = round(cm / 2.54)
+    inches_s = str(int(inches)) if float(inches).is_integer() else f"{inches:g}"
+    return f'{inches_s}" ({cm} cm)'
+
+
+def _result_for(fight, profiles):
+    """Winner/method/round for a completed fight, from either fighter's record table."""
+    f1, f2, d = fight.get('fighter1', ''), fight.get('fighter2', ''), fight.get('date', '')
+    for me, them in ((f1, f2), (f2, f1)):
+        entry = profiles.get(_profile_key(me))
+        row = _wiki.find_result((entry or {}).get('profile'), them, d) if entry else None
+        if not row:
+            continue
+        res = (row.get('result') or '').lower()
+        if res.startswith('win'):
+            winner, loser, outcome = me, them, 'win'
+        elif res.startswith('loss'):
+            winner, loser, outcome = them, me, 'win'
+        elif res.startswith('draw'):
+            winner, loser, outcome = None, None, 'draw'
+        elif 'nc' in res or 'no contest' in res:
+            winner, loser, outcome = None, None, 'nc'
+        else:
+            continue
+        return {
+            'outcome': outcome, 'winner': winner, 'loser': loser,
+            'method': row.get('method'), 'round': row.get('round'), 'time': row.get('time'),
+            'notes': row.get('notes'), 'source_url': (entry.get('profile') or {}).get('url'),
+        }
+    return None
+
+
+def enrich_fights(fights):
+    """Attach fighter1_tape / fighter2_tape, is_past, and result (for past fights)."""
+    profiles = load_profiles()
+    today_iso = date.today().isoformat()
+    for f in fights:
+        f['fighter1_tape'] = _tape(profiles.get(_profile_key(f.get('fighter1', ''))))
+        f['fighter2_tape'] = _tape(profiles.get(_profile_key(f.get('fighter2', ''))))
+        f['is_past'] = f.get('date', '') < today_iso
+        f['result'] = _result_for(f, profiles) if f['is_past'] else None
+    return fights
+
+
 _scrape_lock = threading.Lock()
 
 
@@ -660,7 +894,10 @@ def _refresh_cache(wait=False):
         logger.info("Scrape already in progress in another thread, skipping")
         return None
     try:
-        return _scrape_all_sources()
+        fights = _scrape_all_sources()
+        if fights:
+            threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
+        return fights
     except Exception as e:
         logger.error(f"Background scrape failed: {e}", exc_info=True)
         return None
@@ -669,6 +906,13 @@ def _refresh_cache(wait=False):
 
 
 def fetch_fights():
+    """Fight data with tale-of-the-tape and results attached (see enrich_fights)."""
+    fights = _fetch_fights_raw()
+    _maybe_start_profile_job(fights)
+    return enrich_fights(fights)
+
+
+def _fetch_fights_raw():
     """Return fight data, preferring cache. Stale-while-revalidate: if the
     cache is expired but usable, serve it immediately and refresh in a
     background thread so visitors never wait on a scrape."""
@@ -808,10 +1052,23 @@ def _scrape_all_sources():
     
     # Sort fights by date
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
-    # Filter out past fights
+    # Sources only list upcoming cards, so completed fights within the results
+    # window are carried forward from the previous cache (deduped by matchup).
     today = date.today().isoformat()
+    cutoff = _retention_cutoff_iso()
+    previous_cache = load_cache(max_age_hours=24 * 365) or []
+    seen_pairs = {(tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date')) for f in fights}
+    carried_past = 0
+    for f in previous_cache:
+        if cutoff <= f.get('date', '') < today:
+            key = (tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date'))
+            if key not in seen_pairs:
+                fights.append(f); seen_pairs.add(key); carried_past += 1
+    log(f"Carried forward {carried_past} completed fights for results")
+    fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
+
     fights_before_filter = len(fights)
-    fights = [f for f in fights if f.get('date', '') >= today]
+    fights = [f for f in fights if f.get('date', '') >= cutoff]
     
     # Keep all UFC fights (no filtering needed)
     # Keep all boxing fights - BBC Sport already curates quality matches
@@ -846,8 +1103,8 @@ def persisted_fighter_image(filename):
 @app.route('/')
 def home():
     logger.info("--> Home page accessed")
-    fights = fetch_fights()
-    logger.info(f"  Rendering {len(fights)} fights")
+    fights = upcoming_only(fetch_fights())
+    logger.info(f"  Rendering {len(fights)} upcoming fights")
     
     # Separate by sport and filter out prelims
     ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
@@ -998,6 +1255,8 @@ def _group_events_for_landing(fights, sport):
                 'fight_count': counts.get(name, 1),
                 'path': f"/event/{slug}",
                 'url': f"https://fightschedule.live/event/{slug}",
+                'is_past': f.get('is_past', False),
+                'result': f.get('result'),
             })
     else:
         # Boxing: one entry per main event; count undercard via venue+date
@@ -1025,6 +1284,8 @@ def _group_events_for_landing(fights, sport):
                 'fight_count': counts.get((f.get('venue', ''), f.get('date', '')), 1),
                 'path': f"/boxing-event/{slug}",
                 'url': f"https://fightschedule.live/boxing-event/{slug}",
+                'is_past': f.get('is_past', False),
+                'result': f.get('result'),
             })
 
     events.sort(key=lambda e: (e['date'] or '9999', e['time'] or '99:99'))
@@ -1048,7 +1309,9 @@ def _group_events_for_landing(fights, sport):
 def ufc_schedule():
     """UFC schedule landing page."""
     fights = fetch_fights()
-    all_events, months = _group_events_for_landing(fights, 'UFC')
+    all_events, months = _group_events_for_landing(upcoming_only(fights), 'UFC')
+    recent_events, _ = _group_events_for_landing(recent_results(fights), 'UFC')
+    recent_events = sorted(recent_events, key=lambda e: e['date'], reverse=True)[:12]
     now = datetime.now()
     page = {
         'sport': 'UFC',
@@ -1064,14 +1327,16 @@ def ufc_schedule():
         'other_path': '/boxing',
         'other_label': 'boxing schedule',
     }
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events)
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events)
 
 
 @app.route('/boxing')
 def boxing_schedule():
     """Boxing schedule landing page."""
     fights = fetch_fights()
-    all_events, months = _group_events_for_landing(fights, 'Boxing')
+    all_events, months = _group_events_for_landing(upcoming_only(fights), 'Boxing')
+    recent_events, _ = _group_events_for_landing(recent_results(fights), 'Boxing')
+    recent_events = sorted(recent_events, key=lambda e: e['date'], reverse=True)[:12]
     now = datetime.now()
     page = {
         'sport': 'Boxing',
@@ -1087,7 +1352,7 @@ def boxing_schedule():
         'other_path': '/ufc',
         'other_label': 'UFC schedule',
     }
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events)
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events)
 
 
 @app.route('/event/<event_slug>')
@@ -1203,13 +1468,15 @@ def event_detail(event_slug):
             'fighter1_image': main_event_fight.get('fighter1_image') or '/static/placeholder-fighter-mma.png',
             'fighter2_image': main_event_fight.get('fighter2_image') or '/static/placeholder-fighter-mma.png',
             'weight_class': weight_class,
-            'time': main_event_fight.get('time', 'TBA')
+            'time': main_event_fight.get('time', 'TBA'),
+            **{k: main_event_fight.get(k) for k in ('is_past', 'result', 'fighter1_tape', 'fighter2_tape', 'sport', 'date')},
         },
         'main_card': [
             {
                 'fighter1': f['fighter1'],
                 'fighter2': f['fighter2'],
-                'is_title': f.get('weight_class') == 'Title'
+                'is_title': f.get('weight_class') == 'Title',
+                'result': f.get('result'),
             }
             for f in main_card_fights
         ],
@@ -1312,6 +1579,7 @@ def boxing_event_detail(event_slug):
             'fighter2': main_event_fight['fighter2'],
             'fighter1_image': main_event_fight.get('fighter1_image'),
             'fighter2_image': main_event_fight.get('fighter2_image'),
+            **{k: main_event_fight.get(k) for k in ('is_past', 'result', 'fighter1_tape', 'fighter2_tape', 'sport', 'date')},
         },
         'fights': [main_event_fight] + undercard
     }
@@ -1526,7 +1794,7 @@ def calendar_ics(sport=None):
     """Subscribable ICS calendar of upcoming fights (all, ufc, or boxing)."""
     if sport is not None and sport not in ('ufc', 'boxing'):
         abort(404)
-    fights = fetch_fights()
+    fights = upcoming_only(fetch_fights())
     if sport:
         fights = [f for f in fights if f.get('sport', '').lower() == sport]
         cal_name = f"{'UFC' if sport == 'ufc' else 'Boxing'} Schedule — fightschedule.live"
@@ -1943,6 +2211,7 @@ _DEBUG_PARTS = {
     'fighters_ufc': 'fighters_ufc.json',
     'overrides': 'time_overrides.json',
     'fetch_status': 'fetch_status.json',
+    'profiles': 'fighter_profiles.json',
 }
 
 

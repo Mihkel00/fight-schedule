@@ -255,6 +255,7 @@
         </div>
 
         <!-- Add to Calendar -->
+        {% if not event.main_event.is_past %}
         <div class="flex flex-wrap items-center gap-3 mb-8">
             {% set cal_title = event.event_name | urlencode %}
             {% set cal_details = ('Full card and times: ' ~ event.canonical_url) | urlencode %}
@@ -271,6 +272,10 @@
                 🗓️ Subscribe to UFC calendar (.ics)
             </a>
         </div>
+        {% endif %}
+
+        {% import '_tape_result.html' as tr %}
+        {{ tr.result_banner(event.main_event, 'accent-red-custom') }}
 
         <!-- Main Event Fighters -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -314,6 +319,8 @@
                 </div>
             </div>
         </div>
+
+        {{ tr.tale_of_the_tape(event.main_event, 'accent-red-custom') }}
 
         <!-- Streaming Links -->
         <div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-12">
@@ -395,6 +402,7 @@
                                     {% endif %}
                                 </span>
                             </div>
+                            {{ tr.row_result(fight, 'accent-red-custom') }}
                         </div>
                         {% endfor %}
                     </div>
@@ -414,6 +422,7 @@
                                     {{ fight.fighter1 }} vs {{ fight.fighter2 }}
                                 </span>
                             </div>
+                            {{ tr.row_result(fight, 'accent-red-custom') }}
                         </div>
                         {% endfor %}
                     </div>
