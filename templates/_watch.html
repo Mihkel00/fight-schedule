@@ -1,0 +1,34 @@
+{# Streaming / affiliate links. Every provider link goes through /go/<key> so clicks are
+   logged server-side and the destination can be swapped for an affiliate URL via env. #}
+
+{% macro watch_link(streaming, event_slug, sport, placement, css='') -%}
+{% set key = provider_key(streaming) %}
+{% if key %}
+<a href="/go/{{ key }}?event={{ event_slug|urlencode }}&sport={{ sport|lower }}&p={{ placement }}"
+   target="_blank" rel="sponsored nofollow noopener" class="{{ css }}"
+   onclick="if(window.gtag){gtag('event','affiliate_click',{provider:'{{ key }}',event_slug:'{{ event_slug }}',placement:'{{ placement }}'});}">{{ provider_name(key) }}</a>
+{% elif streaming %}
+<span class="{{ css }}">{{ clean_broadcaster(streaming) }}</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro watch_box(streaming, event_slug, sport, accent) -%}
+{% set key = provider_key(streaming) %}
+{% if streaming %}
+<div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-12">
+    <div class="flex flex-wrap items-center justify-center gap-3">
+        <svg class="w-5 h-5 text-{{ accent }} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+        </svg>
+        <span class="font-work text-text-primary">Watch on:</span>
+        {% if key %}
+        {{ watch_link(streaming, event_slug, sport, 'event',
+            'inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-' ~ accent ~ ' text-dark-bg font-work font-semibold hover:opacity-90 transition-opacity') }}
+        {% else %}
+        <span class="font-work font-semibold text-{{ accent }}">{{ clean_broadcaster(streaming) }}</span>
+        {% endif %}
+    </div>
+    {% if key %}<p class="text-center text-[11px] text-text-tertiary font-work mt-3">We may earn a commission if you subscribe through this link. <a href="/privacy#affiliate" class="underline">Details</a></p>{% endif %}
+</div>
+{% endif %}
+{%- endmacro %}

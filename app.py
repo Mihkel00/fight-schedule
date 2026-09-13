@@ -1350,6 +1350,7 @@ def ufc_schedule():
         'sport': 'UFC',
         'title': f"UFC Schedule {now.year} — Upcoming UFC Events, Dates & Fight Cards",
         'heading': 'UFC Schedule',
+        'tagline': 'every upcoming event with full fight cards',
         'breadcrumb': 'UFC Schedule',
         'meta_description': f"Full UFC schedule for {now.year}: every upcoming UFC event with dates, start times in your timezone, full fight cards, main events and venues. Updated daily.",
         'canonical_url': 'https://fightschedule.live/ufc',
@@ -1376,6 +1377,7 @@ def boxing_schedule():
         'sport': 'Boxing',
         'title': f"Boxing Schedule {now.year} — Upcoming Fights, Dates & Fight Cards",
         'heading': 'Boxing Schedule',
+        'tagline': 'every upcoming fight night with undercards',
         'breadcrumb': 'Boxing Schedule',
         'meta_description': f"Full boxing schedule for {now.year}: every upcoming boxing match with dates, start times in your timezone, undercards, venues and where to watch. Updated daily.",
         'canonical_url': 'https://fightschedule.live/boxing',
@@ -2552,6 +2554,9 @@ def debug_state():
         threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
         return jsonify({'started': True, 'pending_fighters': len(pending)})
 
+    if part == 'clicks':
+        return jsonify(click_stats(int(request.args.get('days') or 30)))
+
     if part == 'scrape_log':
         path = data_path('data_sources_comparison.txt')
         if not os.path.exists(path):
@@ -2614,6 +2619,73 @@ def debug_state():
         summary['persisted_fighter_images'] = sorted(os.listdir(fighters_dir))
 
     return jsonify(summary)
+
+
+# ============================================================================
+# AFFILIATE / STREAMING LINKS — see affiliates.py
+# ============================================================================
+
+import affiliates as _aff
+
+CLICKS_FILE = data_path('clicks.jsonl')
+_clicks_lock = threading.Lock()
+
+
+# Globals (not context processors) so imported macros in _watch.html can use them
+app.jinja_env.globals.update({
+    'provider_key': _aff.resolve_provider,
+    'provider_name': _aff.provider_name,
+    'clean_broadcaster': _aff.clean_broadcaster,
+})
+
+
+@app.route('/go/<provider>')
+def go_provider(provider):
+    """Redirect to a streaming provider and log the click (server-side, ad-blocker proof)."""
+    url = _aff.affiliate_url(provider, request.args.get('event', '')[:120])
+    if not url:
+        abort(404)
+    try:
+        record = {
+            'ts': datetime.utcnow().isoformat() + 'Z',
+            'provider': provider,
+            'event': request.args.get('event', '')[:120],
+            'sport': request.args.get('sport', '')[:10],
+            'placement': request.args.get('p', '')[:20],
+            'referer': (request.headers.get('Referer') or '')[:200],
+            'affiliate': _aff.is_affiliate_configured(provider),
+        }
+        with _clicks_lock:
+            with open(CLICKS_FILE, 'a') as f:
+                f.write(json.dumps(record) + '\n')
+    except Exception as e:
+        logger.warning(f"click log failed: {e}")
+    resp = redirect(url, code=302)
+    resp.headers['Cache-Control'] = 'no-store'
+    resp.headers['Referrer-Policy'] = 'no-referrer-when-downgrade'
+    return resp
+
+
+def click_stats(days=30):
+    """Aggregate clicks.jsonl by provider / day for the debug API."""
+    cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    by_provider, by_day, by_event, total = {}, {}, {}, 0
+    if os.path.exists(CLICKS_FILE):
+        with open(CLICKS_FILE) as f:
+            for line in f:
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                if r.get('ts', '') < cutoff:
+                    continue
+                total += 1
+                by_provider[r.get('provider')] = by_provider.get(r.get('provider'), 0) + 1
+                by_day[r['ts'][:10]] = by_day.get(r['ts'][:10], 0) + 1
+                by_event[r.get('event') or '-'] = by_event.get(r.get('event') or '-', 0) + 1
+    return {'days': days, 'total': total, 'by_provider': by_provider, 'by_day': dict(sorted(by_day.items())),
+            'top_events': sorted(by_event.items(), key=lambda kv: -kv[1])[:20],
+            'configured_affiliates': [k for k in _aff.PROVIDERS if _aff.is_affiliate_configured(k)]}
 
 
 @app.route('/privacy')
