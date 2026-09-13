@@ -2042,6 +2042,56 @@ def debug_state():
                              'elapsed': round((datetime.now() - started).total_seconds(), 1)}
         return jsonify(out)
 
+    if part == 'wiki_structure':
+        # Dump the structure of the Wikipedia boxing-year article so a parser
+        # can be written against the real markup: section headings, table
+        # headers, row counts and sample rows.
+        import traceback
+        from bs4 import BeautifulSoup
+        year = request.args.get('year') or str(date.today().year)
+        page = f'{year}_in_boxing'
+        try:
+            r = requests.get(
+                'https://en.wikipedia.org/w/api.php',
+                params={'action': 'parse', 'page': page, 'prop': 'text', 'format': 'json'},
+                headers={'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'},
+                timeout=25,
+            )
+            payload = r.json()
+            if 'error' in payload:
+                return jsonify({'page': page, 'status': r.status_code, 'api_error': payload['error']})
+            html = payload['parse']['text']['*']
+            soup = BeautifulSoup(html, 'html.parser')
+
+            sections = [h.get_text(' ', strip=True) for h in soup.find_all(['h2', 'h3'])]
+
+            tables = []
+            for t in soup.find_all('table', class_='wikitable')[:12]:
+                rows = t.find_all('tr')
+                headers = [c.get_text(' ', strip=True) for c in rows[0].find_all(['th', 'td'])] if rows else []
+                samples = []
+                for row in rows[1:4]:
+                    samples.append([c.get_text(' ', strip=True)[:60] for c in row.find_all(['th', 'td'])])
+                # nearest preceding heading gives the table's context
+                prev = t.find_previous(['h2', 'h3'])
+                tables.append({
+                    'context': prev.get_text(' ', strip=True) if prev else None,
+                    'headers': headers,
+                    'row_count': max(0, len(rows) - 1),
+                    'sample_rows': samples,
+                })
+
+            return jsonify({
+                'page': page,
+                'status': r.status_code,
+                'html_length': len(html),
+                'section_headings': sections,
+                'wikitable_count': len(soup.find_all('table', class_='wikitable')),
+                'tables': tables,
+            })
+        except Exception as e:
+            return jsonify({'page': page, 'error': str(e), 'traceback': traceback.format_exc()[-1200:]})
+
     if part == 'scrape_log':
         path = data_path('data_sources_comparison.txt')
         if not os.path.exists(path):
