@@ -621,7 +621,7 @@ def save_cache(fights):
     except Exception as e:
         logger.error(f"Error saving cache: {e}")
         return
-    ping_indexnow(fights)
+    sync_page_versions(fights, reason='scrape')
 
 
 # ============================================================================
@@ -654,12 +654,12 @@ def public_event_urls(fights):
     return urls
 
 
-def ping_indexnow(fights):
-    """Submit current URLs to IndexNow after a successful scrape. Best-effort."""
-    if not INDEXNOW_KEY:
+def ping_indexnow(urls):
+    """Submit changed/removed URLs to IndexNow. Best-effort."""
+    if not INDEXNOW_KEY or not urls:
         return
     try:
-        urls = public_event_urls(fights)
+        urls = list(dict.fromkeys(urls))
         resp = requests.post(
             'https://api.indexnow.org/indexnow',
             json={
@@ -673,6 +673,86 @@ def ping_indexnow(fights):
         logger.info(f"IndexNow ping: {resp.status_code} for {len(urls)} URLs")
     except Exception as e:
         logger.warning(f"IndexNow ping failed: {e}")
+
+
+# ── Page versions: a content fingerprint per public URL so the sitemap's lastmod
+# and IndexNow pings reflect real changes (result added, fighter swapped, time
+# moved) rather than the fight date or "every scrape".
+PAGE_VERSIONS_FILE = data_path('page_versions.json')
+_versions_lock = threading.Lock()
+
+
+def _load_versions():
+    try:
+        with open(PAGE_VERSIONS_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def _fight_signature(f):
+    r = f.get('result') or {}
+    return '|'.join(str(x) for x in (
+        f.get('fighter1'), f.get('fighter2'), f.get('date'), f.get('time'), f.get('venue'),
+        f.get('card_type'), f.get('weight_class'), f.get('streaming'),
+        r.get('winner'), r.get('method'), r.get('round'), r.get('time'),
+    ))
+
+
+def _event_fingerprints(fights):
+    """url -> sha1 of that event's fights (results included). Boxing undercards
+    share their main event's URL via (venue, date)."""
+    import hashlib
+    fights = enrich_fights([dict(f) for f in fights])
+    ufc_url, box_url = {}, {}
+    for f in fights:
+        if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims' and f['event_name'] not in ufc_url:
+            slug = f"{f['event_name'].lower().replace(' ', '-').replace(':', '').replace(',', '')}-{f['date']}"
+            ufc_url[f['event_name']] = f"https://fightschedule.live/event/{slug}"
+        elif f.get('sport') == 'Boxing' and f.get('is_main_event'):
+            slug = f"{_to_slug(f['fighter1'])}-vs-{_to_slug(f['fighter2'])}-{f['date']}"
+            box_url[(f.get('venue'), f.get('date'))] = f"https://fightschedule.live/boxing-event/{slug}"
+    groups = {}
+    for f in fights:
+        url = ufc_url.get(f.get('event_name')) if f.get('sport') == 'UFC' else box_url.get((f.get('venue'), f.get('date')))
+        if url:
+            groups.setdefault(url, []).append(_fight_signature(f))
+    return {url: hashlib.sha1('\n'.join(sorted(sigs)).encode()).hexdigest() for url, sigs in groups.items()}
+
+
+def sync_page_versions(fights, reason=''):
+    """Compare current content with stored fingerprints; bump lastmod for changed
+    pages, drop removed ones, and ping IndexNow with just those URLs."""
+    if not fights:
+        return {'changed': [], 'removed': []}
+    now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    with _versions_lock:
+        stored = _load_versions()
+        current = _event_fingerprints(fights)
+        changed = [u for u, h in current.items() if stored.get(u, {}).get('hash') != h]
+        removed = [u for u in stored if u not in current]
+        for u in changed:
+            stored[u] = {'hash': current[u], 'lastmod': now}
+        for u in removed:
+            stored.pop(u, None)
+        if changed or removed:
+            tmp = PAGE_VERSIONS_FILE + '.tmp'
+            with open(tmp, 'w') as f:
+                json.dump(stored, f)
+            os.replace(tmp, PAGE_VERSIONS_FILE)
+    if changed or removed:
+        logger.info(f"Page versions ({reason}): {len(changed)} changed, {len(removed)} removed")
+        hubs = ['https://fightschedule.live/']
+        if any('/event/' in u for u in changed + removed):
+            hubs.append('https://fightschedule.live/ufc')
+        if any('/boxing-event/' in u for u in changed + removed):
+            hubs.append('https://fightschedule.live/boxing')
+        ping_indexnow(changed + removed + hubs)
+    return {'changed': changed, 'removed': removed}
+
+
+def page_lastmod(url, fallback):
+    return _load_versions().get(url, {}).get('lastmod', fallback)
 
 
 @app.route('/indexnow-key.txt')
@@ -797,6 +877,8 @@ def refresh_profiles(fights, max_fetch=150):
         with _profiles_lock:
             save_profiles(profiles)
         logger.info(f"Profile job done: {fetched} fetched, {sum(1 for p in profiles.values() if p.get('title'))} with articles")
+        if fetched:
+            sync_page_versions(load_cache(max_age_hours=24 * 365) or [], reason='profiles')
     except Exception as e:
         logger.error(f"Profile job failed: {e}", exc_info=True)
     finally:
@@ -1677,9 +1759,13 @@ def sitemap():
     today = datetime.now().strftime('%Y-%m-%d')
 
     pages = []
-    pages.append({'loc': 'https://fightschedule.live/', 'lastmod': today, 'changefreq': 'daily', 'priority': '1.0'})
-    pages.append({'loc': 'https://fightschedule.live/ufc', 'lastmod': today, 'changefreq': 'daily', 'priority': '0.9'})
-    pages.append({'loc': 'https://fightschedule.live/boxing', 'lastmod': today, 'changefreq': 'daily', 'priority': '0.9'})
+    versions = _load_versions()
+    def newest(prefix):
+        stamps = [v.get('lastmod', '') for u, v in versions.items() if prefix in u]
+        return max(stamps)[:10] if stamps else today
+    pages.append({'loc': 'https://fightschedule.live/', 'lastmod': newest('/'), 'changefreq': 'daily', 'priority': '1.0'})
+    pages.append({'loc': 'https://fightschedule.live/ufc', 'lastmod': newest('/event/'), 'changefreq': 'daily', 'priority': '0.9'})
+    pages.append({'loc': 'https://fightschedule.live/boxing', 'lastmod': newest('/boxing-event/'), 'changefreq': 'daily', 'priority': '0.9'})
     pages.append({'loc': 'https://fightschedule.live/privacy', 'lastmod': today, 'changefreq': 'yearly', 'priority': '0.3'})
 
     # UFC events — one URL per event (first non-prelim fight defines the
@@ -1691,7 +1777,8 @@ def sitemap():
             continue
         seen.add(fight['event_name'])
         slug = f"{fight['event_name'].lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
-        pages.append({'loc': f"https://fightschedule.live/event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.8'})
+        url = f"https://fightschedule.live/event/{slug}"
+        pages.append({'loc': url, 'lastmod': versions.get(url, {}).get('lastmod', fight['date']), 'changefreq': 'daily', 'priority': '0.8'})
 
     # Boxing events - all main events
     boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event')]
@@ -1701,7 +1788,8 @@ def sitemap():
         # otherwise the sitemap emits URLs that 404 (e.g. names with periods)
         slug = f"{_to_slug(fight['fighter1'])}-vs-{_to_slug(fight['fighter2'])}-{fight['date']}"
         if slug not in seen:
-            pages.append({'loc': f"https://fightschedule.live/boxing-event/{slug}", 'lastmod': fight['date'], 'changefreq': 'weekly', 'priority': '0.7'})
+            url = f"https://fightschedule.live/boxing-event/{slug}"
+            pages.append({'loc': url, 'lastmod': versions.get(url, {}).get('lastmod', fight['date']), 'changefreq': 'daily', 'priority': '0.7'})
             seen.add(slug)
 
     xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -2553,6 +2641,10 @@ def debug_state():
         pending = _profile_work_list(fights, load_profiles())
         threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
         return jsonify({'started': True, 'pending_fighters': len(pending)})
+
+    if part == 'versions':
+        v = _load_versions()
+        return jsonify({'tracked_urls': len(v), 'newest': sorted(v.items(), key=lambda kv: kv[1].get('lastmod', ''), reverse=True)[:15]})
 
     if part == 'clicks':
         return jsonify(click_stats(int(request.args.get('days') or 30)))

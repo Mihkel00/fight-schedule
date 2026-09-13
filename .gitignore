@@ -14,3 +14,5 @@ node_modules/
 fighter_profiles.json
 fighter_profiles.json.tmp
 clicks.jsonl
+page_versions.json
+page_versions.json.tmp
