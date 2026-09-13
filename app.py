@@ -677,7 +677,7 @@ PROFILES_FILE = data_path('fighter_profiles.json')
 PROFILE_TTL_HOURS = 24 * 7      # re-check a known fighter weekly
 RESULT_TTL_HOURS = 6            # ...but every 6h while one of their fights is recent
 NEGATIVE_TTL_HOURS = 24 * 7     # retry unknown names weekly
-PROFILE_JOB_MIN_INTERVAL_S = 30 * 60
+PROFILE_JOB_MIN_INTERVAL_S = 10 * 60
 
 _profiles_lock = threading.Lock()
 _profiles_mem = {'mtime': None, 'data': {}}
@@ -748,7 +748,7 @@ def _profile_work_list(fights, profiles):
     return [(name, sport) for _, name, sport in sorted(wanted.values(), key=lambda x: x[0])]
 
 
-def refresh_profiles(fights, max_fetch=60):
+def refresh_profiles(fights, max_fetch=150):
     """Background job: fetch/refresh Wikipedia profiles for fighters in the schedule."""
     if _profile_job_state['running']:
         return
@@ -804,9 +804,14 @@ def _tape(profile_entry):
     record = None
     if wins is not None and losses is not None:
         record = f"{wins}-{losses}" + (f"-{draws}" if draws else '')
-    nationality = p.get('nationality')
-    if not nationality and p.get('birthplace'):
+    # Prefer the birthplace country so the row reads "Brazil / South Africa" rather
+    # than a mix of adjectives ("Filipino") and countries.
+    nationality = None
+    if p.get('birthplace'):
         nationality = p['birthplace'].split(',')[-1].strip()
+        nationality = {'U.S.': 'United States', 'US': 'United States', 'USA': 'United States', 'UK': 'United Kingdom'}.get(nationality, nationality)
+    if not nationality:
+        nationality = p.get('nationality')
     return {
         'record': record, 'wins': wins, 'losses': losses, 'draws': draws,
         'ko_wins': rec.get('ko_wins'), 'sub_wins': rec.get('sub_wins'), 'dec_wins': rec.get('dec_wins'),
@@ -2508,6 +2513,15 @@ def debug_state():
         except Exception as e:
             out['error'] = str(e); out['traceback'] = traceback.format_exc()[-1000:]
         return jsonify(out)
+
+    if part == 'profiles_refresh':
+        # Kick the background profile job now (ignores the cooldown)
+        if _profile_job_state['running']:
+            return jsonify({'started': False, 'reason': 'already running'})
+        fights = _fetch_fights_raw()
+        pending = _profile_work_list(fights, load_profiles())
+        threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
+        return jsonify({'started': True, 'pending_fighters': len(pending)})
 
     if part == 'scrape_log':
         path = data_path('data_sources_comparison.txt')

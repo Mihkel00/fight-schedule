@@ -1,13 +1,14 @@
 {# Shared partials: fight result banner, tale of the tape, and per-row result.
-   accent is a Tailwind color token: 'accent-red-custom' (UFC) or 'accent-orange' (boxing). #}
+   accent is 'accent-red-custom' (UFC) or 'accent-orange' (boxing). Class names are
+   written out in full so the Tailwind build can see them. #}
 
 {% macro result_banner(fight, accent) -%}
 {% if fight and fight.result %}
 {% set r = fight.result %}
-<div class="bg-dark-card rounded-xl p-5 border border-{{ accent }} mb-8">
+<div class="bg-dark-card rounded-xl p-5 border {{ 'border-accent-red-custom' if accent == 'accent-red-custom' else 'border-accent-orange' }} mb-8">
     <p class="text-xs uppercase tracking-wide text-text-tertiary font-work mb-1">Result</p>
-    <p class="font-staatliches text-3xl uppercase text-text-primary">
-        {% if r.outcome == 'win' %}{{ r.winner }} <span class="text-{{ accent }}">def.</span> {{ r.loser }}
+    <p class="font-staatliches text-2xl sm:text-3xl uppercase text-text-primary leading-tight">
+        {% if r.outcome == 'win' %}{{ r.winner }} <span class="{{ 'text-accent-red-custom' if accent == 'accent-red-custom' else 'text-accent-orange' }}">def.</span> {{ r.loser }}
         {% elif r.outcome == 'draw' %}Draw
         {% else %}No contest{% endif %}
     </p>
@@ -24,20 +25,28 @@
 {%- endmacro %}
 
 {% macro _stat(label, v1, v2) -%}
-<div class="grid grid-cols-3 items-center py-2 border-t border-dark-border text-sm font-work">
-    <span class="text-text-primary text-right pr-3">{{ v1 if v1 is not none else '—' }}</span>
-    <span class="text-text-tertiary text-center text-xs uppercase tracking-wide">{{ label }}</span>
-    <span class="text-text-primary text-left pl-3">{{ v2 if v2 is not none else '—' }}</span>
+<div class="tape-row grid items-center gap-2 py-2.5 border-t border-dark-border font-work">
+    <span class="text-text-primary text-sm sm:text-base text-right leading-snug">{{ v1 if v1 is not none else '—' }}</span>
+    <span class="text-text-tertiary text-center text-[10px] sm:text-xs uppercase tracking-wide px-1 whitespace-nowrap">{{ label }}</span>
+    <span class="text-text-primary text-sm sm:text-base text-left leading-snug">{{ v2 if v2 is not none else '—' }}</span>
 </div>
 {%- endmacro %}
 
 {% macro tale_of_the_tape(fight, accent) -%}
 {% if fight and (fight.fighter1_tape or fight.fighter2_tape) %}
 {% set t1 = fight.fighter1_tape or {} %}{% set t2 = fight.fighter2_tape or {} %}
-<div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-8">
+<style>
+    /* label column hugs its content; value columns share the rest */
+    .tape-row { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+</style>
+{# On phones the card chrome is dropped and the block bleeds to the screen edge (-mx-4
+   cancels the page padding) so long names and values get the full width. #}
+<div class="-mx-4 px-2 py-4 sm:mx-0 sm:px-6 sm:py-6 sm:bg-dark-card sm:rounded-xl sm:border sm:border-dark-border mb-8">
     <h3 class="font-staatliches text-2xl uppercase text-center mb-4">Tale of the Tape</h3>
-    <div class="grid grid-cols-3 items-end pb-2 font-staatliches uppercase text-lg">
-        <span class="text-right pr-3 truncate">{{ fight.fighter1 }}</span><span></span><span class="text-left pl-3 truncate">{{ fight.fighter2 }}</span>
+    <div class="tape-row grid items-end gap-2 pb-2 font-staatliches uppercase leading-tight">
+        <span class="text-right text-lg sm:text-2xl break-words">{{ fight.fighter1 }}</span>
+        <span></span>
+        <span class="text-left text-lg sm:text-2xl break-words">{{ fight.fighter2 }}</span>
     </div>
     {{ _stat('Record', t1.record, t2.record) }}
     {% if fight.sport == 'UFC' %}
@@ -53,9 +62,9 @@
     {{ _stat('From', t1.nationality, t2.nationality) }}
     <p class="text-xs text-text-tertiary font-work text-center mt-3">
         Source:
-        {% if t1.url %}<a href="{{ t1.url }}" target="_blank" rel="noopener" class="hover:text-{{ accent }}">Wikipedia ({{ fight.fighter1 }})</a>{% endif %}
+        {% if t1.url %}<a href="{{ t1.url }}" target="_blank" rel="noopener" class="underline decoration-dotted">Wikipedia ({{ fight.fighter1 }})</a>{% endif %}
         {% if t1.url and t2.url %} · {% endif %}
-        {% if t2.url %}<a href="{{ t2.url }}" target="_blank" rel="noopener" class="hover:text-{{ accent }}">Wikipedia ({{ fight.fighter2 }})</a>{% endif %}
+        {% if t2.url %}<a href="{{ t2.url }}" target="_blank" rel="noopener" class="underline decoration-dotted">Wikipedia ({{ fight.fighter2 }})</a>{% endif %}
     </p>
 </div>
 {% endif %}
@@ -65,7 +74,7 @@
 {% if fight.result %}
 {% set r = fight.result %}
 <p class="text-xs font-work ml-4 mt-1">
-    {% if r.outcome == 'win' %}<span class="text-{{ accent }} font-semibold">{{ r.winner }}</span> <span class="text-text-secondary">won</span>
+    {% if r.outcome == 'win' %}<span class="{{ 'text-accent-red-custom' if accent == 'accent-red-custom' else 'text-accent-orange' }} font-semibold">{{ r.winner }}</span> <span class="text-text-secondary">won</span>
     {% elif r.outcome == 'draw' %}<span class="text-text-secondary">Draw</span>{% else %}<span class="text-text-secondary">No contest</span>{% endif %}
     <span class="text-text-tertiary">{% if r.method %}· {{ r.method }}{% endif %}{% if r.round %} · R{{ r.round }}{% endif %}{% if r.time %} {{ r.time }}{% endif %}</span>
 </p>
