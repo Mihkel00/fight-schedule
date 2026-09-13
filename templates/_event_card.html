@@ -1,7 +1,6 @@
 {# Ring-style event card shared by the homepage carousels and the /ufc & /boxing pages.
    ev needs: path, fighter1/2, fighter1_image/2, date, time, time_estimated, venue, streaming,
    weight_class, event_name, result. mode: 'upcoming' | 'results'. #}
-{% from '_watch.html' import watch_link %}
 {% macro event_card(ev, mode, sport, placeholder, extra_class='', size='md') %}
 {% set lg = size == 'lg' %}
 {% set w1 = mode == 'results' and ev.result and ev.result.outcome == 'win' and ev.result.winner == ev.fighter1 %}
@@ -48,7 +47,7 @@
         <p class="flex items-center gap-2 text-text-secondary">
             <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 7v5l3 2"/></svg>
             <span class="fight-time" data-utc-time="{{ ev.time }}" data-date="{{ ev.date }}" data-estimated="{{ ev.time_estimated|default(false)|lower }}">{{ '~' if ev.time_estimated else '' }}{{ ev.time or 'TBA' }}</span>
-            {% if ev.streaming %}<span class="text-text-tertiary">· {{ watch_link(ev.streaming, ev.path|replace('/boxing-event/', '')|replace('/event/', ''), sport, 'card', 'underline decoration-dotted hover:text-text-primary') }}</span>{% endif %}
+            {% if ev.streaming %}<span class="text-text-tertiary">· {{ clean_broadcaster(ev.streaming) }}</span>{% endif %}
         </p>
         <span class="block mt-3 text-center rounded-full border border-dark-border py-2 text-text-primary font-medium">See details</span>
     </div>
