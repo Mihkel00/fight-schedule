@@ -761,5 +761,24 @@
         </div>
 
     </div>
+
+    <script>
+        // Keep fighter surnames on one line: shrink the font of any name that overflows its column.
+        (function () {
+            function fit() {
+                document.querySelectorAll('.fit-name').forEach(function (el) {
+                    el.style.fontSize = '';
+                    var size = parseFloat(getComputedStyle(el).fontSize);
+                    var guard = 0;
+                    while (el.scrollWidth > el.clientWidth && size > 13 && guard++ < 20) {
+                        size -= 1; el.style.fontSize = size + 'px';
+                    }
+                });
+            }
+            if (document.fonts && document.fonts.ready) { document.fonts.ready.then(fit); } else { fit(); }
+            window.addEventListener('load', fit);
+            var t; window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(fit, 120); });
+        })();
+    </script>
 </body>
 </html>
