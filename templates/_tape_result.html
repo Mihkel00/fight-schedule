@@ -17,7 +17,7 @@
         {% if r.notes %}<span class="text-text-tertiary"> · {{ r.notes }}</span>{% endif %}
     </p>
 </div>
-{% elif fight and fight.is_past %}
+{% elif fight and fight.result_pending %}
 <div class="bg-dark-card rounded-xl p-4 border border-dark-border mb-8">
     <p class="font-work text-text-secondary text-sm">This event has taken place. Result not yet available.</p>
 </div>
