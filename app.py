@@ -221,6 +221,11 @@ CACHE_DURATION = timedelta(hours=6)  # Refresh every 6 hours
 # URLs keep working (instead of vanishing the morning after).
 RESULTS_WINDOW_DAYS = 30
 
+# How long a finished fight may sit without a result before we stop calling it
+# "pending". Wikipedia records notable bouts within hours; small-hall fights
+# whose fighters have no article never get one.
+RESULT_GRACE_DAYS = 3
+
 
 def _retention_cutoff_iso():
     return (date.today() - timedelta(days=RESULTS_WINDOW_DAYS)).isoformat()
@@ -977,11 +982,20 @@ def enrich_fights(fights):
     """Attach fighter1_tape / fighter2_tape, is_past, and result (for past fights)."""
     profiles = load_profiles()
     today_iso = date.today().isoformat()
+    grace_iso = (date.today() - timedelta(days=RESULT_GRACE_DAYS)).isoformat()
     for f in fights:
         f['fighter1_tape'] = _tape(profiles.get(_profile_key(f.get('fighter1', ''))))
         f['fighter2_tape'] = _tape(profiles.get(_profile_key(f.get('fighter2', ''))))
         f['is_past'] = f.get('date', '') < today_iso
         f['result'] = _result_for(f, profiles) if f['is_past'] else None
+        # Only call it "pending" while a result could realistically still land:
+        # inside the grace window, with at least one fighter whose Wikipedia
+        # record we can read.
+        f['result_pending'] = bool(
+            f['is_past'] and not f['result'] and f.get('date', '') >= grace_iso
+            and any((profiles.get(_profile_key(f.get(k, ''))) or {}).get('title')
+                    for k in ('fighter1', 'fighter2'))
+        )
     return fights
 
 
@@ -1369,6 +1383,7 @@ def _group_events_for_landing(fights, sport):
                 'url': f"https://fightschedule.live/event/{slug}",
                 'is_past': f.get('is_past', False),
                 'result': f.get('result'),
+                'result_pending': f.get('result_pending', False),
             })
     else:
         # Boxing: one entry per main event; count undercard via venue+date
@@ -1400,6 +1415,7 @@ def _group_events_for_landing(fights, sport):
                 'url': f"https://fightschedule.live/boxing-event/{slug}",
                 'is_past': f.get('is_past', False),
                 'result': f.get('result'),
+                'result_pending': f.get('result_pending', False),
             })
 
     events.sort(key=lambda e: (e['date'] or '9999', e['time'] or '99:99'))
@@ -1425,8 +1441,11 @@ def ufc_schedule():
     fights = fetch_fights()
     all_events, months = _group_events_for_landing(upcoming_only(fights), 'UFC')
     recent_events, recent_months = _group_events_for_landing(recent_results(fights), 'UFC')
-    recent_months = [{'label': m['label'], 'events': sorted(m['events'], key=lambda e: e['date'], reverse=True)}
+    recent_months = [{'label': m['label'],
+                      'events': sorted([e for e in m['events'] if e.get('result') or e.get('result_pending')],
+                                       key=lambda e: e['date'], reverse=True)}
                      for m in reversed(recent_months)]
+    recent_months = [m for m in recent_months if m['events']]
     now = datetime.now()
     page = {
         'sport': 'UFC',
@@ -1452,8 +1471,11 @@ def boxing_schedule():
     fights = fetch_fights()
     all_events, months = _group_events_for_landing(upcoming_only(fights), 'Boxing')
     recent_events, recent_months = _group_events_for_landing(recent_results(fights), 'Boxing')
-    recent_months = [{'label': m['label'], 'events': sorted(m['events'], key=lambda e: e['date'], reverse=True)}
+    recent_months = [{'label': m['label'],
+                      'events': sorted([e for e in m['events'] if e.get('result') or e.get('result_pending')],
+                                       key=lambda e: e['date'], reverse=True)}
                      for m in reversed(recent_months)]
+    recent_months = [m for m in recent_months if m['events']]
     now = datetime.now()
     page = {
         'sport': 'Boxing',
@@ -1587,7 +1609,7 @@ def event_detail(event_slug):
             'fighter2_image': main_event_fight.get('fighter2_image') or '/static/placeholder-fighter-mma.png',
             'weight_class': weight_class,
             'time': main_event_fight.get('time', 'TBA'),
-            **{k: main_event_fight.get(k) for k in ('is_past', 'result', 'fighter1_tape', 'fighter2_tape', 'sport', 'date')},
+            **{k: main_event_fight.get(k) for k in ('is_past', 'result', 'result_pending', 'fighter1_tape', 'fighter2_tape', 'sport', 'date')},
         },
         'main_card': [
             {
@@ -1697,7 +1719,7 @@ def boxing_event_detail(event_slug):
             'fighter2': main_event_fight['fighter2'],
             'fighter1_image': main_event_fight.get('fighter1_image'),
             'fighter2_image': main_event_fight.get('fighter2_image'),
-            **{k: main_event_fight.get(k) for k in ('is_past', 'result', 'fighter1_tape', 'fighter2_tape', 'sport', 'date')},
+            **{k: main_event_fight.get(k) for k in ('is_past', 'result', 'result_pending', 'fighter1_tape', 'fighter2_tape', 'sport', 'date')},
         },
         'fights': [main_event_fight] + undercard
     }
