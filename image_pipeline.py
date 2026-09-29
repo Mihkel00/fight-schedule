@@ -44,6 +44,7 @@ from datetime import datetime
 import requests
 
 from scrapers import fighter_profiles as fp
+import locks as _locks
 
 DATA_DIR = os.environ.get('DATA_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
 META_FILE = os.path.join(DATA_DIR, 'image_meta.json')
@@ -672,6 +673,11 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
     """
     if not _job_lock.acquire(blocking=False):
         return False
+    xlock = _locks.job_lock('image_job')
+    if not xlock.__enter__():
+        xlock.__exit__(None, None, None)
+        _job_lock.release()
+        return False
     try:
         fighters = fighters if fighters is not None else schedule_fighters()
         titles = _profile_titles()
@@ -731,6 +737,7 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
         _write_job({'state': 'error', 'error': str(ex)[:500]})
         return False
     finally:
+        xlock.__exit__(None, None, None)
         _job_lock.release()
 
 

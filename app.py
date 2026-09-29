@@ -23,6 +23,7 @@ from bs4 import BeautifulSoup
 # Import scrapers
 from scrapers import scrape_ufc_events, scrape_boxing_events
 import image_pipeline as _images
+import locks as _locks
 
 # ============================================================================
 # PERSISTENT DATA DIRECTORY
@@ -611,12 +612,16 @@ def save_cache(fights):
             'timestamp': datetime.now().isoformat(),
             'fights': fights
         }
-        with open(CACHE_FILE, 'w') as f:
+        # write-then-rename: readers in the other worker never see a half-written file
+        tmp = CACHE_FILE + '.tmp'
+        with open(tmp, 'w') as f:
             json.dump(cache_data, f)
+        os.replace(tmp, CACHE_FILE)
         logger.info(f"[OK] Cache saved: {len(fights)} fights at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
         logger.error(f"Error saving cache: {e}")
         return
+    archive_results(fights)
     sync_page_versions(fights, reason='scrape')
 
 
@@ -722,7 +727,7 @@ def sync_page_versions(fights, reason=''):
     if not fights:
         return {'changed': [], 'removed': []}
     now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-    with _versions_lock:
+    with _versions_lock, _locks.job_lock('versions', wait_seconds=15):
         stored = _load_versions()
         current = _event_fingerprints(fights)
         changed = [u for u, h in current.items() if stored.get(u, {}).get('hash') != h]
@@ -849,6 +854,12 @@ def refresh_profiles(fights, max_fetch=150):
         return
     _profile_job_state['running'] = True
     _profile_job_state['last_start'] = time.time()
+    lock = _locks.job_lock('profiles')
+    if not lock.__enter__():
+        lock.__exit__(None, None, None)
+        _profile_job_state['running'] = False
+        logger.info("Profile job already running in the other worker, skipping")
+        return
     try:
         profiles = dict(load_profiles())
         work = _profile_work_list(fights, profiles)[:max_fetch]
@@ -879,6 +890,7 @@ def refresh_profiles(fights, max_fetch=150):
     except Exception as e:
         logger.error(f"Profile job failed: {e}", exc_info=True)
     finally:
+        lock.__exit__(None, None, None)
         _profile_job_state['running'] = False
 
 
@@ -999,6 +1011,66 @@ def enrich_fights(fights):
 _scrape_lock = threading.Lock()
 
 
+# ── Results archive ─────────────────────────────────────────────────────────
+# Completed fights are kept in their own file, separate from the cache that is
+# rewritten every scrape. Sources stop listing a card once it has happened, so
+# this archive is the only lasting record of past cards and their results.
+# It is append-only (never pruned); the site shows the last RESULTS_WINDOW_DAYS.
+
+RESULTS_ARCHIVE_FILE = data_path('results_archive.json')
+
+
+def _fight_key(f):
+    return (tuple(sorted([(f.get('fighter1') or '').lower(), (f.get('fighter2') or '').lower()])), f.get('date'))
+
+
+def load_results_archive():
+    try:
+        with open(RESULTS_ARCHIVE_FILE) as fh:
+            return json.load(fh)
+    except Exception:
+        return []
+
+
+def archive_results(fights):
+    """Add fights dated today or earlier to the archive (existing entries are
+    updated in place, e.g. a corrected time). Safe across workers."""
+    today_iso = date.today().isoformat()
+    due = [f for f in fights if f.get('date') and f['date'] <= today_iso]
+    if not due:
+        return 0
+    with _locks.job_lock('results_archive', wait_seconds=10) as got:
+        if not got:
+            logger.warning("results archive busy; will retry on next save")
+            return 0
+        archive = load_results_archive()
+        index = {_fight_key(f): i for i, f in enumerate(archive)}
+        added = 0
+        for f in due:
+            clean = {k: v for k, v in f.items() if k in _ARCHIVE_FIELDS}
+            k = _fight_key(clean)
+            if k in index:
+                archive[index[k]].update(clean)
+            else:
+                index[k] = len(archive)
+                archive.append(clean)
+                added += 1
+        archive.sort(key=lambda x: x.get('date') or '')
+        tmp = RESULTS_ARCHIVE_FILE + '.tmp'
+        with open(tmp, 'w') as fh:
+            json.dump(archive, fh, ensure_ascii=False)
+        os.replace(tmp, RESULTS_ARCHIVE_FILE)
+    if added:
+        logger.info(f"Results archive: +{added} fights ({len(archive)} total)")
+    return added
+
+
+# Only scraped fields are archived; derived fields (images, tape, results) are
+# recomputed on display so they always reflect the latest data.
+_ARCHIVE_FIELDS = ('fighter1', 'fighter2', 'date', 'time', 'time_estimated', 'venue', 'location', 'sport',
+                   'event_name', 'weight_class', 'card_type', 'rounds', 'is_main_event', 'streaming')
+
+
 def _refresh_cache(wait=False):
     """Run the full scrape and save the cache. Only one scrape runs at a time.
     With wait=False returns None immediately if another scrape is running;
@@ -1011,7 +1083,15 @@ def _refresh_cache(wait=False):
         logger.info("Scrape already in progress in another thread, skipping")
         return None
     try:
-        fights = _scrape_all_sources()
+        with _locks.job_lock('scrape', wait_seconds=90 if wait else 0) as got:
+            if not got:
+                logger.info("Scrape already in progress in the other worker, skipping")
+                return None
+            # The other worker may have just finished a scrape while we waited
+            fresh = load_cache()
+            if fresh:
+                return fresh
+            fights = _scrape_all_sources()
         if fights:
             threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
         return fights
@@ -1161,20 +1241,21 @@ def _scrape_all_sources():
     # Sort fights by date
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
     # Sources only list upcoming cards, so completed fights within the results
-    # window are carried forward from the previous cache (deduped by matchup).
+    # window are carried forward from the results archive (and the previous
+    # cache, which also seeds the archive on first run), deduped by matchup.
+    # Includes today: sources drop a card as soon as it ends, which is often
+    # hours before UTC midnight (this is how UFC 331 was once lost).
     today = date.today().isoformat()
     cutoff = _retention_cutoff_iso()
     previous_cache = load_cache(max_age_hours=24 * 365) or []
-    seen_pairs = {(tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date')) for f in fights}
+    archive_results(previous_cache)
+    seen_pairs = {_fight_key(f) for f in fights}
     carried_past = 0
-    # Includes today: sources drop a card as soon as it ends, which is often
-    # hours before UTC midnight, and a fight dropped on its own day used to be
-    # lost for good (this is how UFC 331 vanished).
-    for f in previous_cache:
+    for f in load_results_archive() + previous_cache:
         if cutoff <= f.get('date', '') <= today:
-            key = (tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date'))
+            key = _fight_key(f)
             if key not in seen_pairs:
-                fights.append(f); seen_pairs.add(key); carried_past += 1
+                fights.append(dict(f)); seen_pairs.add(key); carried_past += 1
     log(f"Carried forward {carried_past} completed fights for results")
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
 
@@ -2202,6 +2283,7 @@ _DEBUG_PARTS = {
     'overrides': 'time_overrides.json',
     'profiles': 'fighter_profiles.json',
     'image_meta': 'image_meta.json',
+    'results_archive': 'results_archive.json',
 }
 
 
