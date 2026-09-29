@@ -1207,8 +1207,11 @@ def _scrape_all_sources():
     previous_cache = load_cache(max_age_hours=24 * 365) or []
     seen_pairs = {(tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date')) for f in fights}
     carried_past = 0
+    # Includes today: sources drop a card as soon as it ends, which is often
+    # hours before UTC midnight, and a fight dropped on its own day used to be
+    # lost for good (this is how UFC 331 vanished).
     for f in previous_cache:
-        if cutoff <= f.get('date', '') < today:
+        if cutoff <= f.get('date', '') <= today:
             key = (tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date'))
             if key not in seen_pairs:
                 fights.append(f); seen_pairs.add(key); carried_past += 1
@@ -2449,6 +2452,7 @@ def debug_state():
                 'tag_histogram': {t: len(soup.find_all(t)) for t in ('p', 'div', 'li', 'tr', 'h2', 'h3', 'article', 'script')},
                 'article_classes': sorted({' '.join(a.get('class', [])) for a in soup.find_all('article')}),
                 'first_article_html': str(soup.find('article'))[:4000] if soup.find('article') else None,
+                'event_articles': [str(x)[:9000] for x in soup.select('article.rsd-event, article.rs-card')[:2]],
                 'second_article_html': str(soup.find_all('article')[1])[:2500] if len(soup.find_all('article')) > 1 else None,
                 'text_head': text[:1500],
             })
@@ -2636,7 +2640,8 @@ def debug_state():
     if part == 'espn_mma_results':
         # Do completed UFC events expose winner/method? And what does an athlete profile hold?
         import traceback
-        ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'}
+        from scrapers.ufc_scraper import _ESPN_UA
+        ua = {'User-Agent': _ESPN_UA}
         dates = request.args.get('dates') or f"{date.today():%Y%m}"
         if not re.fullmatch(r'\d{6}|\d{8}(-\d{8})?', dates):
             return jsonify({'error': 'dates must be YYYYMM, YYYYMMDD or YYYYMMDD-YYYYMMDD'}), 400
