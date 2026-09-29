@@ -10,3 +10,4 @@ flask-compress==1.15
 boto3==1.34.0
 flask-limiter==3.5.0
 flask-wtf==1.2.1
+Pillow>=10.4

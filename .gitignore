@@ -16,3 +16,8 @@ fighter_profiles.json.tmp
 clicks.jsonl
 page_versions.json
 page_versions.json.tmp
+image_meta.json
+image_meta.json.tmp
+image_job_status.json
+image_job_status.json.tmp
+image_settings.json

@@ -22,6 +22,7 @@ from bs4 import BeautifulSoup
 
 # Import scrapers
 from scrapers import scrape_ufc_events, scrape_boxing_events
+import image_pipeline as _images
 
 # ============================================================================
 # PERSISTENT DATA DIRECTORY
@@ -319,19 +320,9 @@ def load_fighter_database():
     return fighters_db
 
 def get_fighter_image(fighter_name):
-    """Search for fighter by name and return their image URL"""
-    if not fighter_name or fighter_name == 'TBA':
-        return None
-    
-    # Check local database only (no API fallback)
-    fighters_db = load_fighter_database()
-    if fighter_name in fighters_db:
-        cached_url = fighters_db[fighter_name]
-        if cached_url:
-            print(f"Using cached image for {fighter_name}")
-            return cached_url
-    
-    return None
+    """Image to display for a fighter: reviewed/manual overrides first, then the
+    legacy fighters.json / fighters_ufc.json databases (see image_pipeline.py)."""
+    return _images.image_for(fighter_name)
 
 # ============================================================================
 # AI FIGHT PREVIEW FUNCTIONS
@@ -884,6 +875,7 @@ def refresh_profiles(fights, max_fetch=150):
         logger.info(f"Profile job done: {fetched} fetched, {sum(1 for p in profiles.values() if p.get('title'))} with articles")
         if fetched:
             sync_page_versions(load_cache(max_age_hours=24 * 365) or [], reason='profiles')
+        _images.autofill_new_fighters()
     except Exception as e:
         logger.error(f"Profile job failed: {e}", exc_info=True)
     finally:
@@ -984,6 +976,11 @@ def enrich_fights(fights):
     today_iso = date.today().isoformat()
     grace_iso = (date.today() - timedelta(days=RESULT_GRACE_DAYS)).isoformat()
     for f in fights:
+        for k in ('fighter1', 'fighter2'):
+            if _images.is_rejected(f.get(k, '')):
+                f[f'{k}_image'] = None
+            else:
+                f[f'{k}_image'] = _images.image_for(f.get(k, '')) or f.get(f'{k}_image')
         f['fighter1_tape'] = _tape(profiles.get(_profile_key(f.get('fighter1', ''))))
         f['fighter2_tape'] = _tape(profiles.get(_profile_key(f.get('fighter2', ''))))
         f['is_past'] = f.get('date', '') < today_iso
@@ -2358,6 +2355,7 @@ _DEBUG_PARTS = {
     'overrides': 'time_overrides.json',
     'fetch_status': 'fetch_status.json',
     'profiles': 'fighter_profiles.json',
+    'image_meta': 'image_meta.json',
 }
 
 
@@ -2667,6 +2665,14 @@ def debug_state():
     if part == 'versions':
         v = _load_versions()
         return jsonify({'tracked_urls': len(v), 'newest': sorted(v.items(), key=lambda kv: kv[1].get('lastmod', ''), reverse=True)[:15]})
+
+    if part == 'image_job':
+        # Read the image job report; &start=dry launches a dry run (writes nothing).
+        # Applying is admin-only (Review Images page).
+        started = None
+        if request.args.get('start') == 'dry':
+            started = _images.start_job(apply=False)
+        return jsonify({'started': started, 'job': _images.read_job(), 'settings': _images.read_settings()})
 
     if part == 'clicks':
         return jsonify(click_stats(int(request.args.get('days') or 30)))
