@@ -127,7 +127,7 @@
                 <div>
                     <p class="text-xs text-text-tertiary font-work">Date & Time</p>
                     <p class="text-text-primary font-work">
-                        <span class="fight-date">{{ event.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ event.main_event.time }}" data-date="{{ event.date }}">{{ event.main_event.time or 'TBA' }}</span>
+                        <span class="fight-date">{{ event.date|format_date }}</span> • <time class="fight-time" datetime="{{ event.date|iso_utc(event.main_event.time) }}" data-utc-time="{{ event.main_event.time }}" data-date="{{ event.date }}">{{ event.main_event.time|utc_time }}</time>
                     </p>
                 </div>
             </div>
@@ -279,7 +279,7 @@
                 <!-- Main Card Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Main Card (<span class="fight-time" data-utc-time="{{ event.main_card_time }}" data-date="{{ event.date }}">{{ event.main_card_time or 'TBA' }}</span>)
+                        Main Card (<time class="fight-time" datetime="{{ event.date|iso_utc(event.main_card_time) }}" data-utc-time="{{ event.main_card_time }}" data-date="{{ event.date }}">{{ event.main_card_time|utc_time }}</time>)
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.main_card %}
@@ -302,7 +302,7 @@
                 <!-- Prelims Column -->
                 <div>
                     <h3 class="font-work text-sm uppercase text-text-tertiary mb-4 tracking-wider">
-                        Prelims (<span class="fight-time" data-utc-time="{{ event.prelim_time }}" data-date="{{ event.date }}">{{ event.prelim_time or 'TBA' }}</span>)
+                        Prelims (<time class="fight-time" datetime="{{ event.date|iso_utc(event.prelim_time) }}" data-utc-time="{{ event.prelim_time }}" data-date="{{ event.date }}">{{ event.prelim_time|utc_time }}</time>)
                     </h3>
                     <div class="space-y-3">
                         {% for fight in event.prelims %}
