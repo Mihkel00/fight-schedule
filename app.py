@@ -287,7 +287,8 @@ def avatar(name):
            f'<circle cx="50" cy="50" r="50" fill="{_avatar_color(name)}"/>'
            f'<text x="50" y="50" dy="0.36em" text-anchor="middle" font-family="Work Sans, Segoe UI, Arial, sans-serif" '
            f'font-size="{30 if len(initials) > 2 else 40 if len(initials) > 1 else 46}" font-weight="600" fill="#f5f5f5" letter-spacing="1">{initials}</text></svg>')
-    return 'data:image/svg+xml;utf8,' + quote(svg, safe="/:=,'()#% ")
+    # '#' (colour values) must be encoded: a raw '#' ends the URI as a fragment
+    return 'data:image/svg+xml;utf8,' + quote(svg, safe="/:=,'() ")
 
 
 app.jinja_env.globals['avatar'] = avatar
