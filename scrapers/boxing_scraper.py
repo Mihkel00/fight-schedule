@@ -38,6 +38,24 @@ REGIONAL_DEFAULT_TIMES_UTC = {
     'Philippines': '12:00',  # ~8 PM PHT
     'Thailand': '13:00',     # ~8 PM ICT
     'China': '12:00',        # ~8 PM CST
+    # Cities (the schedule source often lists only a city)
+    'Tokyo': '10:00', 'Osaka': '10:00', 'Saitama': '10:00', 'Yokohama': '10:00', 'Nagoya': '10:00', 'Kobe': '10:00',
+    'Las Vegas': '02:00', 'New York': '02:00', 'Brooklyn': '02:00', 'Los Angeles': '03:00', 'Inglewood': '03:00',
+    'Carson': '03:00', 'Anaheim': '03:00', 'San Diego': '03:00', 'Orlando': '02:00', 'Miami': '02:00',
+    'Houston': '02:00', 'Dallas': '02:00', 'Arlington': '02:00', 'San Antonio': '02:00', 'Chicago': '02:00',
+    'Atlanta': '02:00', 'Boston': '02:00', 'Philadelphia': '02:00', 'Detroit': '02:00', 'Phoenix': '03:00',
+    'Fresno': '03:00', 'Oakland': '03:00', 'Ontario': '03:00', 'Verona': '02:00', 'Atlantic City': '02:00',
+    'London': '22:00', 'Manchester': '22:00', 'Birmingham': '22:00', 'Liverpool': '22:00', 'Leeds': '22:00',
+    'Sheffield': '22:00', 'Newcastle': '22:00', 'Nottingham': '22:00', 'Glasgow': '22:00', 'Edinburgh': '22:00',
+    'Cardiff': '22:00', 'Belfast': '22:00', 'Dublin': '22:00', 'Preston': '22:00', 'Bolton': '22:00', 'Leicester': '22:00',
+    'Riyadh': '17:00', 'Jeddah': '17:00', 'Dubai': '17:00', 'Abu Dhabi': '17:00', 'Doha': '17:00',
+    'Mexico City': '03:00', 'Guadalajara': '03:00', 'Monterrey': '03:00', 'Tijuana': '04:00', 'Cancun': '02:00',
+    'Sydney': '10:00', 'Melbourne': '10:00', 'Brisbane': '10:00', 'Perth': '12:00', 'Gold Coast': '10:00',
+    'Toronto': '02:00', 'Montreal': '02:00', 'Quebec': '02:00', 'Vancouver': '04:00',
+    'Manila': '12:00', 'Cebu': '12:00', 'Tagbilaran': '12:00', 'Bangkok': '13:00', 'Pattaya': '13:00', 'Seoul': '10:00',
+    'Berlin': '21:00', 'Hamburg': '21:00', 'Munich': '21:00', 'Paris': '21:00', 'Madrid': '21:00', 'Barcelona': '21:00',
+    'Milan': '21:00', 'Rome': '21:00', 'Monte Carlo': '21:00', 'Buenos Aires': '01:00', 'Johannesburg': '19:00',
+    'Cape Town': '19:00', 'San Juan': '01:00', 'Tashkent': '15:00', 'Almaty': '14:00',
 }
 
 

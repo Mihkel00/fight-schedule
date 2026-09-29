@@ -21,3 +21,4 @@ image_meta.json.tmp
 image_job_status.json
 image_job_status.json.tmp
 image_settings.json
+alert_state.json
