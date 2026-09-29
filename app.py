@@ -281,10 +281,12 @@ def avatar(name):
     first = parts[0][0] if parts and parts[0][0].isalnum() else ''
     last = surname(name)
     initials = ((first + (last[0] if last and last != parts[0] else '')) or '?').upper()[:2]
+    if name.upper() == 'TBA':
+        initials = 'TBA'
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
            f'<circle cx="50" cy="50" r="50" fill="{_avatar_color(name)}"/>'
            f'<text x="50" y="50" dy="0.36em" text-anchor="middle" font-family="Work Sans, Segoe UI, Arial, sans-serif" '
-           f'font-size="{40 if len(initials) > 1 else 46}" font-weight="600" fill="#f5f5f5" letter-spacing="1">{initials}</text></svg>')
+           f'font-size="{30 if len(initials) > 2 else 40 if len(initials) > 1 else 46}" font-weight="600" fill="#f5f5f5" letter-spacing="1">{initials}</text></svg>')
     return 'data:image/svg+xml;utf8,' + quote(svg, safe="/:=,'()#% ")
 
 
