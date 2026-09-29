@@ -1152,6 +1152,12 @@ def _scrape_all_sources():
 
     ufc_ok = ufc_count >= 10
     boxing_ok = boxing_count >= 5
+    try:
+        import alerts as _alerts
+        _alerts.report('UFC', ufc_ok, f'{ufc_count} fights')
+        _alerts.report('Boxing', boxing_ok, f'{boxing_count} fights')
+    except Exception as e:
+        logger.warning(f"alerting failed: {e}")
 
     if not ufc_ok:
         log(f"\n[X] UFC scraper returned only {ufc_count} fights (expected 50+)")
@@ -2393,7 +2399,7 @@ _DEBUG_PARTS = {
 }
 
 
-@app.route('/api/debug/state')
+@app.route('/api/debug/state', methods=['GET', 'POST'])
 def debug_state():
     expected = os.environ.get('DEBUG_API_TOKEN', '')
     provided = request.args.get('token', '')
@@ -2722,6 +2728,67 @@ def debug_state():
     if part == 'clicks':
         return jsonify(click_stats(int(request.args.get('days') or 30)))
 
+    if part == 'backfill':
+        # POST a JSON list of fights (past dates only) to merge into the cache,
+        # e.g. to restore a card a source dropped before it was carried forward.
+        if request.method != 'POST':
+            return jsonify({'error': 'POST a JSON list of fights'}), 405
+        incoming = request.get_json(silent=True) or []
+        today_iso, cutoff = date.today().isoformat(), _retention_cutoff_iso()
+        current = load_cache(max_age_hours=24 * 365) or []
+        seen = {(tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date')) for f in current}
+        added = []
+        for f in incoming:
+            if not isinstance(f, dict) or not all(f.get(k) for k in ('fighter1', 'fighter2', 'date', 'sport')):
+                continue
+            if not (cutoff <= f['date'] <= today_iso):
+                continue
+            k = (tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f['date'])
+            if k in seen:
+                continue
+            seen.add(k)
+            current.append({key: f.get(key) for key in ('fighter1', 'fighter2', 'date', 'time', 'venue', 'location', 'sport',
+                                                        'event_name', 'weight_class', 'card_type', 'rounds', 'is_main_event',
+                                                        'streaming', 'time_estimated') if key in f})
+            added.append(f"{f['fighter1']} vs {f['fighter2']} ({f['date']})")
+        if added:
+            current.sort(key=lambda x: x.get('date') or '9999-12-31')
+            save_cache(current)
+            threading.Thread(target=refresh_profiles, args=(current,), daemon=True).start()
+        return jsonify({'added': added, 'total_now': len(current)})
+
+    if part == 'page_probe':
+        # Structure of a candidate schedule page (fixed list of hosts) to design a fallback parser.
+        pages = {
+            'espn_boxing': 'https://www.espn.com/boxing/schedule',
+            'sky_boxing': 'https://www.skysports.com/boxing-schedule',
+            'boxing_schedule_com': 'https://boxing-schedule.com/',
+            'dazn_schedule': 'https://www.dazn.com/en-US/news/boxing/boxing-schedule',
+        }
+        which = request.args.get('which', '')
+        if which not in pages:
+            return jsonify({'error': f'which must be one of {sorted(pages)}'}), 400
+        from bs4 import BeautifulSoup
+        from collections import Counter
+        try:
+            r = requests.get(pages[which], headers={'User-Agent': _ESPN_UA if False else 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}, timeout=25)
+            soup = BeautifulSoup(r.text, 'html.parser')
+            for t in soup(['script', 'style', 'noscript', 'svg']):
+                t.decompose()
+            classes = Counter(c for el in soup.find_all(True) for c in (el.get('class') or []))
+            text = soup.get_text('\n', strip=True)
+            vs_lines = [l for l in text.split('\n') if re.search(r'\bvs\.?\b', l, re.I)][:15]
+            body = str(soup.body)[:12000] if soup.body else r.text[:12000]
+            return jsonify({'url': pages[which], 'status': r.status_code, 'length': len(r.text),
+                            'top_classes': classes.most_common(40), 'vs_lines': vs_lines,
+                            'text_head': text[:2500], 'body_head': body})
+        except Exception as e:
+            return jsonify({'url': pages[which], 'error': str(e)[:300]})
+
+    if part == 'alert_test':
+        import alerts as _alerts
+        return jsonify({'enabled': _alerts.enabled(), 'sent': _alerts.send('[fightschedule.live] test alert', 'Alerting works.')})
+
     if part == 'scrape_log':
         path = data_path('data_sources_comparison.txt')
         if not os.path.exists(path):
@@ -2803,6 +2870,10 @@ app.jinja_env.globals.update({
     'clean_broadcaster': _aff.clean_broadcaster,
 })
 
+
+
+from admin_setup_simple import csrf as _csrf
+_csrf.exempt(debug_state)
 
 @app.route('/go/<provider>')
 def go_provider(provider):
