@@ -427,17 +427,6 @@
             });
         });
         
-        var AVATAR_COLORS = ['#7f1d1d', '#9a3412', '#854d0e', '#3f6212', '#065f46', '#155e75', '#1e3a8a', '#4c1d95', '#831843', '#374151'];
-        function avatarSvg(name) {
-            name = (name || '').trim();
-            var h = 5381; for (var i = 0; i < name.length; i++) h = ((Math.imul(h, 33) ^ name.charCodeAt(i)) >>> 0);
-            var parts = name.split(/\s+/).filter(Boolean), last = surname(name);
-            var initials = (((parts[0] || '?')[0] || '') + (last && last !== parts[0] ? last[0] : '')).toUpperCase().slice(0, 2) || '?';
-            var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="' + AVATAR_COLORS[h % AVATAR_COLORS.length] + '"/>' +
-                '<text x="50" y="50" dy="0.36em" text-anchor="middle" font-family="Work Sans, Segoe UI, Arial, sans-serif" font-size="' + (initials.length > 1 ? 40 : 46) + '" font-weight="600" fill="#f5f5f5" letter-spacing="1">' + initials + '</text></svg>';
-            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-        }
-
         function surname(name) {
             const suffixes = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
             let parts = (name || '').replace(/["“”‘’'][^"“”‘’']+["“”‘’']/g, ' ').replace(/\s+\d+$/, '').trim().split(/\s+/);
@@ -485,7 +474,7 @@
         function createFightCard(fight) {
             const isUFC = fight.sport === 'UFC';
             const accentColor = isUFC ? 'accent-red' : 'accent-orange';
-            // no photo -> initials avatar (see avatarSvg below)
+            const placeholder = isUFC ? '/static/placeholder-fighter-mma.svg' : '/static/placeholder-fighter-boxing.svg';
             const eventUrl = isUFC 
                 ? `/event/${fight.event_name.toLowerCase().replace(/ /g, '-').replace(/:/g, '').replace(/,/g, '')}-${fight.date}`
                 : `/boxing-event/${fight.venue.toLowerCase().replace(/ /g, '-').replace(/,/g, '').replace(/\./g, '').replace(/'/g, '')}-${fight.date}`;
@@ -495,14 +484,14 @@
                     <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="${fight.fighter1_image || avatarSvg(fight.fighter1)}" alt="${fight.fighter1}" class="w-full h-full object-cover" loading="lazy">
+                                <img src="${fight.fighter1_image || placeholder}" alt="${fight.fighter1}" class="w-full h-full object-cover ${fight.fighter1_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${surname(fight.fighter1)}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="${fight.fighter2_image || avatarSvg(fight.fighter2)}" alt="${fight.fighter2}" class="w-full h-full object-cover" loading="lazy">
+                                <img src="${fight.fighter2_image || placeholder}" alt="${fight.fighter2}" class="w-full h-full object-cover ${fight.fighter2_image ? '' : 'opacity-30'}" loading="lazy">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">${surname(fight.fighter2)}</p>
                         </div>
@@ -636,18 +625,18 @@
                     <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter1_image or avatar(fight.fighter1) }}" 
+                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-mma.svg' }}" 
                                      alt="{{ fight.fighter1 }}" 
-                                     class="w-full h-full object-cover">
+                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1|surname }}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter2_image or avatar(fight.fighter2) }}" 
+                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-mma.svg' }}" 
                                      alt="{{ fight.fighter2 }}" 
-                                     class="w-full h-full object-cover">
+                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2|surname }}</p>
                         </div>
@@ -693,18 +682,18 @@
                     <div class="flex items-center justify-center gap-6 mb-4">
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter1_image or avatar(fight.fighter1) }}" 
+                                <img src="{{ fight.fighter1_image or '/static/placeholder-fighter-boxing.svg' }}" 
                                      alt="{{ fight.fighter1 }}" 
-                                     class="w-full h-full object-cover">
+                                     class="w-full h-full object-cover {% if not fight.fighter1_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter1|surname }}</p>
                         </div>
                         <div class="font-work font-semibold text-sm italic uppercase text-text-tertiary">VS</div>
                         <div class="text-center w-32">
                             <div class="w-20 h-20 rounded-full bg-dark-elevated mb-3 mx-auto overflow-hidden">
-                                <img src="{{ fight.fighter2_image or avatar(fight.fighter2) }}" 
+                                <img src="{{ fight.fighter2_image or '/static/placeholder-fighter-boxing.svg' }}" 
                                      alt="{{ fight.fighter2 }}" 
-                                     class="w-full h-full object-cover">
+                                     class="w-full h-full object-cover {% if not fight.fighter2_image %}opacity-30{% endif %}">
                             </div>
                             <p class="font-staatliches text-lg leading-tight uppercase line-clamp-2">{{ fight.fighter2|surname }}</p>
                         </div>
