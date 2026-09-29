@@ -20,7 +20,7 @@ import json
 import re
 import unicodedata
 import requests as http_requests
-from admin_models import FighterImageOverride, BigNameFighter, ManualEvent, TimeOverride, data_path
+from admin_models import BigNameFighter, ManualEvent, TimeOverride, data_path
 
 logger = logging.getLogger('fight_schedule')
 
@@ -498,12 +498,5 @@ def setup_admin(app):
     admin.add_view(BigNameFighterView(name='Big Name Fighters', endpoint='big_names'))
     admin.add_view(ManualEventView(name='Manual Events', endpoint='manual_events'))
     admin.add_view(TimeOverrideView(name='Time Overrides', endpoint='time_overrides'))
-
-    try:
-        moved = images.migrate_legacy_overrides()
-        if moved:
-            logger.info(f"Migrated {moved} old image overrides into image_meta.json")
-    except Exception as e:
-        logger.warning(f"override migration failed: {e}")
 
     return admin
