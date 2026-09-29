@@ -26,3 +26,5 @@ results_archive.json
 results_archive.json.tmp
 fights_cache.json.tmp
 .*.lock
+last_good.json
+last_good.json.tmp

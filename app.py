@@ -606,11 +606,19 @@ def load_cache(max_age_hours=None):
         logger.error(f"Error loading cache: {e}")
         return None
 
-def save_cache(fights):
-    """Save fight data to cache with timestamp"""
+def save_cache(fights, keep_timestamp=False):
+    """Save fight data to cache with timestamp. keep_timestamp=True (manual
+    restores) leaves the scrape schedule untouched."""
     try:
+        stamp = datetime.now().isoformat()
+        if keep_timestamp:
+            try:
+                with open(CACHE_FILE) as fh:
+                    stamp = json.load(fh).get('timestamp') or stamp
+            except Exception:
+                pass
         cache_data = {
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': stamp,
             'fights': fights
         }
         # write-then-rename: readers in the other worker never see a half-written file
@@ -1066,6 +1074,45 @@ def archive_results(fights):
     return added
 
 
+# ── Last known-good data per source ─────────────────────────────────────────
+# Written every time a source's scrape passes validation. When a source fails,
+# its fights are carried forward from here, so the site keeps its upcoming
+# schedule even if the cache has been cleared. No admin action deletes this.
+
+LAST_GOOD_FILE = data_path('last_good.json')
+
+
+def load_last_good(sport):
+    try:
+        with open(LAST_GOOD_FILE) as fh:
+            return (json.load(fh).get(sport) or {}).get('fights') or []
+    except Exception:
+        return []
+
+
+def save_last_good(sport, fights, merge=False):
+    """Store a source's fights as its last known-good set (merge=True adds to
+    the existing set instead of replacing it, used by manual restores)."""
+    with _locks.job_lock('last_good', wait_seconds=10) as got:
+        if not got:
+            return
+        try:
+            with open(LAST_GOOD_FILE) as fh:
+                data = json.load(fh)
+        except Exception:
+            data = {}
+        clean = [{k: v for k, v in f.items() if k in _ARCHIVE_FIELDS} for f in fights]
+        if merge:
+            existing = (data.get(sport) or {}).get('fights') or []
+            keys = {_fight_key(f) for f in clean}
+            clean = [f for f in existing if _fight_key(f) not in keys] + clean
+        data[sport] = {'saved_at': datetime.utcnow().isoformat() + 'Z', 'fights': clean}
+        tmp = LAST_GOOD_FILE + '.tmp'
+        with open(tmp, 'w') as fh:
+            json.dump(data, fh, ensure_ascii=False)
+        os.replace(tmp, LAST_GOOD_FILE)
+
+
 # Only scraped fields are archived; derived fields (images, tape, results) are
 # recomputed on display so they always reflect the latest data.
 _ARCHIVE_FIELDS = ('fighter1', 'fighter2', 'date', 'time', 'time_estimated', 'venue', 'location', 'sport',
@@ -1204,17 +1251,24 @@ def _scrape_all_sources():
         log(f"\n[X] Boxing scraper returned only {boxing_count} fights (expected 10+)")
         logger.error(f"SCRAPER FAILURE: Boxing scraper returned only {boxing_count} fights")
 
+    if ufc_ok:
+        save_last_good('UFC', mma_fighting_ufc)
+    if boxing_ok:
+        save_last_good('Boxing', boxingschedule_fights)
+
     if not (ufc_ok and boxing_ok):
-        # Carry forward the previous cache for whichever sport failed
+        # Carry forward the failed sport from the previous cache, or — if the
+        # cache is gone (cleared, corrupted) — from the source's last good scrape
         previous = load_cache(max_age_hours=24 * 365) or []
-        if not ufc_ok:
-            carried = [f for f in previous if f.get('sport') == 'UFC']
-            fights = [f for f in fights if f.get('sport') != 'UFC'] + carried
-            log(f"  -> carried forward {len(carried)} cached UFC fights")
-        if not boxing_ok:
-            carried = [f for f in previous if f.get('sport') == 'Boxing']
-            fights = [f for f in fights if f.get('sport') != 'Boxing'] + carried
-            log(f"  -> carried forward {len(carried)} cached Boxing fights")
+        for sport, ok in (('UFC', ufc_ok), ('Boxing', boxing_ok)):
+            if ok:
+                continue
+            carried = [f for f in previous if f.get('sport') == sport]
+            origin = 'cache'
+            if not carried:
+                carried, origin = [dict(f) for f in load_last_good(sport)], 'last-good snapshot'
+            fights = [f for f in fights if f.get('sport') != sport] + carried
+            log(f"  -> carried forward {len(carried)} {sport} fights from the {origin}")
         if not ufc_ok and not boxing_ok:
             logger.error("SCRAPER FAILURE: both scrapers failed, serving cached data only")
 
@@ -2132,6 +2186,17 @@ def clear_cache():
     """Clear the fights cache file"""
     cache_file = CACHE_FILE
     if os.path.exists(cache_file):
+        # Before deleting: archive past fights, and give any source without a
+        # last-good snapshot one from the cache, so a failing source can't
+        # empty its section after the clear.
+        cached = load_cache(max_age_hours=24 * 365) or []
+        archive_results(cached)
+        today_iso = date.today().isoformat()
+        for sport in ('UFC', 'Boxing'):
+            if not load_last_good(sport):
+                upcoming = [f for f in cached if f.get('sport') == sport and f.get('date', '') > today_iso]
+                if upcoming:
+                    save_last_good(sport, upcoming)
         os.remove(cache_file)
         logger.info("Cache cleared manually via admin route")
         return "✓ Cache cleared successfully. Next page load will fetch fresh data."
@@ -2285,6 +2350,7 @@ _DEBUG_PARTS = {
     'profiles': 'fighter_profiles.json',
     'image_meta': 'image_meta.json',
     'results_archive': 'results_archive.json',
+    'last_good': 'last_good.json',
 }
 
 
@@ -2388,10 +2454,13 @@ def debug_state():
         return jsonify(click_stats(int(request.args.get('days') or 30)))
 
     if part == 'backfill':
-        # POST a JSON list of fights (past dates only) to merge into the cache,
-        # e.g. to restore a card a source dropped before it was carried forward.
+        # POST a JSON list of fights to merge into the cache, e.g. to restore a
+        # card a source dropped. Past fights by default; &upcoming=1 also
+        # restores future fights (and records them as that source's last-good
+        # set so they survive while the source is down).
         if request.method != 'POST':
             return jsonify({'error': 'POST a JSON list of fights'}), 405
+        allow_upcoming = request.args.get('upcoming') == '1'
         incoming = request.get_json(silent=True) or []
         today_iso, cutoff = date.today().isoformat(), _retention_cutoff_iso()
         current = load_cache(max_age_hours=24 * 365) or []
@@ -2400,7 +2469,7 @@ def debug_state():
         for f in incoming:
             if not isinstance(f, dict) or not all(f.get(k) for k in ('fighter1', 'fighter2', 'date', 'sport')):
                 continue
-            if not (cutoff <= f['date'] <= today_iso):
+            if f['date'] < cutoff or (f['date'] > today_iso and not allow_upcoming):
                 continue
             k = (tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f['date'])
             if k in seen:
@@ -2412,7 +2481,12 @@ def debug_state():
             added.append(f"{f['fighter1']} vs {f['fighter2']} ({f['date']})")
         if added:
             current.sort(key=lambda x: x.get('date') or '9999-12-31')
-            save_cache(current)
+            save_cache(current, keep_timestamp=True)
+            if allow_upcoming:
+                for sport in ('UFC', 'Boxing'):
+                    future = [f for f in incoming if isinstance(f, dict) and f.get('sport') == sport and (f.get('date') or '') > today_iso]
+                    if future:
+                        save_last_good(sport, future, merge=True)
             threading.Thread(target=refresh_profiles, args=(current,), daemon=True).start()
         return jsonify({'added': added, 'total_now': len(current)})
 
