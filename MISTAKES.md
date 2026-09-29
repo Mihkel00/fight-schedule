@@ -6,6 +6,22 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-29 — Results archive has a first-run gap that "Clear Cache" can fall into
+
+**What happened:** The new results archive is only created on the first
+*scrape* after deploy. The last backfill reset the cache's timestamp, so that
+scrape is hours away, and pressing admin "Clear Cache" before then would
+delete the only copy of past results (UFC 331, Sept boxing cards).
+
+**Root cause:** I tested every scrape path (deleted cache, corrupt cache,
+concurrent workers) but did not list every code path that writes or deletes
+the cache — the admin Clear Cache route and the backfill endpoint both
+bypass the scrape, and the backfill's `save_cache` marks the cache fresh.
+
+**Rule:** When changing how a piece of state is protected, enumerate every
+code path that writes or deletes it (grep for the file/function), not just the
+main one, and check the state on the first run after deploy.
+
 ## 2026-09-29 — Recommended and built image sources without checking the rights to use them
 
 **What happened:** I proposed and built UFC.com and ESPN headshots as image
