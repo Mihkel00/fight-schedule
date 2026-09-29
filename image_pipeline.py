@@ -252,6 +252,66 @@ def wikipedia_candidate(name, sport, title=None):
     return None
 
 
+_WD_API = 'https://www.wikidata.org/w/api.php'
+# occupation / sport items that identify a fighter on Wikidata
+_WD_FIGHTER_QIDS = {'Q11338576',   # boxer
+                    'Q13381863',   # mixed martial artist
+                    'Q32112',      # boxing (P641 sport)
+                    'Q114466'}     # mixed martial arts (P641 sport)
+_WD_DESC_WORDS = ('boxer', 'boxing', 'mixed martial', 'mma', 'pugilist', 'kickboxer')
+
+
+def wikidata_candidate(name, sport):
+    """Photo (P18) of the Wikidata item whose label is exactly the fighter's
+    name and who is a boxer / MMA fighter. Catches fighters with a Spanish,
+    Japanese, Tagalog... article but no English one."""
+    want = key(name)
+    hits = []
+    try:
+        for lang in ('en', 'es'):
+            r = requests.get(_WD_API, params={'action': 'wbsearchentities', 'search': name, 'language': lang,
+                                              'uselang': 'en', 'type': 'item', 'limit': 8, 'format': 'json'},
+                             headers={'User-Agent': _UA_BOT}, timeout=10)
+            hits += [h for h in r.json().get('search', []) if key(h.get('label', '')) == want
+                     or any(key(a) == want for a in h.get('aliases', []) or [])]
+            if hits:
+                break
+    except Exception:
+        return None
+    ids = list(dict.fromkeys(h['id'] for h in hits))[:6]
+    if not ids:
+        return None
+    try:
+        r = requests.get(_WD_API, params={'action': 'wbgetentities', 'ids': '|'.join(ids), 'props': 'claims|descriptions|sitelinks',
+                                          'languages': 'en', 'format': 'json'},
+                         headers={'User-Agent': _UA_BOT}, timeout=10)
+        entities = r.json().get('entities', {})
+    except Exception:
+        return None
+    for qid in ids:
+        ent = entities.get(qid) or {}
+        claims = ent.get('claims', {})
+
+        def qids(prop):
+            return {c.get('mainsnak', {}).get('datavalue', {}).get('value', {}).get('id') for c in claims.get(prop, [])}
+
+        desc = (ent.get('descriptions', {}).get('en', {}) or {}).get('value', '').lower()
+        is_fighter = bool((qids('P106') | qids('P641')) & _WD_FIGHTER_QIDS) or any(w in desc for w in _WD_DESC_WORDS)
+        if not is_fighter:
+            continue
+        if sport == 'UFC' and 'boxer' in desc and 'mixed' not in desc:
+            continue     # a boxer with the same name as a UFC fighter
+        if sport == 'Boxing' and 'mixed martial' in desc and 'box' not in desc:
+            continue
+        for c in claims.get('P18', []):
+            fname = c.get('mainsnak', {}).get('datavalue', {}).get('value')
+            if fname:
+                url = 'https://commons.wikimedia.org/wiki/Special:FilePath/' + requests.utils.quote(fname.replace(' ', '_')) + '?width=600'
+                return {'url': url, 'source': 'wikidata', 'file': fname,
+                        'ref': f'https://www.wikidata.org/wiki/{qid}', 'desc': desc}
+    return None
+
+
 # ── download, quality gate, processing ───────────────────────────────────────
 
 def download(url, max_bytes=8 * 1024 * 1024):
@@ -348,7 +408,9 @@ def find_best(name, sport, rejected_urls=(), title=None):
     """First candidate that is not rejected and passes the gate.
     Returns (candidate_with_processed_image | None, [reasons for rejections])."""
     reasons = []
-    for finder in (lambda: espn_candidate(name, sport), lambda: wikipedia_candidate(name, sport, title)):
+    for finder in (lambda: espn_candidate(name, sport),
+                   lambda: wikipedia_candidate(name, sport, title),
+                   lambda: wikidata_candidate(name, sport)):
         try:
             cand = finder()
         except Exception as e:
@@ -373,8 +435,36 @@ def find_best(name, sport, rejected_urls=(), title=None):
         cand['size'] = img.size
         return cand, reasons
     if not reasons:
-        reasons.append('no ESPN athlete or Wikipedia article with this exact name')
+        reasons.append('no ESPN athlete, Wikipedia article or Wikidata item with this exact name')
     return None, reasons
+
+
+def probe(name, sport, title=None):
+    """Diagnostics: what each source offers for a fighter and what the gate says.
+    Downloads candidates but saves nothing."""
+    out = {'name': name, 'sport': sport, 'sources': {}}
+    for label, finder in (('espn', lambda: espn_candidate(name, sport)),
+                          ('wikipedia', lambda: wikipedia_candidate(name, sport, title)),
+                          ('wikidata', lambda: wikidata_candidate(name, sport))):
+        try:
+            cand = finder()
+        except Exception as e:
+            out['sources'][label] = {'error': str(e)[:200]}
+            continue
+        if not cand:
+            out['sources'][label] = None
+            continue
+        info = {k: v for k, v in cand.items() if k != 'image'}
+        try:
+            raw = download(cand['url'])
+            img = open_image(raw)
+            info['size'] = list(img.size)
+            info['bytes'] = len(raw)
+            info['gate'] = quality_gate(cand, name, img, len(raw)) or 'ok'
+        except Exception as e:
+            info['gate'] = f'download failed: {str(e)[:120]}'
+        out['sources'][label] = info
+    return out
 
 
 # ── manual actions (admin) ───────────────────────────────────────────────────
