@@ -1,0 +1,43 @@
+{# Cookie consent bar. Accept and Decline carry equal weight; the choice is kept
+   in localStorage. Declining (also later, from the privacy page) removes GA cookies. #}
+<div id="fs-consent" hidden role="dialog" aria-live="polite" aria-label="Cookie consent" class="fixed bottom-0 inset-x-0 z-50 px-4 pb-4">
+    <div class="max-w-3xl mx-auto bg-dark-card border border-dark-border rounded-2xl px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 shadow-lg">
+        <p class="font-work text-sm text-text-secondary flex-1 m-0">We'd like to use Google Analytics cookies to see how the site is used. <a href="/privacy#cookies" class="underline hover:text-text-primary">Privacy</a></p>
+        <div class="flex gap-2 flex-shrink-0">
+            <button type="button" data-consent="denied" class="font-work text-sm px-4 py-2 rounded-lg border border-dark-border text-text-primary hover:border-text-tertiary transition-colors">Decline</button>
+            <button type="button" data-consent="granted" class="font-work text-sm px-4 py-2 rounded-lg border border-dark-border text-text-primary hover:border-text-tertiary transition-colors">Accept</button>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var box = document.getElementById('fs-consent');
+    function stored() { try { return localStorage.getItem('fs-consent'); } catch (e) { return null; } }
+    function clearGaCookies() {
+        var host = location.hostname.replace(/^www\./, '');
+        document.cookie.split(';').forEach(function (c) {
+            var name = c.split('=')[0].trim();
+            if (name.indexOf('_ga') === 0) {
+                ['', '; domain=' + host, '; domain=.' + host].forEach(function (d) {
+                    document.cookie = name + '=; Max-Age=0; path=/' + d;
+                });
+            }
+        });
+    }
+    function choose(value) {
+        try { localStorage.setItem('fs-consent', value); } catch (e) {}
+        box.hidden = true;
+        if (value === 'granted') {
+            if (window.fsLoadAnalytics) window.fsLoadAnalytics();
+        } else {
+            window['ga-disable-' + window.FS_GA_ID] = true;
+            clearGaCookies();
+        }
+    }
+    box.querySelectorAll('[data-consent]').forEach(function (b) {
+        b.addEventListener('click', function () { choose(b.dataset.consent); });
+    });
+    window.fsShowConsent = function () { box.hidden = false; };
+    if (!stored()) box.hidden = false;
+})();
+</script>

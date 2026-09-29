@@ -1,11 +1,8 @@
 """
-UFC Event Scraper
-Primary: ESPN MMA API (stable JSON)
-Fallback: mmafighting.com HTML scraping
+UFC Event Scraper — ESPN MMA API (JSON).
 """
 
 import requests
-from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import re
@@ -290,110 +287,6 @@ def _scrape_espn():
     return unique_fights
 
 
-def _scrape_mmafighting():
-    """Fallback: scrape UFC schedule from mmafighting.com (brittle HTML)."""
-    fights = []
-
-    try:
-        print("Fallback: scraping mmafighting.com...")
-        resp = requests.get(
-            'https://www.mmafighting.com/schedule',
-            headers={'User-Agent': _ESPN_UA},
-            timeout=10,
-        )
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, 'html.parser')
-
-        # Try a few known class patterns; site uses CSS-in-JS so these may change
-        date_elems = (
-            soup.find_all('h1', class_='_5ae48f1') or
-            soup.find_all('h2', class_=re.compile(r'schedule.*date', re.I)) or
-            soup.find_all('h1', class_=re.compile(r'_[0-9a-f]+'))
-        )
-
-        for date_elem in date_elems:
-            date_text = date_elem.get_text(strip=True)
-            try:
-                date_obj = datetime.strptime(date_text, '%B %d, %Y')
-                date_formatted = date_obj.strftime('%Y-%m-%d')
-            except Exception:
-                continue
-
-            current = date_elem.parent.parent
-            event_containers = current.find_next_siblings('div', class_='duet--layout--page-header')
-
-            for ec in event_containers:
-                event_link = ec.find('a', class_=re.compile(r'_[0-9a-f]+'))
-                if not event_link:
-                    continue
-                event_name = event_link.get_text(strip=True)
-                if 'UFC' not in event_name:
-                    continue
-
-                event_details = ec.find('p')
-                details_text = event_details.get_text(strip=True) if event_details else ''
-                venue = details_text.split('•')[0].strip() if '•' in details_text else ''
-
-                main_card_utc_dt = None
-                mc_match = re.search(r'main card.*?(\d+(?::\d+)?\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
-                if mc_match:
-                    main_card_utc_dt = convert_et_to_utc(mc_match.group(1), date_formatted)
-
-                prelim_utc_dt = None
-                pl_match = re.search(r'prelim.*?(\d+(?::\d+)?\s*(?:a\.m\.|p\.m\.)\s*ET)', details_text, re.IGNORECASE)
-                if pl_match:
-                    prelim_utc_dt = convert_et_to_utc(pl_match.group(1), date_formatted)
-
-                def fmt(utc_dt):
-                    if utc_dt is None:
-                        return date_formatted, None
-                    return utc_dt.strftime('%Y-%m-%d'), utc_dt.strftime('%H:%M')
-
-                # Search broadly for fight links — any <a> whose text has " vs "
-                search_root = ec.find_next_sibling('div') or ec.parent
-                if not search_root:
-                    continue
-
-                seen_in_event = set()
-                for fight_link in search_root.find_all('a'):
-                    fight_text = fight_link.get_text(strip=True)
-                    if ' vs ' not in fight_text:
-                        continue
-                    fighters = fight_text.split(' vs ', 1)
-                    if len(fighters) != 2:
-                        continue
-
-                    f1 = re.sub(r'\s+\d+$', '', fighters[0].strip())
-                    f2 = re.sub(r'\s+\d+$', '', fighters[1].strip())
-                    if not f1 or not f2:
-                        continue
-
-                    pair = tuple(sorted([f1.lower(), f2.lower()]))
-                    if pair in seen_in_event:
-                        continue
-                    seen_in_event.add(pair)
-
-                    mc_date, mc_time = fmt(main_card_utc_dt)
-                    fights.append({
-                        'fighter1': f1,
-                        'fighter2': f2,
-                        'date': mc_date,
-                        'time': mc_time,
-                        'venue': venue,
-                        'location': venue,
-                        'sport': 'UFC',
-                        'event_name': event_name,
-                        'weight_class': '',
-                        'card_type': 'Main Card',
-                    })
-
-    except Exception as e:
-        print(f"mmafighting.com scrape error: {e}")
-
-    print(f"mmafighting.com: Found {len(fights)} UFC fights")
-    return fights
-
-
 def _dedup(fights):
     """Remove duplicate fights, keeping the first occurrence of each matchup."""
     seen = set()
@@ -411,18 +304,10 @@ def _dedup(fights):
 
 def scrape_ufc_events():
     """
-    Scrape UFC schedule. Tries ESPN API first, falls back to mmafighting.com.
+    Scrape the UFC schedule from the ESPN API.
 
     Returns list of fight dicts:
         fighter1, fighter2, date (YYYY-MM-DD), time (HH:MM UTC or None),
         venue, location, sport='UFC', event_name, weight_class, card_type
     """
-    fights = _scrape_espn()
-
-    if len(fights) < 5:
-        print(f"ESPN returned only {len(fights)} fights — trying mmafighting.com fallback")
-        fallback = _scrape_mmafighting()
-        if len(fallback) > len(fights):
-            fights = fallback
-
-    return _dedup(fights)
+    return _dedup(_scrape_espn())

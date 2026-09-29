@@ -23,6 +23,8 @@ from bs4 import BeautifulSoup
 # Import scrapers
 from scrapers import scrape_ufc_events, scrape_boxing_events
 import image_pipeline as _images
+import locks as _locks
+import structured_data as _ld
 
 # ============================================================================
 # PERSISTENT DATA DIRECTORY
@@ -53,8 +55,6 @@ def _seed_data_files():
         ('time_overrides.json', 'time_overrides.json'),
         ('data/big_name_fighters.json', 'big_name_fighters.json'),
         ('data/fight_previews.json', 'fight_previews.json'),
-        ('data/fighter_image_overrides.json', 'fighter_image_overrides.json'),
-        ('data/manual_events.json', 'manual_events.json'),
     ]
 
     for src_rel, dest_rel in seed_files:
@@ -260,38 +260,8 @@ def surname(name):
 
 
 app.jinja_env.filters['surname'] = surname
+app.jinja_env.globals['ld'] = _ld
 
-# Initials avatar for fighters without a photo: a coloured circle with their
-# initials (same look as the JS version in index.html's search results).
-_AVATAR_COLORS = ('#7f1d1d', '#9a3412', '#854d0e', '#3f6212', '#065f46', '#155e75', '#1e3a8a', '#4c1d95', '#831843', '#374151')
-
-
-def _avatar_color(name):
-    h = 5381
-    for ch in (name or ''):
-        h = ((h * 33) ^ ord(ch)) & 0xFFFFFFFF
-    return _AVATAR_COLORS[h % len(_AVATAR_COLORS)]
-
-
-def avatar(name):
-    """data: URI of an SVG initials avatar for a fighter name."""
-    from urllib.parse import quote
-    name = (name or '').strip()
-    parts = [p for p in re.split(r'\s+', name) if p]
-    first = parts[0][0] if parts and parts[0][0].isalnum() else ''
-    last = surname(name)
-    initials = ((first + (last[0] if last and last != parts[0] else '')) or '?').upper()[:2]
-    if name.upper() == 'TBA':
-        initials = 'TBA'
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
-           f'<circle cx="50" cy="50" r="50" fill="{_avatar_color(name)}"/>'
-           f'<text x="50" y="50" dy="0.36em" text-anchor="middle" font-family="Work Sans, Segoe UI, Arial, sans-serif" '
-           f'font-size="{30 if len(initials) > 2 else 40 if len(initials) > 1 else 46}" font-weight="600" fill="#f5f5f5" letter-spacing="1">{initials}</text></svg>')
-    # '#' (colour values) must be encoded: a raw '#' ends the URI as a fragment
-    return 'data:image/svg+xml;utf8,' + quote(svg, safe="/:=,'() ")
-
-
-app.jinja_env.globals['avatar'] = avatar
 
 
 def format_fight_date(date_str):
@@ -333,7 +303,7 @@ def load_fighter_database():
     """Load fighters.json and fighters_ufc.json from persistent data directory"""
     fighters_db = {}
 
-    # Load general fighter database (from TheSportsDB)
+    # Load general fighter database
     try:
         with open(data_path('fighters.json'), 'r', encoding='utf-8') as f:
             fighters_db.update(json.load(f))
@@ -643,12 +613,16 @@ def save_cache(fights):
             'timestamp': datetime.now().isoformat(),
             'fights': fights
         }
-        with open(CACHE_FILE, 'w') as f:
+        # write-then-rename: readers in the other worker never see a half-written file
+        tmp = CACHE_FILE + '.tmp'
+        with open(tmp, 'w') as f:
             json.dump(cache_data, f)
+        os.replace(tmp, CACHE_FILE)
         logger.info(f"[OK] Cache saved: {len(fights)} fights at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
         logger.error(f"Error saving cache: {e}")
         return
+    archive_results(fights)
     sync_page_versions(fights, reason='scrape')
 
 
@@ -754,7 +728,7 @@ def sync_page_versions(fights, reason=''):
     if not fights:
         return {'changed': [], 'removed': []}
     now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
-    with _versions_lock:
+    with _versions_lock, _locks.job_lock('versions', wait_seconds=15):
         stored = _load_versions()
         current = _event_fingerprints(fights)
         changed = [u for u, h in current.items() if stored.get(u, {}).get('hash') != h]
@@ -881,6 +855,12 @@ def refresh_profiles(fights, max_fetch=150):
         return
     _profile_job_state['running'] = True
     _profile_job_state['last_start'] = time.time()
+    lock = _locks.job_lock('profiles')
+    if not lock.__enter__():
+        lock.__exit__(None, None, None)
+        _profile_job_state['running'] = False
+        logger.info("Profile job already running in the other worker, skipping")
+        return
     try:
         profiles = dict(load_profiles())
         work = _profile_work_list(fights, profiles)[:max_fetch]
@@ -911,6 +891,7 @@ def refresh_profiles(fights, max_fetch=150):
     except Exception as e:
         logger.error(f"Profile job failed: {e}", exc_info=True)
     finally:
+        lock.__exit__(None, None, None)
         _profile_job_state['running'] = False
 
 
@@ -1031,6 +1012,66 @@ def enrich_fights(fights):
 _scrape_lock = threading.Lock()
 
 
+# ── Results archive ─────────────────────────────────────────────────────────
+# Completed fights are kept in their own file, separate from the cache that is
+# rewritten every scrape. Sources stop listing a card once it has happened, so
+# this archive is the only lasting record of past cards and their results.
+# It is append-only (never pruned); the site shows the last RESULTS_WINDOW_DAYS.
+
+RESULTS_ARCHIVE_FILE = data_path('results_archive.json')
+
+
+def _fight_key(f):
+    return (tuple(sorted([(f.get('fighter1') or '').lower(), (f.get('fighter2') or '').lower()])), f.get('date'))
+
+
+def load_results_archive():
+    try:
+        with open(RESULTS_ARCHIVE_FILE) as fh:
+            return json.load(fh)
+    except Exception:
+        return []
+
+
+def archive_results(fights):
+    """Add fights dated today or earlier to the archive (existing entries are
+    updated in place, e.g. a corrected time). Safe across workers."""
+    today_iso = date.today().isoformat()
+    due = [f for f in fights if f.get('date') and f['date'] <= today_iso]
+    if not due:
+        return 0
+    with _locks.job_lock('results_archive', wait_seconds=10) as got:
+        if not got:
+            logger.warning("results archive busy; will retry on next save")
+            return 0
+        archive = load_results_archive()
+        index = {_fight_key(f): i for i, f in enumerate(archive)}
+        added = 0
+        for f in due:
+            clean = {k: v for k, v in f.items() if k in _ARCHIVE_FIELDS}
+            k = _fight_key(clean)
+            if k in index:
+                archive[index[k]].update(clean)
+            else:
+                index[k] = len(archive)
+                archive.append(clean)
+                added += 1
+        archive.sort(key=lambda x: x.get('date') or '')
+        tmp = RESULTS_ARCHIVE_FILE + '.tmp'
+        with open(tmp, 'w') as fh:
+            json.dump(archive, fh, ensure_ascii=False)
+        os.replace(tmp, RESULTS_ARCHIVE_FILE)
+    if added:
+        logger.info(f"Results archive: +{added} fights ({len(archive)} total)")
+    return added
+
+
+# Only scraped fields are archived; derived fields (images, tape, results) are
+# recomputed on display so they always reflect the latest data.
+_ARCHIVE_FIELDS = ('fighter1', 'fighter2', 'date', 'time', 'time_estimated', 'venue', 'location', 'sport',
+                   'event_name', 'weight_class', 'card_type', 'rounds', 'is_main_event', 'streaming')
+
+
 def _refresh_cache(wait=False):
     """Run the full scrape and save the cache. Only one scrape runs at a time.
     With wait=False returns None immediately if another scrape is running;
@@ -1043,7 +1084,15 @@ def _refresh_cache(wait=False):
         logger.info("Scrape already in progress in another thread, skipping")
         return None
     try:
-        fights = _scrape_all_sources()
+        with _locks.job_lock('scrape', wait_seconds=90 if wait else 0) as got:
+            if not got:
+                logger.info("Scrape already in progress in the other worker, skipping")
+                return None
+            # The other worker may have just finished a scrape while we waited
+            fresh = load_cache()
+            if fresh:
+                return fresh
+            fights = _scrape_all_sources()
         if fights:
             threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
         return fights
@@ -1110,11 +1159,6 @@ def _scrape_all_sources():
     if len(boxingschedule_fights) > 5:
         log(f"  ... and {len(boxingschedule_fights) - 5} more\n")
     
-    # 1b. Scrape BBC Sport for boxing (DISABLED FOR TESTING)
-    log("--- BBC SPORT BOXING (DISABLED) ---")
-    # bbc_boxing = scrape_bbc_boxing()
-    bbc_boxing = []
-    log(f"BBC Sport Boxing: DISABLED\n")
     
     # 2. Scrape MMA Fighting for UFC schedule
     log("\n--- MMA FIGHTING UFC ---")
@@ -1125,11 +1169,6 @@ def _scrape_all_sources():
     if len(mma_fighting_ufc) > 5:
         log(f"  ... and {len(mma_fighting_ufc) - 5} more\n")
     
-    # 3. Fetch TheSportsDB for boxing images (DISABLED - poor data quality)
-    log("\n--- THESPORTSDB BOXING (DISABLED) ---")
-    # thesportsdb_boxing = fetch_boxing_events()
-    thesportsdb_boxing = []
-    log(f"TheSportsDB Boxing: DISABLED\n")
     
     # 4. Combine data
     log("\n" + "="*60)
@@ -1139,8 +1178,6 @@ def _scrape_all_sources():
     # Add BoxingSchedule.co fights
     fights.extend(boxingschedule_fights)
     
-    # Add BBC Sport boxing fights
-    fights.extend(bbc_boxing)
     
     # Add MMA Fighting UFC fights
     fights.extend(mma_fighting_ufc)
@@ -1184,9 +1221,6 @@ def _scrape_all_sources():
     log(f"\n[OK] Validation: UFC={ufc_count} ({'ok' if ufc_ok else 'FAILED'}), "
         f"Boxing={boxing_count} ({'ok' if boxing_ok else 'FAILED'}), Total={len(fights)}\n")
     
-    # TheSportsDB merge disabled
-    merged_count = 0
-    new_from_tsd = 0
     
     # 5. Fetch images for fights that don't have them yet
     log("\n--- FETCHING MISSING FIGHTER IMAGES ---\n")
@@ -1208,20 +1242,21 @@ def _scrape_all_sources():
     # Sort fights by date
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
     # Sources only list upcoming cards, so completed fights within the results
-    # window are carried forward from the previous cache (deduped by matchup).
+    # window are carried forward from the results archive (and the previous
+    # cache, which also seeds the archive on first run), deduped by matchup.
+    # Includes today: sources drop a card as soon as it ends, which is often
+    # hours before UTC midnight (this is how UFC 331 was once lost).
     today = date.today().isoformat()
     cutoff = _retention_cutoff_iso()
     previous_cache = load_cache(max_age_hours=24 * 365) or []
-    seen_pairs = {(tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date')) for f in fights}
+    archive_results(previous_cache)
+    seen_pairs = {_fight_key(f) for f in fights}
     carried_past = 0
-    # Includes today: sources drop a card as soon as it ends, which is often
-    # hours before UTC midnight, and a fight dropped on its own day used to be
-    # lost for good (this is how UFC 331 vanished).
-    for f in previous_cache:
+    for f in load_results_archive() + previous_cache:
         if cutoff <= f.get('date', '') <= today:
-            key = (tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date'))
+            key = _fight_key(f)
             if key not in seen_pairs:
-                fights.append(f); seen_pairs.add(key); carried_past += 1
+                fights.append(dict(f)); seen_pairs.add(key); carried_past += 1
     log(f"Carried forward {carried_past} completed fights for results")
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
 
@@ -1229,7 +1264,6 @@ def _scrape_all_sources():
     fights = [f for f in fights if f.get('date', '') >= cutoff]
     
     # Keep all UFC fights (no filtering needed)
-    # Keep all boxing fights - BBC Sport already curates quality matches
     fights_before_sport_filter = len(fights)
     # No filtering needed - trust the source curation
     
@@ -1788,28 +1822,6 @@ def boxing_event_detail(event_slug):
     return render_template('boxing_event.html', event=event_data)
 
 # ============================================================================
-# ESPN DATA EXPLORATION PAGE
-# ============================================================================
-@app.route('/espn')
-@admin_required
-def espn_data():
-    """
-    Temporary page to explore ESPN API data.
-    Shows raw data from ESPN's hidden API for MMA and Boxing.
-    """
-    from scrapers.espn_api import fetch_all_espn_data
-    import json
-
-    espn = fetch_all_espn_data()
-
-    # Helper to make data JSON-serializable for the template
-    def to_json(obj):
-        return json.dumps(obj, indent=2, default=str) if obj else 'null'
-
-    return render_template('espn_data.html',
-                           espn=espn,
-                           to_json=to_json)
-
 # SEO Routes
 @app.route('/sitemap.xml')
 def sitemap():
@@ -1998,7 +2010,6 @@ def robots():
     txt = """User-agent: *
 Allow: /
 Disallow: /admin/
-Disallow: /espn
 
 # AI search and training crawlers
 User-agent: GPTBot
@@ -2127,129 +2138,6 @@ def clear_cache():
     return "No cache file found."
 
 ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
-
-@app.route('/admin/upload-images', methods=['GET', 'POST'])
-@admin_required
-def upload_fighter_images():
-    """Admin interface for uploading fighter images"""
-    from werkzeug.utils import secure_filename
-    from r2_storage import upload_fighter_image, is_r2_enabled
-
-    if request.method == 'POST':
-        fighter_name = request.form.get('fighter_name', '').strip()[:200]
-        sport = request.form.get('sport', 'UFC')
-
-        if 'image' not in request.files:
-            return "No file uploaded", 400
-
-        file = request.files['image']
-        if file.filename == '':
-            return "No file selected", 400
-
-        if file and fighter_name:
-            # Validate file extension against whitelist
-            ext = os.path.splitext(secure_filename(file.filename))[1].lower() or '.png'
-            if ext not in ALLOWED_IMAGE_EXTENSIONS:
-                return f"Invalid file type. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}", 400
-
-            # Generate safe filename from fighter name
-            safe_name = secure_filename(fighter_name.lower().replace(' ', '-'))
-            if not safe_name:
-                return "Invalid fighter name", 400
-            filename = safe_name + ext
-            
-            # Upload to R2 or save locally
-            image_url = None
-            if is_r2_enabled():
-                file.seek(0)  # Reset file pointer
-                image_url = upload_fighter_image(file.read(), filename)
-            
-            # Fallback to local if R2 fails or not configured
-            if not image_url:
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.seek(0)  # Reset file pointer
-                file.save(filepath)
-                image_url = f'/static/fighters/{filename}'
-                logger.info(f"Saved locally (R2 unavailable): {filename}")
-            
-            # Update JSON in persistent data directory
-            json_file = data_path('fighters.json') if sport == 'Boxing' else data_path('fighters_ufc.json')
-            with open(json_file, 'r', encoding='utf-8') as f:
-                fighters = json.load(f)
-
-            fighters[fighter_name] = image_url
-
-            with open(json_file, 'w', encoding='utf-8') as f:
-                json.dump(fighters, f, indent=2, ensure_ascii=False)
-            
-            logger.info(f"Uploaded image for {fighter_name}: {image_url}")
-            return redirect('/admin/upload-images')
-    
-    # GET - show missing fighters
-    search_name = request.args.get('search', '').strip()
-    show_all = request.args.get('show_all') == 'true'
-    
-    try:
-        with open(CACHE_FILE, 'r') as f:
-            cache = json.load(f)
-    except:
-        return "No cache found. Visit homepage first to generate cache.", 404
-
-    # Load databases from persistent data directory
-    with open(data_path('fighters.json'), 'r', encoding='utf-8') as f:
-        boxing = json.load(f)
-    with open(data_path('fighters_ufc.json'), 'r', encoding='utf-8') as f:
-        ufc = json.load(f)
-    
-    all_fighters = {**boxing, **ufc}
-    
-    # If searching, show that fighter
-    if search_name:
-        sport = 'UFC' if search_name in ufc else 'Boxing'
-        missing = [{
-            'name': search_name,
-            'sport': sport,
-            'event': 'Search result',
-            'has_image': all_fighters.get(search_name, '').startswith('/static/') if search_name in all_fighters else False
-        }]
-        return render_template('admin/upload_images.html', missing=missing, search_mode=True)
-    
-    # Find missing main event fighters
-    missing = []
-    for fight in cache.get('fights', []):
-        if fight.get('is_main_event') or show_all:
-            for fighter_key in ['fighter1', 'fighter2']:
-                fighter = fight.get(fighter_key)
-                if not fighter or fighter == 'TBA':
-                    continue
-                
-                has_image = False
-                if fighter in all_fighters:
-                    url = all_fighters[fighter]
-                    if url and url.startswith('/static/'):
-                        has_image = True
-                
-                img_key = f'{fighter_key}_image'
-                if fight.get(img_key) and fight.get(img_key).startswith('/static/'):
-                    has_image = True
-                
-                if not has_image:
-                    missing.append({
-                        'name': fighter,
-                        'sport': fight.get('sport', 'UFC'),
-                        'event': f"{fight.get('venue')} - {fight.get('date')}"
-                    })
-    
-    # Remove duplicates
-    seen = set()
-    unique_missing = []
-    for f in missing:
-        key = f['name']
-        if key not in seen:
-            seen.add(key)
-            unique_missing.append(f)
-    
-    return render_template('admin/upload_images.html', missing=unique_missing, search_mode=False)
 
 @app.route('/admin/manage-fighters', methods=['GET', 'POST'])
 @admin_required
@@ -2394,9 +2282,9 @@ _DEBUG_PARTS = {
     'fighters': 'fighters.json',
     'fighters_ufc': 'fighters_ufc.json',
     'overrides': 'time_overrides.json',
-    'fetch_status': 'fetch_status.json',
     'profiles': 'fighter_profiles.json',
     'image_meta': 'image_meta.json',
+    'results_archive': 'results_archive.json',
 }
 
 
@@ -2465,236 +2353,6 @@ def debug_state():
             })
         except Exception as e:
             return jsonify({'error': str(e), 'traceback': traceback.format_exc()[-1500:]})
-
-    if part == 'source_probe':
-        # Test candidate boxing data sources from the deployed environment.
-        # Fixed candidate list (no user-supplied URLs).
-        import traceback
-        year = date.today().year
-        candidates = [
-            ('wikipedia_year', f'https://en.wikipedia.org/w/api.php?action=parse&page={year}_in_boxing&prop=wikitext&format=json'),
-            ('wikipedia_search', 'https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=in%20boxing%20schedule&format=json'),
-            ('thesportsdb_leagues', 'https://www.thesportsdb.com/api/v1/json/3/all_leagues.php'),
-            ('espn_boxing_a', 'https://site.api.espn.com/apis/site/v2/sports/boxing/boxing/scoreboard'),
-            ('espn_boxing_b', 'https://sports.core.api.espn.com/v2/sports/boxing/leagues'),
-            ('espn_boxing_c', 'https://site.web.api.espn.com/apis/common/v3/sports/boxing/boxing/scoreboard'),
-            ('boxingschedule_co', 'https://boxingschedule.co'),
-            ('boxing_schedule_com', 'https://boxing-schedule.com'),
-        ]
-        out = {}
-        for name, url in candidates:
-            started = datetime.now()
-            try:
-                r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; FightScheduleBot/1.0)'}, timeout=20)
-                body = r.text
-                out[name] = {
-                    'url': url,
-                    'status': r.status_code,
-                    'length': len(body),
-                    'content_type': (r.headers.get('content-type') or '')[:60],
-                    'elapsed': round((datetime.now() - started).total_seconds(), 1),
-                    'sample': body[:700],
-                }
-            except Exception as e:
-                out[name] = {'url': url, 'error': str(e)[:300],
-                             'elapsed': round((datetime.now() - started).total_seconds(), 1)}
-        return jsonify(out)
-
-    if part == 'wiki_raw':
-        # Rendered HTML of one Wikipedia article (host fixed), for offline parser tests
-        page = (request.args.get('page') or '')[:200]
-        if not page:
-            return jsonify({'error': 'page required'}), 400
-        try:
-            r = requests.get('https://en.wikipedia.org/w/api.php',
-                             params={'action': 'parse', 'page': page, 'prop': 'text', 'format': 'json', 'redirects': 1},
-                             headers={'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'}, timeout=25)
-            payload = r.json()
-            if 'error' in payload:
-                return jsonify({'page': page, 'api_error': payload['error']}), 404
-            resp = make_response(payload['parse']['text']['*'][:400000])
-            resp.headers['Content-Type'] = 'text/html; charset=utf-8'
-            resp.headers['X-Resolved-Title'] = payload['parse'].get('title', '')
-            return resp
-        except Exception as e:
-            return jsonify({'page': page, 'error': str(e)})
-
-    if part == 'wiki_search':
-        # Search Wikipedia titles (host fixed; only the query string is user-supplied)
-        q = (request.args.get('q') or 'boxing')[:200]
-        try:
-            r = requests.get(
-                'https://en.wikipedia.org/w/api.php',
-                params={'action': 'query', 'list': 'search', 'srsearch': q, 'srlimit': 20, 'format': 'json'},
-                headers={'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'},
-                timeout=20,
-            )
-            hits = r.json().get('query', {}).get('search', [])
-            return jsonify({'q': q, 'titles': [(h['title'], h.get('wordcount')) for h in hits]})
-        except Exception as e:
-            return jsonify({'q': q, 'error': str(e)})
-
-    if part == 'wiki_structure':
-        # Dump the structure of the Wikipedia boxing-year article so a parser
-        # can be written against the real markup: section headings, table
-        # headers, row counts and sample rows.
-        import traceback
-        from bs4 import BeautifulSoup
-        year = request.args.get('year') or str(date.today().year)
-        page = request.args.get('page') or f'{year}_in_boxing'
-        try:
-            r = requests.get(
-                'https://en.wikipedia.org/w/api.php',
-                params={'action': 'parse', 'page': page, 'prop': 'text', 'format': 'json'},
-                headers={'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'},
-                timeout=25,
-            )
-            payload = r.json()
-            if 'error' in payload:
-                return jsonify({'page': page, 'status': r.status_code, 'api_error': payload['error']})
-            html = payload['parse']['text']['*']
-            soup = BeautifulSoup(html, 'html.parser')
-
-            sections = [h.get_text(' ', strip=True) for h in soup.find_all(['h2', 'h3'])]
-
-            infobox = []
-            ib = soup.find('table', class_='infobox')
-            if ib:
-                for tr in ib.find_all('tr'):
-                    th, td = tr.find('th'), tr.find('td')
-                    if th and td:
-                        infobox.append([th.get_text(' ', strip=True)[:40], td.get_text(' ', strip=True)[:120]])
-                    elif th:
-                        infobox.append(['#', th.get_text(' ', strip=True)[:60]])
-
-            tables = []
-            for t in soup.find_all('table', class_='wikitable')[:12]:
-                rows = t.find_all('tr')
-                headers = [c.get_text(' ', strip=True) for c in rows[0].find_all(['th', 'td'])] if rows else []
-                samples = []
-                for row in rows[1:4]:
-                    samples.append([c.get_text(' ', strip=True)[:60] for c in row.find_all(['th', 'td'])])
-                # nearest preceding heading gives the table's context
-                prev = t.find_previous(['h2', 'h3'])
-                tables.append({
-                    'context': prev.get_text(' ', strip=True) if prev else None,
-                    'headers': headers,
-                    'row_count': max(0, len(rows) - 1),
-                    'sample_rows': samples,
-                })
-
-            return jsonify({
-                'page': page,
-                'status': r.status_code,
-                'html_length': len(html),
-                'section_headings': sections,
-                'infobox': infobox[:60],
-                'wikitable_count': len(soup.find_all('table', class_='wikitable')),
-                'tables': tables,
-            })
-        except Exception as e:
-            return jsonify({'page': page, 'error': str(e), 'traceback': traceback.format_exc()[-1200:]})
-
-    if part == 'espn_boxer':
-        # Search ESPN for a boxer, then try profile endpoints for record/height/reach.
-        import traceback
-        name = (request.args.get('name') or 'Ryan Garcia')[:80]
-        ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'}
-        out = {'name': name}
-        try:
-            r = requests.get('https://site.web.api.espn.com/apis/common/v3/search',
-                             params={'query': name, 'sport': 'boxing', 'type': 'athlete', 'limit': 3, 'lang': 'en'},
-                             headers=ua, timeout=15)
-            hits = []
-            for res in r.json().get('results', []):
-                for item in res.get('contents', []):
-                    hits.append(item.get('data', item))
-            out['search_status'] = r.status_code
-            out['search_hits'] = hits[:3]
-            aid = next((h.get('id') for h in hits if h.get('id')), None)
-            out['athlete_id'] = aid
-            if aid:
-                cands = {
-                    'web_api_athlete': f'https://site.web.api.espn.com/apis/common/v3/sports/boxing/athletes/{aid}',
-                    'site_api_athlete': f'https://site.api.espn.com/apis/site/v2/sports/boxing/athletes/{aid}',
-                    'core_athlete': f'https://sports.core.api.espn.com/v2/sports/boxing/athletes/{aid}',
-                    'fighter_page_html': f'https://www.espn.com/boxing/fighter/_/id/{aid}',
-                }
-                out['endpoints'] = {}
-                for k, url in cands.items():
-                    try:
-                        rr = requests.get(url, headers=ua, timeout=15)
-                        body = rr.text
-                        info = {'status': rr.status_code, 'length': len(body)}
-                        if 'html' in (rr.headers.get('content-type') or ''):
-                            from bs4 import BeautifulSoup
-                            txt = BeautifulSoup(body, 'html.parser').get_text(' ', strip=True)
-                            snippets = []
-                            for kw in ('Record', 'Height', 'Reach', 'Stance', 'KO', 'Weight'):
-                                i = txt.find(kw)
-                                if i > -1:
-                                    snippets.append(txt[max(0, i - 80):i + 160])
-                            info['keyword_snippets'] = snippets[:6]
-                        else:
-                            info['sample'] = body[:1500]
-                        out['endpoints'][k] = info
-                    except Exception as e:
-                        out['endpoints'][k] = {'error': str(e)[:200]}
-        except Exception as e:
-            out['error'] = str(e); out['traceback'] = traceback.format_exc()[-1000:]
-        return jsonify(out)
-
-    if part == 'espn_mma_results':
-        # Do completed UFC events expose winner/method? And what does an athlete profile hold?
-        import traceback
-        from scrapers.ufc_scraper import _ESPN_UA
-        ua = {'User-Agent': _ESPN_UA}
-        dates = request.args.get('dates') or f"{date.today():%Y%m}"
-        if not re.fullmatch(r'\d{6}|\d{8}(-\d{8})?', dates):
-            return jsonify({'error': 'dates must be YYYYMM, YYYYMMDD or YYYYMMDD-YYYYMMDD'}), 400
-        out = {'range': dates}
-        try:
-            r = requests.get('https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard',
-                             params={'dates': dates}, headers=ua, timeout=20)
-            try:
-                data = r.json()
-            except ValueError:
-                return jsonify({'range': dates, 'status': r.status_code, 'non_json_head': r.text[:600]})
-            events = data.get('events', [])
-            out['status'] = r.status_code; out['event_count'] = len(events)
-            out['events'] = [{'id': e.get('id'), 'name': e.get('name'), 'date': e.get('date'),
-                              'competitions': len(e.get('competitions', [])),
-                              'state': ((e.get('status') or {}).get('type') or {}).get('state')} for e in events[:12]]
-            done = next((e for e in events if e.get('competitions')
-                         and ((e.get('status') or {}).get('type') or {}).get('state') == 'post'), None) \
-                or next((e for e in events if e.get('competitions')), None)
-            if done:
-                comps = done['competitions']
-                out['sample_event'] = done.get('name')
-                out['competition_keys'] = sorted(comps[0].keys())
-                out['sample_competitions'] = []
-                for c in comps[:3]:
-                    out['sample_competitions'].append({
-                        'status': c.get('status'),
-                        'competitors': [{'name': (x.get('athlete') or {}).get('displayName'), 'id': (x.get('athlete') or {}).get('id'),
-                                         'winner': x.get('winner'), 'keys': sorted(x.keys())} for x in c.get('competitors', [])],
-                        'format': c.get('format'), 'notes': c.get('notes'), 'type': c.get('type'),
-                    })
-                aid = ((comps[0].get('competitors') or [{}])[0].get('athlete') or {}).get('id')
-                if aid:
-                    ar = requests.get(f'https://site.web.api.espn.com/apis/common/v3/sports/mma/ufc/athletes/{aid}', headers=ua, timeout=15)
-                    out['athlete_status'] = ar.status_code
-                    try:
-                        a = ar.json().get('athlete', ar.json())
-                        out['athlete_keys'] = sorted(a.keys())[:60]
-                        out['athlete_fields'] = {k: a.get(k) for k in ('displayName', 'displayHeight', 'displayWeight', 'displayReach',
-                                                                       'age', 'dateOfBirth', 'stance', 'weightClass', 'records', 'citizenship',
-                                                                       'headshot', 'statsSummary') if k in a}
-                    except Exception:
-                        out['athlete_sample'] = ar.text[:800]
-        except Exception as e:
-            out['error'] = str(e); out['traceback'] = traceback.format_exc()[-1000:]
-        return jsonify(out)
 
     if part == 'profiles_refresh':
         # Kick the background profile job now (ignores the cooldown)

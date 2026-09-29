@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NFMLL334B3"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-NFMLL334B3');
-    </script>
+    {% include '_analytics.html' %}
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -34,91 +27,10 @@
     <meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
 
     <!-- BreadcrumbList -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://fightschedule.live/"},
-            {"@type": "ListItem", "position": 2, "name": "Boxing Events", "item": "https://fightschedule.live/"},
-            {"@type": "ListItem", "position": 3, "name": "{{ event.main_event.fighter1|e }} vs {{ event.main_event.fighter2|e }}"}
-        ]
-    }
-    </script>
+    <script type="application/ld+json">{{ ld.breadcrumbs(('Home', '/'), ('Boxing Schedule', '/boxing'), (event.main_event.fighter1 ~ ' vs ' ~ event.main_event.fighter2, None))|tojson }}</script>
 
     <!-- Structured Data: SportsEvent (JSON-LD) -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "SportsEvent",
-        "name": "{{ event.main_event.fighter1|e }} vs {{ event.main_event.fighter2|e }}",
-        "description": "{{ event.meta_description|e }}",
-        "url": "{{ event.canonical_url }}",
-        "sport": "Boxing",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "eventAttendanceMode": "https://schema.org/MixedEventAttendanceMode",
-        {% if event.date and event.time and event.time != 'TBA' %}
-        "startDate": "{{ event.date }}T{{ '%02d'|format(event.time.split(':')[0]|int) }}:{{ '%02d'|format(event.time.split(':')[1]|default('00', true)|int) }}:00Z",
-        {% elif event.date %}
-        "startDate": "{{ event.date }}",
-        {% endif %}
-        "location": {
-            "@type": "Place",
-            "name": "{{ event.venue|e }}",
-            "address": "{{ event.location|e }}"
-        },
-        "organizer": {
-            "@type": "Organization",
-            "name": "Boxing Event"
-        },
-        "competitor": [
-            {
-                "@type": "Person",
-                "name": "{{ event.main_event.fighter1|e }}"
-                {% if event.main_event.fighter1_image and '/static/' not in event.main_event.fighter1_image %}
-                ,"image": "{{ event.main_event.fighter1_image }}"
-                {% endif %}
-            },
-            {
-                "@type": "Person",
-                "name": "{{ event.main_event.fighter2|e }}"
-                {% if event.main_event.fighter2_image and '/static/' not in event.main_event.fighter2_image %}
-                ,"image": "{{ event.main_event.fighter2_image }}"
-                {% endif %}
-            }
-        ]
-        {% if event.fights|length > 1 %}
-        ,"subEvent": [
-            {% for fight in event.fights %}
-            {% if not loop.first %},{% endif %}
-            {
-                "@type": "SportsEvent",
-                "name": "{{ fight.fighter1|e }} vs {{ fight.fighter2|e }}",
-                "sport": "Boxing",
-                "eventStatus": "https://schema.org/EventScheduled",
-                {% if event.date and event.time and event.time != 'TBA' %}
-                "startDate": "{{ event.date }}T{{ '%02d'|format(event.time.split(':')[0]|int) }}:{{ '%02d'|format(event.time.split(':')[1]|default('00', true)|int) }}:00Z",
-                {% elif event.date %}
-                "startDate": "{{ event.date }}",
-                {% endif %}
-                "location": {
-                    "@type": "Place",
-                    "name": "{{ event.venue|e }}",
-                    "address": "{{ event.location|e }}"
-                },
-                {% if fight.weight_class %}
-                "description": "{{ fight.weight_class|e }}",
-                {% endif %}
-                "competitor": [
-                    {"@type": "Person", "name": "{{ fight.fighter1|e }}"},
-                    {"@type": "Person", "name": "{{ fight.fighter2|e }}"}
-                ]
-            }
-            {% endfor %}
-        ]
-        {% endif %}
-    }
-    </script>
+    <script type="application/ld+json">{{ ld.boxing_event(event)|tojson }}</script>
 
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
@@ -260,7 +172,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter1_image or avatar(event.main_event.fighter1) }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover" loading="lazy">
+                        <img src="{{ event.main_event.fighter1_image or '/static/placeholder-fighter-boxing.svg' }}" alt="{{ event.main_event.fighter1 }}" class="w-full h-full object-cover {{ 'opacity-30' if not event.main_event.fighter1_image else '' }}" loading="lazy">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter1|surname|upper }}
@@ -285,7 +197,7 @@
             <div class="bg-dark-card rounded-xl p-8 border border-dark-border">
                 <div class="flex flex-col items-center">
                     <div class="w-40 h-40 rounded-full bg-dark-elevated mb-4 overflow-hidden">
-                        <img src="{{ event.main_event.fighter2_image or avatar(event.main_event.fighter2) }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover" loading="lazy">
+                        <img src="{{ event.main_event.fighter2_image or '/static/placeholder-fighter-boxing.svg' }}" alt="{{ event.main_event.fighter2 }}" class="w-full h-full object-cover {{ 'opacity-30' if not event.main_event.fighter2_image else '' }}" loading="lazy">
                     </div>
                     <h2 class="font-staatliches text-4xl uppercase text-center mb-1">
                         {{ event.main_event.fighter2|surname|upper }}
@@ -375,5 +287,6 @@
             </div>
         </div>
     </div>
+    {% include '_consent.html' %}
 </body>
 </html>

@@ -66,21 +66,6 @@ class JSONModel:
         return None
 
 
-class FighterImageOverride(JSONModel):
-    """Manage fighter image overrides"""
-
-    def __init__(self):
-        super().__init__(data_path('fighter_image_overrides.json'))
-
-    def get_image_for_fighter(self, fighter_name):
-        """Get override image URL for a fighter"""
-        data = self.get_all()
-        for item in data:
-            if item['fighter_name'].lower() == fighter_name.lower():
-                return item['image_url']
-        return None
-
-
 class BigNameFighter(JSONModel):
     """Manage big-name fighters list"""
 
@@ -95,19 +80,6 @@ class BigNameFighter(JSONModel):
             if item['name'].lower() in fighter_lower or fighter_lower in item['name'].lower():
                 return True
         return False
-
-
-class ManualEvent(JSONModel):
-    """Manage manually added events"""
-
-    def __init__(self):
-        super().__init__(data_path('manual_events.json'))
-
-    def get_upcoming_events(self):
-        """Get events that haven't happened yet"""
-        data = self.get_all()
-        today = datetime.now().date().isoformat()
-        return [e for e in data if e.get('date', '') >= today]
 
 
 class TimeOverride(JSONModel):

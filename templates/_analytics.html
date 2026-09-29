@@ -1,0 +1,18 @@
+{# Google Analytics is loaded only after the visitor accepts in the consent bar
+   (_consent.html). Before that there is no GA request and no GA cookie. #}
+<script>
+    window.FS_GA_ID = 'G-NFMLL334B3';
+    window.fsLoadAnalytics = function () {
+        if (window.gtag) return;
+        window['ga-disable-' + window.FS_GA_ID] = false;
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () { dataLayer.push(arguments); };
+        gtag('js', new Date());
+        gtag('config', window.FS_GA_ID);
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.FS_GA_ID;
+        document.head.appendChild(s);
+    };
+    try { if (localStorage.getItem('fs-consent') === 'granted') window.fsLoadAnalytics(); } catch (e) {}
+</script>

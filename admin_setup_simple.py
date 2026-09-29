@@ -20,7 +20,7 @@ import json
 import re
 import unicodedata
 import requests as http_requests
-from admin_models import FighterImageOverride, BigNameFighter, ManualEvent, TimeOverride, data_path
+from admin_models import BigNameFighter, TimeOverride, data_path
 
 logger = logging.getLogger('fight_schedule')
 
@@ -145,66 +145,6 @@ class BigNameFighterView(ProtectedBaseView):
     @expose('/delete/<int:idx>')
     def delete(self, idx):
         model = BigNameFighter()
-        model.delete(idx)
-        return redirect(url_for('.index'))
-
-
-class ManualEventView(ProtectedBaseView):
-    """Manage manually added events"""
-
-    @expose('/')
-    def index(self):
-        model = ManualEvent()
-        items = model.get_all()
-        return self.render('admin/manual_events.html', items=items)
-
-    @expose('/add', methods=['GET', 'POST'])
-    def add(self):
-        if request.method == 'POST':
-            model = ManualEvent()
-            item = {
-                'fighter1': request.form.get('fighter1', '').strip()[:200],
-                'fighter2': request.form.get('fighter2', '').strip()[:200],
-                'date': request.form.get('date', '').strip()[:10],
-                'time': request.form.get('time', '').strip()[:20],
-                'venue': request.form.get('venue', '').strip()[:500],
-                'sport': request.form.get('sport', '').strip()[:20],
-                'event_name': request.form.get('event_name', '').strip()[:200],
-                'card_type': request.form.get('card_type', 'Main Card').strip()[:50],
-                'weight_class': request.form.get('weight_class', '').strip()[:100]
-            }
-            model.add(item)
-            return redirect(url_for('.index'))
-
-        return self.render('admin/manual_event_form.html', item=None)
-
-    @expose('/edit/<int:idx>', methods=['GET', 'POST'])
-    def edit(self, idx):
-        model = ManualEvent()
-
-        if request.method == 'POST':
-            item = {
-                'fighter1': request.form.get('fighter1', '').strip()[:200],
-                'fighter2': request.form.get('fighter2', '').strip()[:200],
-                'date': request.form.get('date', '').strip()[:10],
-                'time': request.form.get('time', '').strip()[:20],
-                'venue': request.form.get('venue', '').strip()[:500],
-                'sport': request.form.get('sport', '').strip()[:20],
-                'event_name': request.form.get('event_name', '').strip()[:200],
-                'card_type': request.form.get('card_type', 'Main Card').strip()[:50],
-                'weight_class': request.form.get('weight_class', '').strip()[:100]
-            }
-            model.update(idx, item)
-            return redirect(url_for('.index'))
-
-        items = model.get_all()
-        if 0 <= idx < len(items):
-            return self.render('admin/manual_event_form.html', item=items[idx], idx=idx)
-        return redirect(url_for('.index'))
-
-    @expose('/delete/<int:idx>')
-    def delete(self, idx):
-        model = ManualEvent()
         model.delete(idx)
         return redirect(url_for('.index'))
 
@@ -496,14 +436,6 @@ def setup_admin(app):
     # Add views (all extend ProtectedBaseView now)
     admin.add_view(ReviewImagesView(name='Review Images', endpoint='review_images'))
     admin.add_view(BigNameFighterView(name='Big Name Fighters', endpoint='big_names'))
-    admin.add_view(ManualEventView(name='Manual Events', endpoint='manual_events'))
     admin.add_view(TimeOverrideView(name='Time Overrides', endpoint='time_overrides'))
-
-    try:
-        moved = images.migrate_legacy_overrides()
-        if moved:
-            logger.info(f"Migrated {moved} old image overrides into image_meta.json")
-    except Exception as e:
-        logger.warning(f"override migration failed: {e}")
 
     return admin

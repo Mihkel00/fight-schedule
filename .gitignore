@@ -22,3 +22,7 @@ image_job_status.json
 image_job_status.json.tmp
 image_settings.json
 alert_state.json
+results_archive.json
+results_archive.json.tmp
+fights_cache.json.tmp
+.*.lock

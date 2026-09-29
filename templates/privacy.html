@@ -7,6 +7,7 @@
     <meta name="description" content="Privacy policy and cookie information for FightSchedule. Learn how we handle your data on our UFC and boxing fight schedule platform.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://fightschedule.live/privacy">
+    {% include '_analytics.html' %}
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
@@ -55,13 +56,13 @@
         </ul>
         <p>We do NOT collect personal information like names, emails, or IP addresses.</p>
         
-        <h2>Cookies</h2>
-        <p>We use cookies for:</p>
+        <h2 id="cookies">Cookies</h2>
+        <p>Google Analytics cookies are only set if you choose <strong>Accept</strong> in the cookie bar. If you decline, or don't answer, Google Analytics is not loaded at all.</p>
         <ul>
-            <li><strong>Google Analytics:</strong> Anonymous traffic analysis</li>
-            <li><strong>Timezone preference:</strong> To show fight times in your local timezone</li>
+            <li><strong>Google Analytics (only with your consent):</strong> anonymous traffic analysis</li>
+            <li><strong>Your cookie choice:</strong> stored in your browser's local storage so we don't ask again</li>
         </ul>
-        <p>All cookies are anonymous and do not identify you personally.</p>
+        <p>Fight times are converted to your timezone in your browser; nothing is stored for that.</p>
         
         <h2>Google Analytics</h2>
         <p>Google Analytics processes data on our behalf to provide insights about site usage. Google may use this data in accordance with their own privacy policy. Learn more at <a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a>.</p>
@@ -75,6 +76,7 @@
         <h2>Your Rights</h2>
         <p>You can:</p>
         <ul>
+            <li>Change your cookie choice at any time: <button type="button" onclick="window.fsShowConsent && window.fsShowConsent()" style="text-decoration:underline;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer">cookie settings</button> (declining removes Google Analytics cookies)</li>
             <li>Block cookies in your browser settings</li>
             <li>Opt out of Google Analytics via <a href="https://tools.google.com/dlpage/gaoptout" target="_blank">browser add-on</a></li>
             <li>Use private/incognito browsing mode</li>
@@ -92,5 +94,6 @@
         <h2>Contact</h2>
         <p>Questions about this policy? Contact us via our <a href="/">main site</a>.</p>
     </div>
+    {% include '_consent.html' %}
 </body>
 </html>
