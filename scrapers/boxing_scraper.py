@@ -403,22 +403,29 @@ def _parse_rsd(soup):
                 desc = card.select_one('.rsd-description')
                 bouts.append((pair, desc.get_text(' ', strip=True) if desc else ''))
                 seen.add(tuple(sorted(p.lower() for p in pair)))
+            VS = re.compile(r'\bvs\.?\b', re.IGNORECASE)
             for el in card.find_all(['li', 'h3', 'h4', 'strong', 'p']):
                 if head and (el is head or head in el.parents or el in head.parents):
                     continue
                 text = el.get_text(' ', strip=True)
-                if not re.search(r'\bvs\.?\b', text, re.IGNORECASE) or len(text) > 160:
+                if not VS.search(text) or len(text) > 160:
+                    continue
+                # prefer the innermost element that names the bout (<li><strong>A vs B</strong>...)
+                if any(VS.search(ch.get_text(' ', strip=True)) for ch in el.find_all(['strong', 'h3', 'h4', 'li'])):
                     continue
                 names_part, _, detail = text.partition(',')
-                pr = _split_vs(names_part)
+                pr = _split_vs(names_part.strip())
                 if not pr:
                     continue
                 k = tuple(sorted(p.lower() for p in pr))
                 if k in seen:
                     continue
                 seen.add(k)
-                span = el.find('span')
-                bouts.append((pr, (span.get_text(' ', strip=True) if span and span.get_text(strip=True) != text else detail.strip())))
+                if el.name == 'strong' and el.parent is not None:
+                    # detail lives next to the names: <li><strong>names</strong><span>detail</span></li>
+                    sib = el.find_next_sibling()
+                    detail = sib.get_text(' ', strip=True) if sib else el.parent.get_text(' ', strip=True).replace(text, '').strip(' ,')
+                bouts.append((pr, detail.strip()))
 
             for idx, ((f1, f2), detail) in enumerate(bouts):
                 rounds, weight_class = _parse_bout_detail(detail)
