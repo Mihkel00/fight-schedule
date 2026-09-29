@@ -6,6 +6,20 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-29 — Read "geo" as geographic when the owner meant GEO (LLM findability)
+
+**What happened:** Asked "What about geo", I wrote a full answer about
+per-click country tracking. The owner meant generative engine optimisation —
+being found and cited by ChatGPT, Claude, Perplexity and AI search.
+
+**Root cause:** I resolved an ambiguous term from the most recent topic
+(country routing in affiliate links) instead of the owner's larger goal
+(traffic and SEO), and didn't ask one clarifying question.
+
+**Rule:** When a short question uses a term with more than one plausible
+meaning in context (GEO, CTR, CAC...), ask which one, or answer the
+likelier one in a sentence and confirm, before writing a long answer.
+
 ## 2026-09-29 — UFC section went empty: source failure + missing cache defeated both safety nets
 
 **What happened:** At 22:05 a scrape ran with no previous cache available and
