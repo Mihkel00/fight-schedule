@@ -1,0 +1,143 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<style>
+    body, .content { background: #0d0d0d; color: #efe5e4; }
+    .ri { padding: 24px; max-width: 1280px; }
+    .ri h1 { font-size: 1.9rem; font-weight: 700; margin: 0 0 6px; }
+    .ri .sub { color: #998c8a; margin-bottom: 24px; max-width: 760px; }
+    .panel { background: #161616; border: 1px solid #2e2d2d; border-radius: 12px; padding: 18px 20px; margin-bottom: 20px; }
+    .panel h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 8px; }
+    .muted { color: #998c8a; font-size: 0.85rem; }
+    .btn-ri { border: 1px solid #3a3838; background: #1f1f1f; color: #efe5e4; border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; }
+    .btn-ri:hover { border-color: #fb923c; }
+    .btn-primary-ri { background: #fb923c; color: #0d0d0d; border-color: #fb923c; font-weight: 700; }
+    .btn-good { border-color: #22c55e66; } .btn-good:hover { border-color: #22c55e; }
+    .btn-bad { border-color: #ef444466; } .btn-bad:hover { border-color: #ef4444; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
+    .tabs a { padding: 6px 12px; border-radius: 999px; border: 1px solid #2e2d2d; color: #998c8a; font-size: 0.85rem; text-decoration: none; }
+    .tabs a.on { background: #fb923c; color: #0d0d0d; border-color: #fb923c; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+    .tile { background: #161616; border: 1px solid #2e2d2d; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .tile-top { display: flex; gap: 12px; align-items: center; }
+    .tile img, .ph { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: #232323; flex-shrink: 0; }
+    .ph { display: flex; align-items: center; justify-content: center; color: #5a5454; font-size: 0.75rem; }
+    .name { font-weight: 600; }
+    .badge { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; margin-top: 4px; }
+    .b-auto { background: #fb923c22; color: #fb923c; } .b-approved, .b-manual { background: #22c55e22; color: #22c55e; }
+    .b-rejected { background: #ef444422; color: #ef4444; } .b-missing { background: #2e2d2d; color: #998c8a; }
+    .b-legacy { background: #3b82f622; color: #60a5fa; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .row input[type=url], .row input[type=file] { flex: 1; min-width: 0; background: #0d0d0d; color: #efe5e4; border: 1px solid #2e2d2d; border-radius: 8px; padding: 5px 8px; font-size: 0.8rem; }
+    .note { font-size: 0.75rem; color: #c9a227; }
+    .src a { color: #998c8a; }
+    .progress { background: #2e2d2d; border-radius: 99px; height: 8px; overflow: hidden; margin: 8px 0; }
+    .progress div { background: #fb923c; height: 100%; }
+    details summary { cursor: pointer; margin: 6px 0; }
+    .cmp { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid #222; font-size: 0.85rem; }
+    .cmp img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: #232323; }
+    #q { background: #0d0d0d; color: #efe5e4; border: 1px solid #2e2d2d; border-radius: 8px; padding: 7px 10px; width: 260px; max-width: 100%; }
+</style>
+
+<div class="ri">
+    <h1>Review Images</h1>
+    <p class="sub">Every fighter in the current schedule. Images are only fetched from an exact-name ESPN athlete or the fighter's own Wikipedia article, must pass a size/shape check, and are cropped to the face. Anything you keep, upload or paste is never replaced automatically; anything you mark wrong is never picked again.</p>
+
+    {# ── bulk job ── #}
+    <div class="panel">
+        <h2>Re-check with the new rules</h2>
+        {% if job and job.state == 'running' %}
+            <meta http-equiv="refresh" content="4">
+            <p class="muted">{{ 'Dry run' if job.mode == 'dry-run' else 'Applying' }} — {{ job.done }} / {{ job.total }}{% if job.current %} · {{ job.current }}{% endif %}</p>
+            <div class="progress"><div style="width: {{ ((job.done / job.total * 100) | int) if job.total else 0 }}%"></div></div>
+        {% else %}
+            <form method="POST" class="row" style="margin-bottom:10px">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-ri" name="action" value="dry_run">Dry run (changes nothing)</button>
+                <button class="btn-ri btn-primary-ri" name="action" value="apply"
+                        onclick="return confirm('Apply the new rules? Verified images replace old auto-found ones; old images with no verifiable source are flagged for review, not deleted.')">Apply new rules</button>
+            </form>
+            <p class="muted">Automatic images for newly added fighters: <strong>{{ 'on' if settings.autofill else 'off' }}</strong>{% if not settings.autofill %} — turns on after the first applied run{% endif %}.</p>
+        {% endif %}
+
+        {% if job and job.state == 'done' %}
+            {% set r = job.report %}
+            <p style="margin-top:10px"><strong>Last {{ job.mode }}</strong> <span class="muted">({{ (job.finished_at or '')[:16] | replace('T', ' ') }} UTC, {{ job.total }} checked; skipped {{ job.skipped.reviewed }} reviewed, {{ job.skipped['already-verified'] }} already verified, {{ job.skipped['trusted-static'] }} trusted UFC/static)</span></p>
+            <details {% if r.would_replace %}open{% endif %}><summary>{{ 'Would replace' if job.mode == 'dry-run' else 'Replaced' }}: {{ r.would_replace | length }}</summary>
+                {% for x in r.would_replace %}<div class="cmp"><img src="{{ x.current }}" alt=""> → <img src="{{ x.url }}" alt=""> <span>{{ x.name }} <span class="muted">· {{ x.source }} {{ x.size[0] }}×{{ x.size[1] }}</span></span></div>{% endfor %}
+            </details>
+            <details><summary>{{ 'Would add' if job.mode == 'dry-run' else 'Added' }}: {{ r.would_add | length }}</summary>
+                {% for x in r.would_add %}<div class="cmp"><img src="{{ x.url }}" alt=""> <span>{{ x.name }} <span class="muted">· {{ x.source }} {{ x.size[0] }}×{{ x.size[1] }}</span></span></div>{% endfor %}
+            </details>
+            <details><summary>Current image can't be verified (flagged for review{{ '' if job.mode != 'dry-run' else ' on apply' }}): {{ r.unverified | length }}</summary>
+                {% for x in r.unverified %}<div class="cmp"><img src="{{ x.current }}" alt=""> <span>{{ x.name }} <span class="muted">· {{ x.why | join('; ') }}</span></span></div>{% endfor %}
+            </details>
+            <details><summary>No image found: {{ r.none_found | length }}</summary>
+                {% for x in r.none_found %}<div class="cmp"><span>{{ x.name }} <span class="muted">· {{ x.why | join('; ') }}</span></span></div>{% endfor %}
+            </details>
+        {% elif job and job.state == 'error' %}
+            <p class="note">Last job failed: {{ job.error }}</p>
+        {% endif %}
+    </div>
+
+    {# ── filters ── #}
+    <div class="tabs">
+        {% for key, label in [('review', 'Needs review'), ('missing', 'No image'), ('rejected', 'Marked wrong'), ('legacy', 'Unreviewed (older)'), ('approved', 'Approved / manual'), ('all', 'All')] %}
+        <a href="?show={{ key }}" class="{{ 'on' if show == key else '' }}">{{ label }} · {{ counts[key] }}</a>
+        {% endfor %}
+    </div>
+    <input id="q" type="search" placeholder="Filter by name…" oninput="filterTiles(this.value)" style="margin-bottom:14px">
+
+    {% if not rows %}<p class="muted">Nothing here.</p>{% endif %}
+    <div class="grid">
+        {% for r in rows %}
+        <div class="tile" data-name="{{ r.name | lower }}">
+            <div class="tile-top">
+                {% if r.path %}<img src="{{ r.path }}" alt="{{ r.name }}" loading="lazy">{% else %}<div class="ph">no image</div>{% endif %}
+                <div>
+                    <div class="name">{{ r.name }}</div>
+                    <div class="muted">{{ r.sport }}</div>
+                    <span class="badge b-{{ r.status }}">{{ {'auto': 'needs review', 'approved': 'approved', 'manual': 'manual', 'rejected': 'marked wrong', 'missing': 'no image', 'legacy': 'older, unreviewed'}[r.status] }}</span>
+                    <div class="src muted" style="font-size:0.75rem">
+                        {% if r.source %}{% if r.source_url and r.source_url.startswith('http') %}<a href="{{ r.source_url }}" target="_blank" rel="noopener">{{ r.source }}</a>{% else %}{{ r.source }}{% endif %}{% endif %}
+                        {% if r.fetched_at %} · {{ r.fetched_at }}{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if r.note %}<div class="note">{{ r.note }}</div>{% endif %}
+
+            <form method="POST" class="row">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="name" value="{{ r.name }}"><input type="hidden" name="sport" value="{{ r.sport }}">
+                {% if r.path %}
+                <button class="btn-ri btn-good" name="action" value="keep">✓ Keep</button>
+                <button class="btn-ri btn-bad" name="action" value="wrong">✗ Wrong</button>
+                {% endif %}
+                {% if r.status not in ('legacy', 'missing') %}<button class="btn-ri" name="action" value="reset" title="Forget review state and go back to automatic">Reset</button>{% endif %}
+            </form>
+            <form method="POST" class="row">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="name" value="{{ r.name }}"><input type="hidden" name="sport" value="{{ r.sport }}">
+                <input type="url" name="url" placeholder="Paste image URL" required>
+                <button class="btn-ri" name="action" value="replace_url">Use URL</button>
+            </form>
+            <form method="POST" enctype="multipart/form-data" class="row">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="name" value="{{ r.name }}"><input type="hidden" name="sport" value="{{ r.sport }}">
+                <input type="file" name="file" accept="image/*" required>
+                <button class="btn-ri" name="action" value="upload">Upload</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function filterTiles(q) {
+        q = q.trim().toLowerCase();
+        document.querySelectorAll('.tile').forEach(function (t) {
+            t.style.display = !q || t.dataset.name.indexOf(q) > -1 ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}
