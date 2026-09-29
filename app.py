@@ -261,6 +261,35 @@ def surname(name):
 
 app.jinja_env.filters['surname'] = surname
 
+# Initials avatar for fighters without a photo: a coloured circle with their
+# initials (same look as the JS version in index.html's search results).
+_AVATAR_COLORS = ('#7f1d1d', '#9a3412', '#854d0e', '#3f6212', '#065f46', '#155e75', '#1e3a8a', '#4c1d95', '#831843', '#374151')
+
+
+def _avatar_color(name):
+    h = 5381
+    for ch in (name or ''):
+        h = ((h * 33) ^ ord(ch)) & 0xFFFFFFFF
+    return _AVATAR_COLORS[h % len(_AVATAR_COLORS)]
+
+
+def avatar(name):
+    """data: URI of an SVG initials avatar for a fighter name."""
+    from urllib.parse import quote
+    name = (name or '').strip()
+    parts = [p for p in re.split(r'\s+', name) if p]
+    first = parts[0][0] if parts and parts[0][0].isalnum() else ''
+    last = surname(name)
+    initials = ((first + (last[0] if last and last != parts[0] else '')) or '?').upper()[:2]
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+           f'<circle cx="50" cy="50" r="50" fill="{_avatar_color(name)}"/>'
+           f'<text x="50" y="50" dy="0.36em" text-anchor="middle" font-family="Work Sans, Segoe UI, Arial, sans-serif" '
+           f'font-size="{40 if len(initials) > 1 else 46}" font-weight="600" fill="#f5f5f5" letter-spacing="1">{initials}</text></svg>')
+    return 'data:image/svg+xml;utf8,' + quote(svg, safe="/:=,'()#% ")
+
+
+app.jinja_env.globals['avatar'] = avatar
+
 
 def format_fight_date(date_str):
     """Format date from YYYY-MM-DD to 'Sat, Dec 06'"""
