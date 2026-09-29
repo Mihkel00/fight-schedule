@@ -55,7 +55,6 @@ def _seed_data_files():
         ('time_overrides.json', 'time_overrides.json'),
         ('data/big_name_fighters.json', 'big_name_fighters.json'),
         ('data/fight_previews.json', 'fight_previews.json'),
-        ('data/manual_events.json', 'manual_events.json'),
     ]
 
     for src_rel, dest_rel in seed_files:

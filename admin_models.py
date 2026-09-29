@@ -82,19 +82,6 @@ class BigNameFighter(JSONModel):
         return False
 
 
-class ManualEvent(JSONModel):
-    """Manage manually added events"""
-
-    def __init__(self):
-        super().__init__(data_path('manual_events.json'))
-
-    def get_upcoming_events(self):
-        """Get events that haven't happened yet"""
-        data = self.get_all()
-        today = datetime.now().date().isoformat()
-        return [e for e in data if e.get('date', '') >= today]
-
-
 class TimeOverride(JSONModel):
     """Manage time overrides"""
 
