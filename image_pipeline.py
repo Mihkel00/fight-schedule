@@ -252,6 +252,41 @@ def wikipedia_candidate(name, sport, title=None):
     return None
 
 
+def ufc_candidate(name, sport):
+    """Official UFC.com athlete headshot. The athlete URL *is* the name
+    (ufc.com/athlete/first-last), and the page title is checked against the
+    fighter's name, so there is no search step to pick the wrong person."""
+    if sport != 'UFC':
+        return None
+    slug = _slug(name)
+    url = f'https://www.ufc.com/athlete/{slug}'
+    try:
+        r = requests.get(url, headers={'User-Agent': _UA_BROWSER}, timeout=12)
+    except Exception:
+        return None
+    if r.status_code != 200:
+        return None
+    html = r.text
+    m = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)', html) \
+        or re.search(r'<title>([^<]+)</title>', html)
+    title = m.group(1) if m else ''
+    if key(name) not in key(title):
+        return None          # redirected to a different athlete or a search page
+    m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', html) \
+        or re.search(r'class=["\'][^"\']*hero-profile__image[^"\']*["\'][^>]+src=["\']([^"\']+)', html)
+    if not m:
+        return None
+    img = m.group(1).replace('&amp;', '&')
+    if img.startswith('/'):
+        img = 'https://www.ufc.com' + img
+    if 'ufc' not in img.lower() and 'dmxg' not in img.lower():
+        return None          # og:image is the site logo / a share card, not the athlete
+    fname = img.split('?')[0].rsplit('/', 1)[-1]
+    if 'logo' in fname.lower() or 'default' in fname.lower() or 'silhouette' in fname.lower():
+        return None
+    return {'url': img, 'source': 'ufc', 'file': fname, 'ref': url}
+
+
 _WD_API = 'https://www.wikidata.org/w/api.php'
 # occupation / sport items that identify a fighter on Wikidata
 _WD_FIGHTER_QIDS = {'Q11338576',   # boxer
@@ -408,7 +443,8 @@ def find_best(name, sport, rejected_urls=(), title=None):
     """First candidate that is not rejected and passes the gate.
     Returns (candidate_with_processed_image | None, [reasons for rejections])."""
     reasons = []
-    for finder in (lambda: espn_candidate(name, sport),
+    for finder in (lambda: ufc_candidate(name, sport),
+                   lambda: espn_candidate(name, sport),
                    lambda: wikipedia_candidate(name, sport, title),
                    lambda: wikidata_candidate(name, sport)):
         try:
@@ -435,7 +471,7 @@ def find_best(name, sport, rejected_urls=(), title=None):
         cand['size'] = img.size
         return cand, reasons
     if not reasons:
-        reasons.append('no ESPN athlete, Wikipedia article or Wikidata item with this exact name')
+        reasons.append('no UFC.com page, ESPN athlete, Wikipedia article or Wikidata item with this exact name')
     return None, reasons
 
 
@@ -443,7 +479,8 @@ def probe(name, sport, title=None):
     """Diagnostics: what each source offers for a fighter and what the gate says.
     Downloads candidates but saves nothing."""
     out = {'name': name, 'sport': sport, 'sources': {}}
-    for label, finder in (('espn', lambda: espn_candidate(name, sport)),
+    for label, finder in (('ufc', lambda: ufc_candidate(name, sport)),
+                          ('espn', lambda: espn_candidate(name, sport)),
                           ('wikipedia', lambda: wikipedia_candidate(name, sport, title)),
                           ('wikidata', lambda: wikidata_candidate(name, sport))):
         try:
@@ -602,15 +639,17 @@ def schedule_fighters():
     return out
 
 
-def plan_for(name, sport):
+def plan_for(name, sport, skip_recent_none=False):
     """Decide what the job should do with one fighter (without network calls).
-    Returns 'skip:<why>' or 'check'."""
+    Returns 'skip:<why>' or 'check'. Manual runs re-check fighters with nothing
+    found so far (a new source or a new article may have appeared); only the
+    automatic fill honours the 7-day memory."""
     e = load_meta().get(key(name)) or {}
     if e.get('status') in REVIEWED:
         return 'skip:reviewed'
     if e.get('status') == 'auto' and e.get('source') != 'legacy' and e.get('path'):
         return 'skip:already-verified'
-    if e.get('status') == 'none':
+    if e.get('status') == 'none' and skip_recent_none:
         try:
             checked = datetime.fromisoformat((e.get('checked_at') or '').rstrip('Z'))
             if (datetime.utcnow() - checked).days < 7:
@@ -636,7 +675,7 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
     try:
         fighters = fighters if fighters is not None else schedule_fighters()
         titles = _profile_titles()
-        todo = [(n, s) for n, s in fighters if plan_for(n, s) == 'check']
+        todo = [(n, s) for n, s in fighters if plan_for(n, s, skip_recent_none=only_missing) == 'check']
         if only_missing:
             # fill gaps only: never touch a fighter who already has an image or was marked wrong
             todo = [(n, s) for n, s in todo if not image_for(n) and (load_meta().get(key(n)) or {}).get('status') != 'rejected']
@@ -645,7 +684,7 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
         report = {'would_replace': [], 'would_add': [], 'unverified': [], 'none_found': [], 'errors': []}
         state = {'state': 'running', 'mode': 'apply' if apply else 'dry-run', 'started_at': datetime.utcnow().isoformat() + 'Z',
                  'total': len(todo), 'done': 0, 'current': '', 'report': report,
-                 'skipped': {r: sum(1 for n, s in fighters if plan_for(n, s) == f'skip:{r}')
+                 'skipped': {r: sum(1 for n, s in fighters if plan_for(n, s, skip_recent_none=only_missing) == f'skip:{r}')
                              for r in ('reviewed', 'already-verified', 'trusted-static', 'none-recent')}}
         _write_job(state)
         for i, (name, sport) in enumerate(todo):

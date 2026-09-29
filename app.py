@@ -261,6 +261,37 @@ def surname(name):
 
 app.jinja_env.filters['surname'] = surname
 
+# Initials avatar for fighters without a photo: a coloured circle with their
+# initials (same look as the JS version in index.html's search results).
+_AVATAR_COLORS = ('#7f1d1d', '#9a3412', '#854d0e', '#3f6212', '#065f46', '#155e75', '#1e3a8a', '#4c1d95', '#831843', '#374151')
+
+
+def _avatar_color(name):
+    h = 5381
+    for ch in (name or ''):
+        h = ((h * 33) ^ ord(ch)) & 0xFFFFFFFF
+    return _AVATAR_COLORS[h % len(_AVATAR_COLORS)]
+
+
+def avatar(name):
+    """data: URI of an SVG initials avatar for a fighter name."""
+    from urllib.parse import quote
+    name = (name or '').strip()
+    parts = [p for p in re.split(r'\s+', name) if p]
+    first = parts[0][0] if parts and parts[0][0].isalnum() else ''
+    last = surname(name)
+    initials = ((first + (last[0] if last and last != parts[0] else '')) or '?').upper()[:2]
+    if name.upper() == 'TBA':
+        initials = 'TBA'
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">'
+           f'<circle cx="50" cy="50" r="50" fill="{_avatar_color(name)}"/>'
+           f'<text x="50" y="50" dy="0.36em" text-anchor="middle" font-family="Work Sans, Segoe UI, Arial, sans-serif" '
+           f'font-size="{30 if len(initials) > 2 else 40 if len(initials) > 1 else 46}" font-weight="600" fill="#f5f5f5" letter-spacing="1">{initials}</text></svg>')
+    return 'data:image/svg+xml;utf8,' + quote(svg, safe="/:=,'()#% ")
+
+
+app.jinja_env.globals['avatar'] = avatar
+
 
 def format_fight_date(date_str):
     """Format date from YYYY-MM-DD to 'Sat, Dec 06'"""
@@ -1176,8 +1207,11 @@ def _scrape_all_sources():
     previous_cache = load_cache(max_age_hours=24 * 365) or []
     seen_pairs = {(tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date')) for f in fights}
     carried_past = 0
+    # Includes today: sources drop a card as soon as it ends, which is often
+    # hours before UTC midnight, and a fight dropped on its own day used to be
+    # lost for good (this is how UFC 331 vanished).
     for f in previous_cache:
-        if cutoff <= f.get('date', '') < today:
+        if cutoff <= f.get('date', '') <= today:
             key = (tuple(sorted([f['fighter1'].lower(), f['fighter2'].lower()])), f.get('date'))
             if key not in seen_pairs:
                 fights.append(f); seen_pairs.add(key); carried_past += 1
@@ -2418,6 +2452,7 @@ def debug_state():
                 'tag_histogram': {t: len(soup.find_all(t)) for t in ('p', 'div', 'li', 'tr', 'h2', 'h3', 'article', 'script')},
                 'article_classes': sorted({' '.join(a.get('class', [])) for a in soup.find_all('article')}),
                 'first_article_html': str(soup.find('article'))[:4000] if soup.find('article') else None,
+                'event_articles': [str(x)[:9000] for x in soup.select('article.rsd-event, article.rs-card')[:2]],
                 'second_article_html': str(soup.find_all('article')[1])[:2500] if len(soup.find_all('article')) > 1 else None,
                 'text_head': text[:1500],
             })
@@ -2605,7 +2640,8 @@ def debug_state():
     if part == 'espn_mma_results':
         # Do completed UFC events expose winner/method? And what does an athlete profile hold?
         import traceback
-        ua = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'}
+        from scrapers.ufc_scraper import _ESPN_UA
+        ua = {'User-Agent': _ESPN_UA}
         dates = request.args.get('dates') or f"{date.today():%Y%m}"
         if not re.fullmatch(r'\d{6}|\d{8}(-\d{8})?', dates):
             return jsonify({'error': 'dates must be YYYYMM, YYYYMMDD or YYYYMMDD-YYYYMMDD'}), 400

@@ -352,6 +352,96 @@ def _parse_cards(soup):
     return fights
 
 
+def _card_time(card_text, date_obj, venue):
+    """(date, time, estimated) from an ET time anywhere in a card's text, else a venue estimate."""
+    m = re.search(r'(\d{1,2}:\d{2})\s*([ap]\.?m\.?)\s*(?:ET|EST|EDT)\b', card_text, re.IGNORECASE)
+    if m:
+        local = datetime.strptime(f"{m.group(1)} {m.group(2).replace('.', '').upper()}", '%I:%M %p')
+        et_dt = datetime(date_obj.year, date_obj.month, date_obj.day, local.hour, local.minute, tzinfo=ET_ZONE)
+        utc_dt = et_dt.astimezone(UTC_ZONE)
+        return utc_dt.strftime('%Y-%m-%d'), utc_dt.strftime('%H:%M'), False
+    est, _ = estimate_time_from_venue(venue)
+    return date_obj.strftime('%Y-%m-%d'), est, bool(est)
+
+
+def _parse_rsd(soup):
+    """Late-2026 boxingschedule.co layout: <article class="rsd-event" data-date=...>
+    with .rsd-card-head h2 (main event), .rsd-venue, .rsd-description, broadcaster
+    logos in .rsd-networks, and any further bouts as elements containing " vs "."""
+    fights = []
+    for card in soup.select('article.rsd-event'):
+        try:
+            time_el = card.select_one('time[datetime]')
+            event_date = ((time_el.get('datetime') if time_el else None) or card.get('data-date') or '')[:10]
+            if not re.match(r'\d{4}-\d{2}-\d{2}$', event_date):
+                continue
+            date_obj = datetime.strptime(event_date, '%Y-%m-%d')
+
+            venue_el = card.select_one('.rsd-venue span') or card.select_one('.rsd-venue')
+            venue = venue_el.get_text(' ', strip=True) if venue_el else 'TBA'
+
+            streaming = None
+            logo = card.select_one('.rsd-networks img[alt]')
+            if logo and logo.get('alt', '').strip():
+                streaming = logo['alt'].strip()
+            else:
+                for lab in card.select('.rsd-label'):
+                    if 'broadcast' in lab.get_text(strip=True).lower():
+                        sib = lab.find_next_sibling()
+                        txt = sib.get_text(' ', strip=True) if sib else ''
+                        if txt and 'unconfirmed' not in txt.lower():
+                            streaming = txt
+                        break
+
+            fight_date, fight_time, time_estimated = _card_time(card.get_text(' ', strip=True), date_obj, venue)
+
+            bouts, seen = [], set()
+            head = card.select_one('.rsd-card-head h2') or card.find(['h2', 'h3'])
+            main_text = head.get_text(' ', strip=True) if head else ''
+            pair = _split_vs(main_text)
+            if pair:
+                desc = card.select_one('.rsd-description')
+                bouts.append((pair, desc.get_text(' ', strip=True) if desc else ''))
+                seen.add(tuple(sorted(p.lower() for p in pair)))
+            VS = re.compile(r'\bvs\.?\b', re.IGNORECASE)
+            for el in card.find_all(['li', 'h3', 'h4', 'strong', 'p']):
+                if head and (el is head or head in el.parents or el in head.parents):
+                    continue
+                text = el.get_text(' ', strip=True)
+                if not VS.search(text) or len(text) > 160:
+                    continue
+                # prefer the innermost element that names the bout (<li><strong>A vs B</strong>...)
+                if any(VS.search(ch.get_text(' ', strip=True)) for ch in el.find_all(['strong', 'h3', 'h4', 'li'])):
+                    continue
+                names_part, _, detail = text.partition(',')
+                pr = _split_vs(names_part.strip())
+                if not pr:
+                    continue
+                k = tuple(sorted(p.lower() for p in pr))
+                if k in seen:
+                    continue
+                seen.add(k)
+                if el.name == 'strong' and el.parent is not None:
+                    # detail lives next to the names: <li><strong>names</strong><span>detail</span></li>
+                    sib = el.find_next_sibling()
+                    detail = sib.get_text(' ', strip=True) if sib else el.parent.get_text(' ', strip=True).replace(text, '').strip(' ,')
+                bouts.append((pr, detail.strip()))
+
+            for idx, ((f1, f2), detail) in enumerate(bouts):
+                rounds, weight_class = _parse_bout_detail(detail)
+                fights.append({
+                    'fighter1': f1, 'fighter2': f2, 'date': fight_date, 'time': fight_time or 'TBA',
+                    'time_estimated': time_estimated if fight_time else False,
+                    'venue': venue, 'location': venue, 'sport': 'Boxing',
+                    'weight_class': weight_class, 'rounds': rounds,
+                    'is_main_event': (idx == 0), 'streaming': streaming,
+                })
+        except Exception as e:
+            print(f"Error parsing rsd boxing card: {e}")
+            continue
+    return fights
+
+
 def scrape_boxing_events():
     """
     Scrape boxing schedule from BoxingSchedule.co.
@@ -373,13 +463,14 @@ def scrape_boxing_events():
             return []
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        fights = _parse_cards(soup)
-        layout = 'rs-card'
+        fights, layout = _parse_rsd(soup), 'rsd-event'
         if not fights:
-            fights = _parse_legacy(soup)
-            layout = 'legacy'
+            fights, layout = _parse_cards(soup), 'rs-card'
+        if not fights:
+            fights, layout = _parse_legacy(soup), 'legacy'
         if not fights:
             print(f"BoxingSchedule.co: 0 fights parsed — page is {len(response.content)} bytes, "
+                  f"{len(soup.select('article.rsd-event'))} rsd-event articles, "
                   f"{len(soup.select('article.rs-card'))} rs-card articles, "
                   f"{len(soup.find_all('p', attrs={'data-start': True}))} legacy date paragraphs")
         else:

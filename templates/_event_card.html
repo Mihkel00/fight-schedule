@@ -13,8 +13,8 @@
         </p>
         <div class="flex items-center gap-3">
             <div class="{{ 'w-12 h-12 sm:w-20 sm:h-20' if lg else 'w-12 h-12 sm:w-16 sm:h-16' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w1 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
-                <img src="{{ ev.fighter1_image or placeholder }}" alt="{{ ev.fighter1 }}" loading="lazy"
-                     class="w-full h-full object-cover {% if not ev.fighter1_image %}opacity-30{% endif %}">
+                <img src="{{ ev.fighter1_image or avatar(ev.fighter1) }}" alt="{{ ev.fighter1 }}" loading="lazy"
+                     class="w-full h-full object-cover">
             </div>
             <div class="flex-1 min-w-0 text-center">
                 <h3 class="fit-name font-staatliches uppercase leading-none whitespace-nowrap {{ 'text-xl sm:text-3xl' if lg else 'text-xl sm:text-2xl' }} {% if w1 %}text-accent-green{% elif decided %}text-text-tertiary{% endif %}">{{ ev.fighter1|surname }}</h3>
@@ -30,8 +30,8 @@
                 {% endif %}
             </div>
             <div class="{{ 'w-12 h-12 sm:w-20 sm:h-20' if lg else 'w-12 h-12 sm:w-16 sm:h-16' }} rounded-full bg-dark-elevated overflow-hidden flex-shrink-0 {% if w2 %}ring-2 ring-accent-green{% elif decided %}opacity-50{% endif %}">
-                <img src="{{ ev.fighter2_image or placeholder }}" alt="{{ ev.fighter2 }}" loading="lazy"
-                     class="w-full h-full object-cover {% if not ev.fighter2_image %}opacity-30{% endif %}">
+                <img src="{{ ev.fighter2_image or avatar(ev.fighter2) }}" alt="{{ ev.fighter2 }}" loading="lazy"
+                     class="w-full h-full object-cover">
             </div>
         </div>
     </div>
