@@ -6,6 +6,22 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-29 — Recommended and built image sources without checking the rights to use them
+
+**What happened:** I proposed and built UFC.com and ESPN headshots as image
+sources, and pulled Wikimedia photos, without saying that UFC.com/ESPN photos
+are copyrighted with no licence for re-use, or that Wikimedia photos require
+author/licence attribution (and share-alike for our crops). The site shows none.
+
+**Root cause:** I judged sources only on technical merit (accuracy, stability,
+"publicly reachable") and treated reachable as usable. The owner had already
+said the goal is to earn from the site, which makes rights matter more, and I
+still never asked the question.
+
+**Rule:** Every proposal for a new external source (data, images, text) states
+its licence / terms-of-use status and what compliance requires, before it is
+built. "Public" is not a licence.
+
 ## 2026-09-29 — Built a visual change (initials avatars) the owner did not ask for
 
 **What happened:** Replaced the placeholder silhouette on every card and event
