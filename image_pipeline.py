@@ -101,11 +101,47 @@ def _write_meta(data):
     os.replace(tmp, META_FILE)
 
 
+class _file_lock:
+    """Cross-process lock: the bulk job runs in one gunicorn worker while admin
+    actions land on another, and both read-modify-write the same file."""
+
+    def __init__(self, path):
+        self.path = path
+        self.fh = None
+
+    def __enter__(self):
+        try:
+            import fcntl
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            self.fh = open(self.path, 'a+')
+            fcntl.flock(self.fh, fcntl.LOCK_EX)
+        except Exception:
+            self.fh = None
+        return self
+
+    def __exit__(self, *exc):
+        if self.fh:
+            try:
+                import fcntl
+                fcntl.flock(self.fh, fcntl.LOCK_UN)
+            finally:
+                self.fh.close()
+
+
+def _fresh_meta():
+    """Read the file directly (bypassing the mtime cache) inside a lock."""
+    try:
+        with open(META_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def update_entry(name, **fields):
-    """Merge fields into one fighter's entry (re-reading the file under a lock,
-    so a long-running job never clobbers a review action made meanwhile)."""
-    with _meta_lock:
-        data = dict(load_meta())
+    """Merge fields into one fighter's entry under an in-process and a
+    cross-process lock, so a long-running job never clobbers a review action."""
+    with _meta_lock, _file_lock(META_FILE + '.lock'):
+        data = _fresh_meta()
         k = key(name)
         entry = dict(data.get(k) or {'name': name, 'rejected_urls': []})
         entry.update(fields)
@@ -116,8 +152,8 @@ def update_entry(name, **fields):
 
 
 def delete_entry(name):
-    with _meta_lock:
-        data = dict(load_meta())
+    with _meta_lock, _file_lock(META_FILE + '.lock'):
+        data = _fresh_meta()
         data.pop(key(name), None)
         _write_meta(data)
 
@@ -164,6 +200,11 @@ def image_for(name):
         if e.get('status') == 'rejected':
             return None
     return legacy_image(name)
+
+
+def is_retrying(name):
+    e = load_meta().get(key(name))
+    return bool(e and e.get('retrying'))
 
 
 # ── candidate sources ────────────────────────────────────────────────────────
@@ -360,26 +401,52 @@ def approve(name, sport):
     return update_entry(name, sport=sport, status='approved', source='legacy', source_url=current, path=current)
 
 
+_retry_queue = []
+_retry_lock = threading.Lock()
+_retry_worker = {'thread': None}
+
+
+def _retry_one(name, sport, bad):
+    cand, reasons = find_best(name, sport, rejected_urls=bad, title=_profile_titles().get(key(name)))
+    if cand:
+        data, ext = process(cand['image'])
+        update_entry(name, status='auto', source=cand['source'], source_url=cand['url'], ref=cand.get('ref'),
+                     path=store(name, data, ext), fetched_at=datetime.utcnow().isoformat() + 'Z',
+                     note='replacement found after the previous image was marked wrong', retrying=False)
+    else:
+        update_entry(name, note='marked wrong; no other image found (' + '; '.join(reasons)[:160] + ')',
+                     retrying=False)
+
+
+def _retry_worker_loop():
+    while True:
+        with _retry_lock:
+            if not _retry_queue:
+                _retry_worker['thread'] = None
+                return
+            name, sport, bad = _retry_queue.pop(0)
+        try:
+            _retry_one(name, sport, bad)
+        except Exception as ex:
+            update_entry(name, note=f'marked wrong; retry failed ({str(ex)[:120]})', retrying=False)
+        time.sleep(0.3)
+
+
 def reject_and_retry(name, sport):
-    """Mark the current image wrong, then look for a different one in the background."""
+    """Mark the current image wrong (placeholder shows immediately), then look
+    for a different one via the single background retry worker."""
     e = load_meta().get(key(name)) or {}
     bad = set(e.get('rejected_urls') or [])
     for u in (e.get('source_url'), e.get('path'), legacy_image(name)):
         if u:
-            bad.add(u)
+            bad.add(u.split('?')[0] if u.startswith('/persisted-fighters/') else u)
     update_entry(name, sport=sport, status='rejected', path=None, rejected_urls=sorted(bad),
-                 note='marked wrong; looking for another image')
-
-    def _retry():
-        cand, reasons = find_best(name, sport, rejected_urls=bad, title=_profile_titles().get(key(name)))
-        if cand:
-            data, ext = process(cand['image'])
-            update_entry(name, status='auto', source=cand['source'], source_url=cand['url'], ref=cand.get('ref'),
-                         path=store(name, data, ext), fetched_at=datetime.utcnow().isoformat() + 'Z', note=None)
-        else:
-            update_entry(name, note='marked wrong; no other image found (' + '; '.join(reasons)[:200] + ')')
-
-    threading.Thread(target=_retry, daemon=True).start()
+                 note='marked wrong; looking for another image', retrying=True)
+    with _retry_lock:
+        _retry_queue.append((name, sport, bad))
+        if _retry_worker['thread'] is None or not _retry_worker['thread'].is_alive():
+            _retry_worker['thread'] = threading.Thread(target=_retry_worker_loop, daemon=True)
+            _retry_worker['thread'].start()
 
 
 def reset(name):
@@ -400,12 +467,32 @@ def read_job():
         return None
 
 
+JOB_STALE_SECONDS = 3 * 60
+
+
 def _write_job(state):
     os.makedirs(DATA_DIR, exist_ok=True)
+    state['updated_at'] = datetime.utcnow().isoformat() + 'Z'
     tmp = JOB_FILE + '.tmp'
     with open(tmp, 'w') as f:
         json.dump(state, f, ensure_ascii=False)
     os.replace(tmp, JOB_FILE)
+
+
+def job_view():
+    """Job status for display: a 'running' job with no heartbeat for a few
+    minutes (worker restarted, deploy mid-run) is reported as 'interrupted'."""
+    job = read_job()
+    if not job:
+        return None
+    if job.get('state') == 'running':
+        try:
+            beat = datetime.fromisoformat((job.get('updated_at') or job.get('started_at')).rstrip('Z'))
+            if (datetime.utcnow() - beat).total_seconds() > JOB_STALE_SECONDS:
+                job = {**job, 'state': 'interrupted'}
+        except Exception:
+            job = {**job, 'state': 'interrupted'}
+    return job
 
 
 def schedule_fighters():
@@ -433,6 +520,13 @@ def plan_for(name, sport):
         return 'skip:reviewed'
     if e.get('status') == 'auto' and e.get('source') != 'legacy' and e.get('path'):
         return 'skip:already-verified'
+    if e.get('status') == 'none':
+        try:
+            checked = datetime.fromisoformat((e.get('checked_at') or '').rstrip('Z'))
+            if (datetime.utcnow() - checked).days < 7:
+                return 'skip:none-recent'
+        except Exception:
+            pass
     current = legacy_image(name) if not e else e.get('path')
     if current and current.startswith('/static/'):
         # Git-tracked images (UFC.com headshots, early hand-picked uploads) are trusted
@@ -453,13 +547,16 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
         fighters = fighters if fighters is not None else schedule_fighters()
         titles = _profile_titles()
         todo = [(n, s) for n, s in fighters if plan_for(n, s) == 'check']
+        if only_missing:
+            # fill gaps only: never touch a fighter who already has an image or was marked wrong
+            todo = [(n, s) for n, s in todo if not image_for(n) and (load_meta().get(key(n)) or {}).get('status') != 'rejected']
         if limit:
             todo = todo[:limit]
         report = {'would_replace': [], 'would_add': [], 'unverified': [], 'none_found': [], 'errors': []}
         state = {'state': 'running', 'mode': 'apply' if apply else 'dry-run', 'started_at': datetime.utcnow().isoformat() + 'Z',
                  'total': len(todo), 'done': 0, 'current': '', 'report': report,
                  'skipped': {r: sum(1 for n, s in fighters if plan_for(n, s) == f'skip:{r}')
-                             for r in ('reviewed', 'already-verified', 'trusted-static')}}
+                             for r in ('reviewed', 'already-verified', 'trusted-static', 'none-recent')}}
         _write_job(state)
         for i, (name, sport) in enumerate(todo):
             state.update(done=i, current=name)
@@ -467,8 +564,6 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
                 _write_job(state)
             e = load_meta().get(key(name)) or {}
             current = e.get('path') or (None if e.get('status') == 'rejected' else legacy_image(name))
-            if only_missing and (current or e.get('status') == 'rejected'):
-                continue
             try:
                 cand, reasons = find_best(name, sport, rejected_urls=e.get('rejected_urls') or (), title=titles.get(key(name)))
             except Exception as ex:
@@ -493,6 +588,9 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
                                  note='no verifiable source found; please review')
             else:
                 report['none_found'].append({'name': name, 'sport': sport, 'why': reasons[:3]})
+                if apply and e.get('status') != 'rejected':
+                    update_entry(name, sport=sport, status='none', checked_at=datetime.utcnow().isoformat() + 'Z',
+                                 note='; '.join(reasons)[:160])
             time.sleep(0.2)
         state.update(state='done', done=len(todo), current='', finished_at=datetime.utcnow().isoformat() + 'Z')
         _write_job(state)
@@ -511,15 +609,9 @@ def start_job(apply=False, limit=None, only_missing=False):
     if _job_lock.locked():
         return False
     # The in-process lock can't see other gunicorn workers; the shared status
-    # file can. A "running" job younger than 30 minutes blocks a new one.
-    job = read_job() or {}
-    if job.get('state') == 'running':
-        try:
-            started = datetime.fromisoformat(job['started_at'].rstrip('Z'))
-            if (datetime.utcnow() - started).total_seconds() < 30 * 60:
-                return False
-        except Exception:
-            pass
+    # file can. A job that is still heartbeating blocks a new one.
+    if (job_view() or {}).get('state') == 'running':
+        return False
     threading.Thread(target=run_job, kwargs={'apply': apply, 'limit': limit, 'only_missing': only_missing},
                      daemon=True).start()
     return True

@@ -1,0 +1,47 @@
+{# One fighter tile. Imported as a macro by review_images.html, and rendered
+   directly (with `r` in context) by the action/status endpoints so the page can
+   swap a tile in place without reloading. #}
+{% macro tile(r) -%}
+<div class="tile{% if r.retrying %} retrying{% endif %}" id="{{ r.id }}" data-name="{{ r.name }}" data-sport="{{ r.sport }}" data-lname="{{ r.name | lower }}" data-status="{{ r.status }}"{% if r.retrying %} data-retrying="1"{% endif %}>
+    <label class="pick"><input type="checkbox" class="sel" aria-label="Select {{ r.name }}"></label>
+    <div class="tile-top">
+        {% if r.path %}<img src="{{ r.path }}" alt="{{ r.name }}" loading="lazy">{% else %}<div class="ph">{{ 'looking…' if r.retrying else 'no image' }}</div>{% endif %}
+        <div class="meta">
+            <div class="name">{{ r.name }}</div>
+            <div class="muted">{{ r.sport }}</div>
+            <span class="badge b-{{ r.status }}">{{ r.label }}</span>
+            <div class="src muted">
+                {% if r.source %}{% if r.source_url and r.source_url.startswith('http') %}<a href="{{ r.source_url }}" target="_blank" rel="noopener">{{ r.source }}</a>{% else %}{{ r.source }}{% endif %}{% endif %}
+                {% if r.fetched_at %} · {{ r.fetched_at }}{% endif %}
+            </div>
+        </div>
+    </div>
+    {% if r.retrying %}<div class="note">Looking for another image…</div>{% elif r.note %}<div class="note">{{ r.note }}</div>{% endif %}
+
+    <form method="POST" action="/admin/review_images/action" class="row act">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="name" value="{{ r.name }}"><input type="hidden" name="sport" value="{{ r.sport }}">
+        {% if r.path %}
+        <button class="btn-ri btn-good" name="action" value="keep"{% if r.status == 'approved' %} disabled title="Already kept"{% endif %}>✓ Keep</button>
+        <button class="btn-ri btn-bad" name="action" value="wrong">✗ Wrong</button>
+        {% endif %}
+        {% if r.status not in ('legacy', 'missing') %}<button class="btn-ri" name="action" value="reset" title="Forget review state and go back to automatic">Reset</button>{% endif %}
+        <button type="button" class="btn-ri btn-more" title="Paste a URL or upload a file">…</button>
+    </form>
+    <div class="more" hidden>
+        <form method="POST" action="/admin/review_images/action" class="row act">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="name" value="{{ r.name }}"><input type="hidden" name="sport" value="{{ r.sport }}">
+            <input type="url" name="url" placeholder="Paste image URL" required>
+            <button class="btn-ri" name="action" value="replace_url">Use URL</button>
+        </form>
+        <form method="POST" action="/admin/review_images/action" enctype="multipart/form-data" class="row act">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="name" value="{{ r.name }}"><input type="hidden" name="sport" value="{{ r.sport }}">
+            <input type="file" name="file" accept="image/*" required>
+            <button class="btn-ri" name="action" value="upload">Upload</button>
+        </form>
+    </div>
+</div>
+{%- endmacro %}
+{% if r is defined %}{{ tile(r) }}{% endif %}

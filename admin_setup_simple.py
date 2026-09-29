@@ -263,86 +263,154 @@ _FILTERS = ('review', 'missing', 'rejected', 'legacy', 'approved', 'all')
 
 
 class ReviewImagesView(ProtectedBaseView):
+    """Audit, fix and bulk-refresh fighter images. Actions are JSON (in-place
+    tile updates, no page reload) with a plain form fallback that returns to
+    the fighter's anchor."""
+
+    _STATUS_LABEL = {'auto': 'needs review', 'approved': 'approved', 'manual': 'manual',
+                     'rejected': 'marked wrong', 'missing': 'no image', 'legacy': 'older, unreviewed'}
+
+    def _sports(self):
+        return {images.key(n): s for n, s in images.schedule_fighters()}
+
+    def _row(self, name, sport, meta=None):
+        meta = meta if meta is not None else images.load_meta()
+        e = meta.get(images.key(name)) or {}
+        path = images.image_for(name)
+        status = e.get('status')
+        if not status or status == 'none':
+            status = 'legacy' if path else 'missing'
+        elif status == 'rejected' and path:
+            status = 'auto'      # the retry after "Wrong" found a replacement
+        return {'name': name, 'sport': sport, 'path': path, 'status': status,
+                'label': self._STATUS_LABEL.get(status, status),
+                'id': 'f-' + images._slug(name),
+                'source': e.get('source') or ('legacy' if path else ''),
+                'source_url': e.get('ref') or e.get('source_url'), 'note': e.get('note'),
+                'fetched_at': (e.get('fetched_at') or '')[:10],
+                'retrying': bool(e.get('retrying')),
+                'unverified': e.get('source') == 'legacy' and status == 'auto'}
 
     def _rows(self):
         meta = images.load_meta()
-        rows = []
-        for name, sport in images.schedule_fighters():
-            e = meta.get(images.key(name)) or {}
-            path = images.image_for(name)
-            status = e.get('status')
-            if not status:
-                status = 'legacy' if path else 'missing'
-            elif status == 'rejected' and not path:
-                status = 'rejected'
-            rows.append({'name': name, 'sport': sport, 'path': path, 'status': status,
-                         'source': e.get('source') or ('legacy' if path else ''),
-                         'source_url': e.get('ref') or e.get('source_url'), 'note': e.get('note'),
-                         'fetched_at': (e.get('fetched_at') or '')[:10],
-                         'unverified': e.get('source') == 'legacy' and status == 'auto'})
+        rows = [self._row(n, s, meta) for n, s in images.schedule_fighters()]
         order = {'auto': 0, 'rejected': 1, 'missing': 2, 'legacy': 3, 'manual': 4, 'approved': 5}
         # within Needs review, old images that could not be verified (the likely-wrong ones) come first
         rows.sort(key=lambda r: (order.get(r['status'], 9), 0 if r['unverified'] else 1, r['sport'], r['name']))
         return rows
 
-    @expose('/', methods=['GET', 'POST'])
-    def index(self):
-        from flask import flash
-        show = request.args.get('show', 'review')
-        if request.method == 'POST':
-            action = request.form.get('action', '')
-            name = request.form.get('name', '').strip()[:200]
-            sport = request.form.get('sport', 'Boxing')[:10]
-            try:
-                if action == 'keep' and name:
-                    images.approve(name, sport)
-                    flash(f'Kept image for {name}', 'success')
-                elif action == 'wrong' and name:
-                    images.reject_and_retry(name, sport)
-                    flash(f'Marked wrong: {name}. Looking for another image in the background — refresh in a few seconds.', 'success')
-                elif action == 'replace_url' and name:
-                    url = request.form.get('url', '').strip()[:2000]
-                    if not url.startswith(('http://', 'https://')):
-                        raise ValueError('Paste a full http(s) image URL')
-                    images.set_manual_from_url(name, sport, url)
-                    flash(f'Replaced image for {name}', 'success')
-                elif action == 'upload' and name:
-                    f = request.files.get('file')
-                    if not f or not f.filename:
-                        raise ValueError('Choose an image file')
-                    data = f.read(8 * 1024 * 1024 + 1)
-                    if len(data) > 8 * 1024 * 1024:
-                        raise ValueError('Image larger than 8 MB')
-                    images.set_manual_from_bytes(name, sport, data, 'upload', f.filename[:200])
-                    flash(f'Uploaded image for {name}', 'success')
-                elif action == 'reset' and name:
-                    images.reset(name)
-                    flash(f'Reset {name} to automatic', 'success')
-                elif action in ('dry_run', 'apply'):
-                    if images.start_job(apply=(action == 'apply')):
-                        flash('Dry run started — nothing will change.' if action == 'dry_run'
-                              else 'Applying new rules — verified images will appear under Needs review.', 'success')
-                    else:
-                        flash('A job is already running.', 'error')
-            except Exception as e:
-                logger.warning(f"review images action {action} failed for {name}: {e}")
-                flash(f'Could not {action.replace("_", " ")} for {name}: {e}', 'error')
-            return redirect(url_for('.index', show=show))
-
-        rows = self._rows()
+    def _counts(self, rows):
         counts = {f: 0 for f in _FILTERS}
         for r in rows:
             counts['all'] += 1
             bucket = {'auto': 'review', 'manual': 'approved'}.get(r['status'], r['status'])
             if bucket in counts:
                 counts[bucket] += 1
+        return counts
+
+    def _apply(self, action, name, sport, form=None, files=None):
+        """Run one action; returns a message. Raises ValueError on bad input."""
+        form, files = form or {}, files or {}
+        if action == 'keep':
+            if not images.approve(name, sport):
+                raise ValueError('no image to keep')
+            return f'Kept image for {name}'
+        if action == 'wrong':
+            images.reject_and_retry(name, sport)
+            return f'Marked wrong: {name}; looking for another image'
+        if action == 'reset':
+            images.reset(name)
+            return f'Reset {name} to automatic'
+        if action == 'replace_url':
+            url = (form.get('url') or '').strip()[:2000]
+            if not url.startswith(('http://', 'https://')):
+                raise ValueError('paste a full http(s) image URL')
+            images.set_manual_from_url(name, sport, url)
+            return f'Replaced image for {name}'
+        if action == 'upload':
+            f = files.get('file')
+            if not f or not f.filename:
+                raise ValueError('choose an image file')
+            data = f.read(8 * 1024 * 1024 + 1)
+            if len(data) > 8 * 1024 * 1024:
+                raise ValueError('image larger than 8 MB')
+            images.set_manual_from_bytes(name, sport, data, 'upload', f.filename[:200])
+            return f'Uploaded image for {name}'
+        raise ValueError('unknown action')
+
+    @expose('/')
+    def index(self):
+        show = request.args.get('show', 'review')
         if show not in _FILTERS:
             show = 'review'
+        rows = self._rows()
+        counts = self._counts(rows)
         if show != 'all':
             want = {'review': ('auto',), 'approved': ('approved', 'manual')}.get(show, (show,))
             rows = [r for r in rows if r['status'] in want]
         return self.render('admin/review_images.html', rows=rows, counts=counts, show=show,
-                           job=images.read_job(), settings=images.read_settings())
+                           job=images.job_view(), settings=images.read_settings())
+
+    @expose('/action', methods=['POST'])
+    def action(self):
+        """Single or bulk action. JSON when called with X-Requested-With: fetch;
+        otherwise a normal form post that returns to the fighter's anchor."""
+        from flask import flash, jsonify
+        wants_json = request.headers.get('X-Requested-With') == 'fetch'
+        action = request.form.get('action', '')
+        sports = self._sports()
+        names = [n.strip()[:200] for n in request.form.getlist('name') if n.strip()][:500]
+        show = request.form.get('show', 'review')
+
+        if action in ('dry_run', 'apply'):
+            started = images.start_job(apply=(action == 'apply'))
+            msg = ('Dry run started — nothing will change.' if action == 'dry_run'
+                   else 'Applying new rules — verified images will appear under Needs review.') if started \
+                else 'A job is already running.'
+            if wants_json:
+                return jsonify({'ok': started, 'message': msg, 'job': images.job_view()})
+            flash(msg, 'success' if started else 'error')
+            return redirect(url_for('.index', show=show))
+
+        results, tiles, errors = [], {}, []
+        for name in names:
+            sport = request.form.get('sport') or sports.get(images.key(name), 'Boxing')
+            try:
+                results.append(self._apply(action, name, sport, request.form, request.files))
+            except Exception as e:
+                logger.warning(f"review images {action} failed for {name}: {e}")
+                errors.append(f'{name}: {e}')
+            tiles[images._slug(name)] = self.render('admin/_review_tile.html', r=self._row(name, sport))
+
+        if wants_json:
+            counts = self._counts(self._rows())
+            msg = results[0] if len(results) == 1 else f'{len(results)} updated'
+            if errors:
+                msg += ' · ' + '; '.join(errors)[:300]
+            return jsonify({'ok': not errors, 'message': msg, 'tiles': tiles, 'counts': counts})
+
+        flash('; '.join(results + errors)[:400], 'error' if errors else 'success')
+        anchor = ('#f-' + images._slug(names[0])) if len(names) == 1 else ''
+        return redirect(url_for('.index', show=show) + anchor)
+
+    @expose('/status')
+    def status(self):
+        """Polled by the page: job progress, plus fresh tiles for fighters the
+        page is waiting on (background retries after "Wrong")."""
+        from flask import jsonify
+        names = [n for n in request.args.get('names', '').split(',') if n][:200]
+        sports = self._sports()
+        tiles = {}
+        for name in names:
+            row = self._row(name, sports.get(images.key(name), 'Boxing'))
+            if not row['retrying']:
+                tiles[images._slug(name)] = self.render('admin/_review_tile.html', r=row)
+        return jsonify({'job': images.job_view(), 'settings': images.read_settings(), 'tiles': tiles})
+
+    @expose('/report')
+    def report(self):
+        """Rendered job panel (fetched once a job finishes, instead of reloading the page)."""
+        return self.render('admin/_review_report.html', job=images.job_view(), settings=images.read_settings())
 
 
 # ============================================================================

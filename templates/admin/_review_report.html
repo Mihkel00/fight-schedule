@@ -1,0 +1,39 @@
+{# Job panel: start buttons, live progress (filled in by the page's poll), and
+   the last report. Rendered inside review_images.html and re-fetched from
+   /admin/review_images/report when a job finishes. #}
+{% if job and job.state == 'running' %}
+    <p class="muted" id="job-line">{{ 'Dry run' if job.mode == 'dry-run' else 'Applying' }} — <span id="job-done">{{ job.done }}</span> / <span id="job-total">{{ job.total }}</span> <span id="job-current">{% if job.current %}· {{ job.current }}{% endif %}</span></p>
+    <div class="progress"><div id="job-bar" style="width: {{ ((job.done / job.total * 100) | int) if job.total else 0 }}%"></div></div>
+    <p class="muted">Runs in the background — you can keep reviewing; this panel updates by itself.</p>
+{% else %}
+    <form method="POST" action="/admin/review_images/action" class="row" id="job-form" style="margin-bottom:10px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn-ri" name="action" value="dry_run">Dry run (changes nothing)</button>
+        <button class="btn-ri btn-primary-ri" name="action" value="apply"
+                data-confirm="Apply the new rules? Verified images replace old auto-found ones; old images with no verifiable source are flagged for review, not deleted.">Apply new rules</button>
+    </form>
+    <p class="muted">Automatic images for newly added fighters: <strong>{{ 'on' if settings.autofill else 'off' }}</strong>{% if not settings.autofill %} — turns on after the first applied run{% endif %}.</p>
+{% endif %}
+
+{% if job and job.state == 'interrupted' %}
+    <p class="note">The last {{ job.mode }} was interrupted (probably a deploy or restart) at {{ (job.updated_at or '')[:16] | replace('T', ' ') }} UTC after {{ job.done }} / {{ job.total }} fighters. Start it again when convenient — already-verified fighters are skipped, so it resumes where it left off.</p>
+{% elif job and job.state == 'done' %}
+    {% set r = job.report %}
+    <p style="margin-top:10px"><strong>Last {{ job.mode }}</strong> <span class="muted">({{ (job.finished_at or '')[:16] | replace('T', ' ') }} UTC · {{ job.total }} checked · skipped {% for k, v in job.skipped.items() %}{{ v }} {{ k | replace('-', ' ') }}{% if not loop.last %}, {% endif %}{% endfor %})</span></p>
+    <details {% if r.would_replace %}open{% endif %}><summary>{{ 'Would replace' if job.mode == 'dry-run' else 'Replaced' }}: {{ r.would_replace | length }}</summary>
+        {% for x in r.would_replace %}<div class="cmp"><img src="{{ x.current }}" alt="" loading="lazy"> → <img src="{{ x.url }}" alt="" loading="lazy"> <span>{{ x.name }} <span class="muted">· {{ x.source }} {{ x.size[0] }}×{{ x.size[1] }}</span></span></div>{% endfor %}
+    </details>
+    <details><summary>{{ 'Would add' if job.mode == 'dry-run' else 'Added' }}: {{ r.would_add | length }}</summary>
+        {% for x in r.would_add %}<div class="cmp"><img src="{{ x.url }}" alt="" loading="lazy"> <span>{{ x.name }} <span class="muted">· {{ x.source }} {{ x.size[0] }}×{{ x.size[1] }}</span></span></div>{% endfor %}
+    </details>
+    <details><summary>Current image can't be verified ({{ 'flagged for review on apply' if job.mode == 'dry-run' else 'flagged for review' }}): {{ r.unverified | length }}</summary>
+        {% for x in r.unverified %}<div class="cmp"><img src="{{ x.current }}" alt="" loading="lazy"> <span>{{ x.name }} <span class="muted">· {{ x.why | join('; ') }}</span></span></div>{% endfor %}
+    </details>
+    <details><summary>No image found: {{ r.none_found | length }}</summary>
+        {% for x in r.none_found %}<div class="cmp"><span>{{ x.name }} <span class="muted">· {{ x.why | join('; ') }}</span></span></div>{% endfor %}
+    </details>
+    {% if r.errors %}<details><summary>Errors: {{ r.errors | length }}</summary>{% for x in r.errors %}<div class="cmp"><span>{{ x.name }} <span class="muted">· {{ x.error }}</span></span></div>{% endfor %}</details>{% endif %}
+    {% if job.mode == 'apply' %}<p class="muted" style="margin-top:8px"><a href="?show=review">Reload the Needs review list</a> to see the new images.</p>{% endif %}
+{% elif job and job.state == 'error' %}
+    <p class="note">Last job failed: {{ job.error }}</p>
+{% endif %}
