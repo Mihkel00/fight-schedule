@@ -2666,6 +2666,15 @@ def debug_state():
         v = _load_versions()
         return jsonify({'tracked_urls': len(v), 'newest': sorted(v.items(), key=lambda kv: kv[1].get('lastmod', ''), reverse=True)[:15]})
 
+    if part == 'image_probe':
+        # What would each image source return for a fighter? Saves nothing.
+        name = (request.args.get('name') or '')[:120]
+        sport = 'UFC' if request.args.get('sport', '').lower() == 'ufc' else 'Boxing'
+        if not name:
+            return jsonify({'error': 'name required'}), 400
+        titles = _images._profile_titles()
+        return jsonify(_images.probe(name, sport, title=titles.get(_images.key(name))))
+
     if part == 'image_job':
         # Read the image job report; &start=dry launches a dry run (writes nothing).
         # Applying is admin-only (Review Images page).
