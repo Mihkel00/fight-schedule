@@ -24,6 +24,7 @@ from bs4 import BeautifulSoup
 from scrapers import scrape_ufc_events, scrape_boxing_events
 import image_pipeline as _images
 import locks as _locks
+import structured_data as _ld
 
 # ============================================================================
 # PERSISTENT DATA DIRECTORY
@@ -260,6 +261,7 @@ def surname(name):
 
 
 app.jinja_env.filters['surname'] = surname
+app.jinja_env.globals['ld'] = _ld
 
 
 

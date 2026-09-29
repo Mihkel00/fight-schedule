@@ -42,33 +42,7 @@
         ]
     }
     </script>
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "ItemList",
-        "name": "{{ page.title|e }}",
-        "itemListElement": [
-            {% for ev in all_events %}
-            {
-                "@type": "ListItem",
-                "position": {{ loop.index }},
-                "item": {
-                    "@type": "SportsEvent",
-                    "name": "{{ ev.title|e }}",
-                    "url": "{{ ev.url }}",
-                    {% if ev.time and ev.time != 'TBA' %}
-                    "startDate": "{{ ev.date }}T{{ ev.time }}:00Z",
-                    {% else %}
-                    "startDate": "{{ ev.date }}",
-                    {% endif %}
-                    "eventStatus": "https://schema.org/EventScheduled",
-                    "location": {"@type": "Place", "name": "{{ ev.venue|e }}", "address": "{{ ev.location|e }}"}
-                }
-            }{% if not loop.last %},{% endif %}
-            {% endfor %}
-        ]
-    }
-    </script>
+    <script type="application/ld+json">{{ ld.item_list(page.title, all_events|map(attribute='url')|list)|tojson }}</script>
 
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
