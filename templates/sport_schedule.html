@@ -93,6 +93,69 @@
                     elem.textContent = prefix + convertUTCToLocal(date, utcTime);
                 }
             });
+
+            // Group the cards under the visitor's own day and month. The server
+            // groups by UTC date (what crawlers see); a US Saturday-night card
+            // is a Sunday in UTC. Cards are moved, not re-rendered.
+            const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                            'August', 'September', 'October', 'November', 'December'];
+            function localDay(card) {
+                const t = card.querySelector('time.fight-time');
+                const date = t && t.getAttribute('data-date');
+                const time = t && t.getAttribute('data-utc-time');
+                if (!date) return null;
+                const m = /^(\d{1,2}):(\d{2})/.exec(time || '');
+                if (m) {
+                    const d = new Date(date + 'T' + m[1].padStart(2, '0') + ':' + m[2] + ':00Z');
+                    if (!isNaN(d.getTime())) return {y: d.getFullYear(), mo: d.getMonth(), da: d.getDate(), d: d};
+                }
+                const p = date.split('-').map(Number);          // no start time: keep the listed date
+                return {y: p[0], mo: p[1] - 1, da: p[2], d: new Date(p[0], p[1] - 1, p[2])};
+            }
+            function regroup(section, newestFirst) {
+                if (!section) return;
+                const cards = Array.from(section.querySelectorAll('a.card-hover'));
+                if (!cards.length) return;
+                const items = [];
+                for (let i = 0; i < cards.length; i++) {
+                    const day = localDay(cards[i]);
+                    if (!day) return;                            // unexpected markup: leave the server grouping
+                    items.push({card: cards[i], i: i, key: day.y * 10000 + (day.mo + 1) * 100 + day.da, day: day});
+                }
+                items.sort((a, b) => (newestFirst ? b.key - a.key : a.key - b.key) || a.i - b.i);
+                const blocks = [];
+                let monthDiv = null, grid = null, lastMonth = null, lastDay = null;
+                for (const it of items) {
+                    const monthKey = Math.floor(it.key / 100);
+                    if (monthKey !== lastMonth) {
+                        monthDiv = document.createElement('div');
+                        monthDiv.className = 'mb-14';
+                        const h = document.createElement('h2');
+                        h.className = 'font-staatliches text-4xl uppercase mb-6 text-text-primary';
+                        h.textContent = MONTHS[it.day.mo] + ' ' + it.day.y;
+                        monthDiv.appendChild(h);
+                        blocks.push(monthDiv);
+                        lastMonth = monthKey; lastDay = null;
+                    }
+                    if (it.key !== lastDay) {
+                        const label = document.createElement('p');
+                        label.className = 'font-work text-sm text-text-secondary mb-3' + (lastDay === null ? '' : ' mt-8');
+                        label.textContent = it.day.d.toLocaleDateString('en-US', {weekday: 'short'}) + ', ' +
+                            it.day.d.toLocaleDateString('en-US', {month: 'short'}) + ' ' + String(it.day.da).padStart(2, '0');
+                        grid = document.createElement('div');
+                        grid.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5';
+                        monthDiv.appendChild(label);
+                        monthDiv.appendChild(grid);
+                        lastDay = it.key;
+                    }
+                    grid.appendChild(it.card);
+                }
+                section.replaceChildren(...blocks);
+            }
+            try {
+                regroup(document.getElementById('tab-upcoming'), false);
+                regroup(document.getElementById('tab-results'), true);
+            } catch (e) { /* keep the server's grouping */ }
         });
     </script>
 </head>
