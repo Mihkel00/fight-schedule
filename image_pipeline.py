@@ -602,15 +602,17 @@ def schedule_fighters():
     return out
 
 
-def plan_for(name, sport):
+def plan_for(name, sport, skip_recent_none=False):
     """Decide what the job should do with one fighter (without network calls).
-    Returns 'skip:<why>' or 'check'."""
+    Returns 'skip:<why>' or 'check'. Manual runs re-check fighters with nothing
+    found so far (a new source or a new article may have appeared); only the
+    automatic fill honours the 7-day memory."""
     e = load_meta().get(key(name)) or {}
     if e.get('status') in REVIEWED:
         return 'skip:reviewed'
     if e.get('status') == 'auto' and e.get('source') != 'legacy' and e.get('path'):
         return 'skip:already-verified'
-    if e.get('status') == 'none':
+    if e.get('status') == 'none' and skip_recent_none:
         try:
             checked = datetime.fromisoformat((e.get('checked_at') or '').rstrip('Z'))
             if (datetime.utcnow() - checked).days < 7:
@@ -636,7 +638,7 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
     try:
         fighters = fighters if fighters is not None else schedule_fighters()
         titles = _profile_titles()
-        todo = [(n, s) for n, s in fighters if plan_for(n, s) == 'check']
+        todo = [(n, s) for n, s in fighters if plan_for(n, s, skip_recent_none=only_missing) == 'check']
         if only_missing:
             # fill gaps only: never touch a fighter who already has an image or was marked wrong
             todo = [(n, s) for n, s in todo if not image_for(n) and (load_meta().get(key(n)) or {}).get('status') != 'rejected']
@@ -645,7 +647,7 @@ def run_job(apply=False, fighters=None, limit=None, only_missing=False):
         report = {'would_replace': [], 'would_add': [], 'unverified': [], 'none_found': [], 'errors': []}
         state = {'state': 'running', 'mode': 'apply' if apply else 'dry-run', 'started_at': datetime.utcnow().isoformat() + 'Z',
                  'total': len(todo), 'done': 0, 'current': '', 'report': report,
-                 'skipped': {r: sum(1 for n, s in fighters if plan_for(n, s) == f'skip:{r}')
+                 'skipped': {r: sum(1 for n, s in fighters if plan_for(n, s, skip_recent_none=only_missing) == f'skip:{r}')
                              for r in ('reviewed', 'already-verified', 'trusted-static', 'none-recent')}}
         _write_job(state)
         for i, (name, sport) in enumerate(todo):
