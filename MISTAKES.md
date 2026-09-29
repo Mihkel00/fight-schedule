@@ -6,6 +6,25 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-29 — UFC section went empty: source failure + missing cache defeated both safety nets
+
+**What happened:** At 22:05 a scrape ran with no previous cache available and
+ESPN refusing our server. The per-sport fallback carried forward nothing, the
+new results archive seeded from nothing, and /ufc showed no fights at all.
+Past results were restored from a copy I had; upcoming UFC could not be.
+I had also told the owner the next scrape would be ~03:15 — it ran at 22:05.
+
+**Root cause:** Both safety nets drew their data from the cache file, which
+admin "Clear Cache" deletes and which a restart-time scrape overwrites. I
+tested "cache deleted" and "source failing" separately, never together, and
+the archive only protects *past* fights by design. The scrape-time estimate
+was a guess from a timestamp I had not verified.
+
+**Rule:** Test failure *combinations* (source down + state lost), not only
+single failures. Each source's last known-good data lives in its own file that
+no admin action deletes. Don't give the owner a time or number I haven't
+checked; say it's an estimate or check it first.
+
 ## 2026-09-29 — Results archive has a first-run gap that "Clear Cache" can fall into
 
 **What happened:** The new results archive is only created on the first
