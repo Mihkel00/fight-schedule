@@ -252,6 +252,41 @@ def wikipedia_candidate(name, sport, title=None):
     return None
 
 
+def ufc_candidate(name, sport):
+    """Official UFC.com athlete headshot. The athlete URL *is* the name
+    (ufc.com/athlete/first-last), and the page title is checked against the
+    fighter's name, so there is no search step to pick the wrong person."""
+    if sport != 'UFC':
+        return None
+    slug = _slug(name)
+    url = f'https://www.ufc.com/athlete/{slug}'
+    try:
+        r = requests.get(url, headers={'User-Agent': _UA_BROWSER}, timeout=12)
+    except Exception:
+        return None
+    if r.status_code != 200:
+        return None
+    html = r.text
+    m = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)', html) \
+        or re.search(r'<title>([^<]+)</title>', html)
+    title = m.group(1) if m else ''
+    if key(name) not in key(title):
+        return None          # redirected to a different athlete or a search page
+    m = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)', html) \
+        or re.search(r'class=["\'][^"\']*hero-profile__image[^"\']*["\'][^>]+src=["\']([^"\']+)', html)
+    if not m:
+        return None
+    img = m.group(1).replace('&amp;', '&')
+    if img.startswith('/'):
+        img = 'https://www.ufc.com' + img
+    if 'ufc' not in img.lower() and 'dmxg' not in img.lower():
+        return None          # og:image is the site logo / a share card, not the athlete
+    fname = img.split('?')[0].rsplit('/', 1)[-1]
+    if 'logo' in fname.lower() or 'default' in fname.lower() or 'silhouette' in fname.lower():
+        return None
+    return {'url': img, 'source': 'ufc', 'file': fname, 'ref': url}
+
+
 _WD_API = 'https://www.wikidata.org/w/api.php'
 # occupation / sport items that identify a fighter on Wikidata
 _WD_FIGHTER_QIDS = {'Q11338576',   # boxer
@@ -408,7 +443,8 @@ def find_best(name, sport, rejected_urls=(), title=None):
     """First candidate that is not rejected and passes the gate.
     Returns (candidate_with_processed_image | None, [reasons for rejections])."""
     reasons = []
-    for finder in (lambda: espn_candidate(name, sport),
+    for finder in (lambda: ufc_candidate(name, sport),
+                   lambda: espn_candidate(name, sport),
                    lambda: wikipedia_candidate(name, sport, title),
                    lambda: wikidata_candidate(name, sport)):
         try:
@@ -435,7 +471,7 @@ def find_best(name, sport, rejected_urls=(), title=None):
         cand['size'] = img.size
         return cand, reasons
     if not reasons:
-        reasons.append('no ESPN athlete, Wikipedia article or Wikidata item with this exact name')
+        reasons.append('no UFC.com page, ESPN athlete, Wikipedia article or Wikidata item with this exact name')
     return None, reasons
 
 
@@ -443,7 +479,8 @@ def probe(name, sport, title=None):
     """Diagnostics: what each source offers for a fighter and what the gate says.
     Downloads candidates but saves nothing."""
     out = {'name': name, 'sport': sport, 'sources': {}}
-    for label, finder in (('espn', lambda: espn_candidate(name, sport)),
+    for label, finder in (('ufc', lambda: ufc_candidate(name, sport)),
+                          ('espn', lambda: espn_candidate(name, sport)),
                           ('wikipedia', lambda: wikipedia_candidate(name, sport, title)),
                           ('wikidata', lambda: wikidata_candidate(name, sport))):
         try:
