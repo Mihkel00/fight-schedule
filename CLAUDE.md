@@ -35,3 +35,19 @@ When the owner points out a mistake, or one is discovered, add an entry to
   scratch `DATA_DIR`; never commit files under `data/`.
 - Commits: gate commit/push on tests passing; never chain them past a test
   without `&&`.
+
+## Parked (agreed to revisit — do not build without the owner's go-ahead)
+
+- **Image rights** (from the 2026-09-29 review): UFC.com/ESPN headshots are
+  copyrighted; Wikimedia photos need author/licence credit and share-alike for
+  crops. Do not press "Apply new rules" on the image dry run (13 of 18 new
+  images are UFC.com) until this is decided.
+- **Rotate `DEBUG_API_TOKEN`**: it has appeared in chat and in URLs, and the
+  debug API can now write (backfill).
+- **Second boxing schedule source**: boxing-schedule.com probed as parseable
+  (`events__single` grid); ESPN (bot challenge) and Sky (404) are not usable.
+- **Outage alerts** are built but off until `RESEND_API_KEY` and
+  `ALERT_EMAIL` are set on Railway.
+- **Boxing URLs keep quote characters from nicknames** (e.g.
+  `/boxing-event/isaac-“pitbull”-cruz-…`). Fixing `_to_slug` changes URLs, so
+  it needs 301 redirects from the old ones.
