@@ -6,6 +6,23 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-29 — Event pages and landing day headings show the UTC date next to a local time
+
+**What happened:** A New York visitor sees "Sun, Oct 04 • 8:00 PM" for UFC 332:
+the time is converted to local, the date is not, so the day is wrong. The
+/ufc and /boxing day headings (my Ring-style redesign) group cards by UTC date
+too. The homepage converts both correctly.
+
+**Root cause:** I verified time conversion by checking the time text only, and
+never loaded a page in a non-UTC timezone until today. The date sits in a
+separate element that the event-page script never touches, and I copied UTC
+day-grouping into the landing pages without asking which day a US visitor
+would expect.
+
+**Rule:** Anything shown with a time is checked in a real browser in at least
+two non-UTC timezones (US and Europe), reading the full visible date + time,
+not just the element I changed.
+
 ## 2026-09-29 — Read "geo" as geographic when the owner meant GEO (LLM findability)
 
 **What happened:** Asked "What about geo", I wrote a full answer about

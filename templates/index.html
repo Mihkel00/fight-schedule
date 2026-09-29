@@ -582,7 +582,7 @@
                     </div>
                     <div class="border-t border-dark-border pt-5">
                         <p class="text-accent-red font-work font-semibold mb-3 text-sm">
-                            <span class="fight-date">{{ fight.date|format_date }}</span>{% if fight.card_type %} • {{ fight.card_type }}: <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time or 'TBA' }}</span>{% else %} • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time or 'TBA' }}</span>{% endif %}
+                            <span class="fight-date">{{ fight.date|format_date }}</span>{% if fight.card_type %} • {{ fight.card_type }}: <time class="fight-time" datetime="{{ fight.date|iso_utc(fight.time) }}" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time|utc_time }}</time>{% else %} • <time class="fight-time" datetime="{{ fight.date|iso_utc(fight.time) }}" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time|utc_time }}</time>{% endif %}
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
@@ -639,7 +639,7 @@
                     </div>
                     <div class="border-t border-dark-border pt-5">
                         <p class="text-accent-orange font-work font-semibold mb-3 text-sm">
-                            <span class="fight-date">{{ fight.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time or 'TBA' }}</span>
+                            <span class="fight-date">{{ fight.date|format_date }}</span> • <time class="fight-time" datetime="{{ fight.date|iso_utc(fight.time) }}" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time|utc_time }}</time>
                         </p>
                         <div class="flex items-center justify-between">
                             <span class="font-work text-xs text-text-tertiary truncate">{{ fight.venue }}</span>
@@ -676,7 +676,7 @@
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
                             <span class="font-work text-{% if fight.sport == 'UFC' %}accent-red{% else %}accent-orange{% endif %} font-semibold flex-shrink-0 order-1">
-                                <span class="fight-date">{{ fight.date|format_date }}</span> • <span class="fight-time" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time or 'TBA' }}</span>
+                                <span class="fight-date">{{ fight.date|format_date }}</span> • <time class="fight-time" datetime="{{ fight.date|iso_utc(fight.time) }}" data-utc-time="{{ fight.time }}" data-date="{{ fight.date }}" data-estimated="{{ fight.time_estimated|default(false)|lower }}">{{ '~' if fight.time_estimated else '' }}{{ fight.time|utc_time }}</time>
                             </span>
                             <span class="font-work text-text-tertiary truncate order-2">
                                 {{ fight.venue }}
