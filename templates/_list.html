@@ -38,7 +38,7 @@
     <a href="{{ e.path }}" class="ev-main">
         <span class="top"><span class="tag"><i class="dot"></i>{% if e.sport == 'UFC' %}{{ (e.event_name or 'UFC').split(':')[0] }}{% else %}Boxing{% endif %}</span>
         <span class="where">{{ e.location or e.venue }}</span></span>
-        <span class="pair">{{ face(e.fighter1, e.fighter1_image, e.sport, 'av' ~ (' lost' if w2 else '')) }}{{ face(e.fighter2, e.fighter2_image, e.sport, 'av b' ~ (' lost' if w1 else '')) }}</span>
+        <span class="pair">{{ face(e.fighter1, e.fighter1_image, e.sport, 'av' ~ (' lost' if w2 else '') ~ (' won' if w1 else '')) }}{{ face(e.fighter2, e.fighter2_image, e.sport, 'av b' ~ (' lost' if w1 else '') ~ (' won' if w2 else '')) }}</span>
         <span class="names"><b class="{{ 'lost' if w2 }}">{{ e.fighter1|surname }}</b> <i>vs</i> <b class="{{ 'lost' if w1 }}">{{ e.fighter2|surname }}</b>{% if e.weight_class %}<small>{{ e.weight_class }}</small>{% endif %}</span>
         <span class="t">{% if mode == 'results' %}<span hidden>{{ start_time(e, 'plain') }}</span>{% else %}{{ start_time(e, 'big') }}{% if e.time_estimated and e.time and e.time != 'TBA' %}<span class="est">est.</span>{% endif %}{% endif %}</span>
     </a>
