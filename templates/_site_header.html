@@ -1,0 +1,43 @@
+{# Compact site header shared by the homepage and the /ufc & /boxing pages.
+   mode 'filter' (homepage): the All / UFC / Boxing switch filters the list in place
+   and the search icon opens the search field.
+   mode 'links' (sport pages): the switch links between pages; search opens the
+   homepage search (/#search). #}
+{% macro site_header(mode, active='All') %}
+<header class="site-header sticky top-0 z-30 border-b border-dark-border">
+    <div class="max-w-[1360px] mx-auto flex items-center gap-3 px-4 sm:px-8 lg:px-10 py-3">
+        <a href="/" class="flex-shrink-0">
+            <img src="/static/FS_icon.svg" alt="Fight Schedule" class="h-10 w-auto">
+        </a>
+        <nav class="ml-auto flex items-center gap-1 bg-dark-card border border-dark-border rounded-full p-[3px] font-work text-[13px] font-medium" aria-label="Sport">
+            {% for label, href in [('All', '/'), ('UFC', '/ufc'), ('Boxing', '/boxing')] %}
+            {% set on = label == active %}
+            {% if mode == 'filter' %}
+            <button type="button" data-filter="{{ label }}" aria-pressed="{{ 'true' if on else 'false' }}"
+                    class="sport-pill px-3 py-1.5 rounded-full {{ 'bg-text-primary text-dark-bg' if on else 'text-text-secondary hover:text-text-primary' }}">{{ label }}</button>
+            {% else %}
+            <a href="{{ href }}" {% if on %}aria-current="page"{% endif %}
+               class="px-3 py-1.5 rounded-full {{ 'bg-text-primary text-dark-bg' if on else 'text-text-secondary hover:text-text-primary' }}">{{ label }}</a>
+            {% endif %}
+            {% endfor %}
+        </nav>
+        {% if mode == 'filter' %}
+        <button type="button" id="searchToggle" aria-label="Search fighters or events" aria-expanded="false" aria-controls="searchBar"
+                class="p-2 -mr-2 text-text-secondary hover:text-text-primary">
+        {% else %}
+        <a href="/#search" aria-label="Search fighters or events" class="p-2 -mr-2 text-text-secondary hover:text-text-primary">
+        {% endif %}
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="m20 20-3.5-3.5"/></svg>
+        {% if mode == 'filter' %}</button>{% else %}</a>{% endif %}
+    </div>
+    {% if mode == 'filter' %}
+    <div id="searchBar" class="hidden max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-10 pb-3">
+        <input type="search" id="searchInput" placeholder="Search fighters or events" autocomplete="off"
+               class="w-full bg-dark-elevated border border-dark-border rounded-2xl px-5 py-3 text-text-primary placeholder-text-tertiary font-work text-sm focus:outline-none focus:border-accent-red focus:ring-2 focus:ring-accent-red/20">
+    </div>
+    {% endif %}
+</header>
+<style>
+    .site-header { background: rgba(10, 10, 10, 0.88); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+</style>
+{% endmacro %}

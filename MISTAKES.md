@@ -6,6 +6,35 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-30 — Committed after a test that never ran (exit code hidden by a pipe)
+
+**What happened:** I ran `python smoke.py | tail -3 && git commit …`. The
+test crashed on import, but `tail` exited 0, so the commit and push went
+ahead. (The change was a Markdown file and the test passes on rerun, but the
+gate did not work.)
+
+**Root cause:** The `&&` rule was followed in form only: the command before
+`&&` was a pipeline, whose status is the last command's (`tail`), not the
+test's.
+
+**Rule:** Never pipe a gating test. Write its output to a file, then gate on
+the test's own exit code: `python test.py > out 2>&1 && git commit …`, and
+read `out` afterwards.
+
+## 2026-09-30 — Portfolio help was engineering-heavy for a product designer
+
+**What happened:** Asked to help a product designer's case study, I drafted a
+stack description, an outage post-mortem and technical trade-offs. The owner:
+"most of this is very technical and not much UX in there."
+
+**Root cause:** I wrote from what I know best — the code and incidents I worked
+on — instead of from the audience: design hiring managers looking for user
+problems, decisions, iterations and outcomes.
+
+**Rule:** Before drafting anything for an audience, name the audience and what
+they judge; translate technical work into what the user experiences and why it
+was decided, and keep implementation detail to a supporting line at most.
+
 ## 2026-09-29 — Event pages and landing day headings show the UTC date next to a local time
 
 **What happened:** A New York visitor sees "Sun, Oct 04 • 8:00 PM" for UFC 332:

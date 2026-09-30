@@ -1364,123 +1364,144 @@ def persisted_fighter_image(filename):
     return send_from_directory(fighters_dir, filename)
 
 
+_photo_thumb_cache = {}
+
+
+def _photo_file(url):
+    """Local file behind a fighter photo URL, or None for remote images."""
+    bare = (url or '').split('?')[0]
+    if bare.startswith('/persisted-fighters/'):
+        return os.path.join(data_path('fighters'), bare[len('/persisted-fighters/'):])
+    if bare.startswith('/static/'):
+        return os.path.join(app.root_path, bare.lstrip('/'))
+    return None
+
+
+def _photo_thumb(path):
+    """32px-wide greyscale thumbnail of a stored photo, cached by file mtime."""
+    mtime = os.path.getmtime(path)
+    cached = _photo_thumb_cache.get(path)
+    if cached and cached[0] == mtime:
+        return cached[1]
+    from PIL import Image, ImageOps
+    with Image.open(path) as im:
+        g = ImageOps.exif_transpose(im).convert('L')
+        thumb = g.resize((32, max(1, round(g.height * 32 / g.width))))
+    _photo_thumb_cache[path] = (mtime, thumb)
+    return thumb
+
+
+def _same_picture(url_a, url_b):
+    """True when two fighter photos show the same picture. Saved photos are
+    square crops, so the same source can be stored twice with different crops
+    and bytes (e.g. one walkout photo saved for both fighters). Compare small
+    greyscale thumbnails, sliding the shorter one along the taller one. Same
+    picture scores ~3, different fighters 24+ on live data; the cut-off is 12."""
+    if url_a.split('?')[0] == url_b.split('?')[0]:
+        return True
+    pa, pb = _photo_file(url_a), _photo_file(url_b)
+    if not pa or not pb or not os.path.exists(pa) or not os.path.exists(pb):
+        return False
+    a, b = _photo_thumb(pa), _photo_thumb(pb)
+    if a.height > b.height:
+        a, b = b, a
+    da = a.tobytes()
+    best = 255.0
+    for off in range(0, b.height - a.height + 1):
+        db = b.crop((0, off, 32, off + a.height)).tobytes()
+        best = min(best, sum(abs(x - y) for x, y in zip(da, db)) / len(da))
+    return best < 12
+
+
+def _two_distinct_photos(ev):
+    a, b = ev.get('fighter1_image'), ev.get('fighter2_image')
+    if not a or not b:
+        return False
+    for u in (a, b):
+        f = _photo_file(u)
+        if f and not os.path.exists(f):   # a photo that would render broken
+            return False
+    try:
+        return not _same_picture(a, b)
+    except Exception:
+        return a.split('?')[0] != b.split('?')[0]
+
+
+_NUMBERED_UFC = re.compile(r'^UFC \d+\b')
+
+
+def _big_fights(events, today, limit=6, horizon_days=90):
+    """Lead cards for the homepage: numbered UFC events, boxing title fights and
+    big-name fights in the next `horizon_days`, soonest first -- only when both
+    fighters have real, different photos (a lead card with silhouettes or one
+    photo twice looks broken)."""
+    horizon = (today + timedelta(days=horizon_days)).isoformat()
+    today_iso = today.isoformat()
+    window = [e for e in events if today_iso <= e['date'] <= horizon
+              and e['fighter1'] != 'TBA' and e['fighter2'] != 'TBA']
+
+    def is_big(e):
+        if e['sport'] == 'UFC' and _NUMBERED_UFC.match(e.get('event_name') or ''):
+            return True
+        if e['sport'] == 'Boxing' and (e.get('weight_class') or '').startswith('Title'):
+            return True
+        return is_big_name_fight(e)
+
+    big = [e for e in window if is_big(e) and _two_distinct_photos(e)][:limit]
+    if not big:
+        scored = sorted(window, key=lambda e: (-score_fight_for_featuring(
+            dict(e, is_main_event=True), today), e['date']))
+        big = [e for e in scored if _two_distinct_photos(e)][:1]
+    return big
+
+
 @app.route('/')
 def home():
     logger.info("--> Home page accessed")
     fights = upcoming_only(fetch_fights())
     logger.info(f"  Rendering {len(fights)} upcoming fights")
-    
-    # Separate by sport and filter out prelims
-    ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
-    # Boxing: Only show main events (first fight per date/venue)
-    boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event') == True]
 
-    # FEATURED FIGHTS - score-based, filtered to this week (next 7 days)
-    from datetime import date as date_cls, timedelta
-    today_date = date_cls.today()
-    week_cutoff = (today_date + timedelta(days=7)).isoformat()
-    today_iso = today_date.isoformat()
+    events = (_group_events_for_landing(fights, 'UFC')[0] +
+              _group_events_for_landing(fights, 'Boxing')[0])
+    events.sort(key=lambda e: (e['date'] or '9999',
+                               e['time'] if e['time'] and ':' in str(e['time']) else '99:99'))
+    for e in events:
+        e['slug'] = e['path'].rsplit('/', 1)[-1]
+    big = _big_fights(events, date.today())
+    for e in big:
+        logger.info(f"  Big fight: {e['fighter1']} vs {e['fighter2']} ({e['date']})")
 
-    # Candidates: all main events / non-prelim fights within the next 7 days
-    # Exclude fights with TBA fighters or TBA times from featured section
-    featured_candidates = [
-        f for f in fights
-        if f.get('date', '') >= today_iso
-        and f.get('date', '') <= week_cutoff
-        and (f.get('is_main_event') or f.get('card_type') in ('Main Card', 'Title', None))
-        and f.get('card_type') != 'Prelims'
-        and f.get('fighter1', 'TBA') != 'TBA'
-        and f.get('fighter2', 'TBA') != 'TBA'
-        and f.get('time') and f.get('time') != 'TBA'
-    ]
+    # Day sections as the server sees them (UTC). The browser regroups them by
+    # the visitor's local day; crawlers and no-JS visitors get this grouping.
+    days = []
+    for e in events:
+        if not days or days[-1]['date'] != e['date']:
+            days.append({'date': e['date'], 'events': []})
+        days[-1]['events'].append(e)
 
-    # Score and sort: highest score first, then soonest date as tiebreaker
-    featured_candidates.sort(
-        key=lambda f: (-score_fight_for_featuring(f, today_date), f.get('date', ''))
-    )
-
-    # Deduplicate by event: keep only the top-scored fight per event/date combo
-    seen_events = set()
-    featured_fights = []
-    for fight in featured_candidates:
-        event_key = fight.get('event_name') or f"{fight['fighter1']} vs {fight['fighter2']}"
-        dedup_key = f"{event_key}|{fight['date']}"
-        if dedup_key not in seen_events:
-            seen_events.add(dedup_key)
-            featured_fights.append(fight)
-        if len(featured_fights) >= 6:
-            break
-
-    # Fallback: if no fights this week, show the next 2 best upcoming fights
-    featured_section_title = 'Featured This Week'
-    if not featured_fights:
-        featured_section_title = 'Coming Up Next'
-        fallback_candidates = [
-            f for f in fights
-            if f.get('date', '') >= today_iso
-            and (f.get('is_main_event') or f.get('card_type') in ('Main Card', 'Title', None))
-            and f.get('card_type') != 'Prelims'
-            and f.get('fighter1', 'TBA') != 'TBA'
-            and f.get('fighter2', 'TBA') != 'TBA'
-            and f.get('time') and f.get('time') != 'TBA'
-        ]
-        fallback_candidates.sort(
-            key=lambda f: (-score_fight_for_featuring(f, today_date), f.get('date', ''))
-        )
-        seen_events = set()
-        for fight in fallback_candidates:
-            event_key = fight.get('event_name') or f"{fight['fighter1']} vs {fight['fighter2']}"
-            dedup_key = f"{event_key}|{fight['date']}"
-            if dedup_key not in seen_events:
-                seen_events.add(dedup_key)
-                featured_fights.append(fight)
-            if len(featured_fights) >= 2:
-                break
-
-    for fight in featured_fights:
-        logger.info(f"  Featured: {fight['fighter1']} vs {fight['fighter2']} ({fight['date']}, score={score_fight_for_featuring(fight, today_date)})")
-    
-    # Remove featured from main lists
-    featured_ids = {id(f) for f in featured_fights}
-    ufc_fights = [f for f in ufc_fights if id(f) not in featured_ids]
-    boxing_fights = [f for f in boxing_fights if id(f) not in featured_ids]
-    
-    # Limit horizontal scroll sections (show more fights)
-    ufc_scroll = ufc_fights[:12]
-    boxing_scroll = boxing_fights[:12]
-    
-    # Coming up soon: Everything else
-    coming_soon = ufc_fights[12:] + boxing_fights[12:]
-    coming_soon = sorted(coming_soon, key=lambda x: x['date'])[:20]  # Show 20 max
-    
-    logger.info(f"  Sections: Featured={len(featured_fights)}, UFC={len(ufc_scroll)}, Boxing={len(boxing_scroll)}, Coming Soon={len(coming_soon)}")
-    
-    # Dynamically load fighter images (always fresh from JSON)
-    all_fights_to_display = featured_fights + ufc_scroll + boxing_scroll + coming_soon
-    for fight in all_fights_to_display:
-        if not fight.get('fighter1_image'):
-            img = get_fighter_image(fight['fighter1'])
-            if img:
-                fight['fighter1_image'] = img
-        if not fight.get('fighter2_image'):
-            img = get_fighter_image(fight['fighter2'])
-            if img:
-                fight['fighter2_image'] = img
-        
-        # Generate slugs / detail-page paths for URLs
-        if fight.get('sport') == 'Boxing':
-            fight['slug'] = f"{_to_slug(fight['fighter1'])}-vs-{_to_slug(fight['fighter2'])}-{fight['date']}"
-            fight['path'] = f"/boxing-event/{fight['slug']}"
+    # Every upcoming bout, for the search box
+    search_fights = []
+    for f in fights:
+        if f.get('sport') == 'Boxing':
+            path = f"/boxing-event/{_to_slug(f['fighter1'])}-vs-{_to_slug(f['fighter2'])}-{f['date']}"
+            if not f.get('is_main_event'):
+                main = next((e for e in events if e['sport'] == 'Boxing' and e['date'] == f['date']
+                             and e['venue'] == f.get('venue', '')), None)
+                path = main['path'] if main else path
         else:
-            ev_slug = f"{fight.get('event_name', '').lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
-            fight['path'] = f"/event/{ev_slug}"
-    
-    return render_template('index.html',
-                         featured_fights=featured_fights,
-                         featured_section_title=featured_section_title,
-                         ufc_fights=ufc_scroll,
-                         boxing_fights=boxing_scroll,
-                         coming_soon=coming_soon)
+            path = f"/event/{(f.get('event_name') or '').lower().replace(' ', '-').replace(':', '').replace(',', '')}-{f['date']}"
+        search_fights.append({
+            'fighter1': f.get('fighter1', ''), 'fighter2': f.get('fighter2', ''),
+            'fighter1_image': f.get('fighter1_image') or get_fighter_image(f.get('fighter1', '')),
+            'fighter2_image': f.get('fighter2_image') or get_fighter_image(f.get('fighter2', '')),
+            'event_name': f.get('event_name') or '', 'venue': f.get('venue') or '',
+            'date': f.get('date', ''), 'time': f.get('time'),
+            'time_estimated': bool(f.get('time_estimated')), 'sport': f.get('sport', ''),
+            'path': path,
+        })
+
+    return render_template('index.html', events=events, big=big, days=days,
+                           search_fights=search_fights)
 
 # ============================================================================
 # SPORT LANDING PAGES — /ufc and /boxing
@@ -1490,6 +1511,18 @@ _MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
                 'July', 'August', 'September', 'October', 'November', 'December']
 
 
+def _undercard(bouts, main, prelims_last=False):
+    """The other bouts on the same card as `main`, in card order (UFC: main card
+    before prelims)."""
+    rest = [b for b in bouts if b is not main]
+    if prelims_last:
+        rest = [b for b in rest if b.get('card_type') != 'Prelims'] + \
+               [b for b in rest if b.get('card_type') == 'Prelims']
+    return [{'fighter1': b.get('fighter1', ''), 'fighter2': b.get('fighter2', ''),
+             'weight_class': b.get('weight_class', ''), 'card_type': b.get('card_type') or ''}
+            for b in rest]
+
+
 def _group_events_for_landing(fights, sport):
     """Build a per-event summary list for the /ufc or /boxing landing pages."""
     events = []
@@ -1497,9 +1530,11 @@ def _group_events_for_landing(fights, sport):
         seen = set()
         # Count all fights (incl. prelims) per event
         counts = {}
+        bouts = {}
         for f in fights:
             if f.get('sport') == 'UFC':
                 counts[f.get('event_name', '')] = counts.get(f.get('event_name', ''), 0) + 1
+                bouts.setdefault(f.get('event_name', ''), []).append(f)
         for f in fights:
             if f.get('sport') != 'UFC' or f.get('card_type') == 'Prelims':
                 continue
@@ -1521,6 +1556,8 @@ def _group_events_for_landing(fights, sport):
                 'location': f.get('location', ''),
                 'streaming': '',
                 'fight_count': counts.get(name, 1),
+                'sport': 'UFC',
+                'undercard': _undercard(bouts.get(name, []), f, prelims_last=True),
                 'weight_class': f.get('weight_class', ''),
                 'event_name': f.get('event_name', ''),
                 'path': f"/event/{slug}",
@@ -1532,10 +1569,12 @@ def _group_events_for_landing(fights, sport):
     else:
         # Boxing: one entry per main event; count undercard via venue+date
         counts = {}
+        bouts = {}
         for f in fights:
             if f.get('sport') == 'Boxing':
                 key = (f.get('venue', ''), f.get('date', ''))
                 counts[key] = counts.get(key, 0) + 1
+                bouts.setdefault(key, []).append(f)
         for f in fights:
             if f.get('sport') != 'Boxing' or not f.get('is_main_event'):
                 continue
@@ -1553,6 +1592,8 @@ def _group_events_for_landing(fights, sport):
                 'location': f.get('location', ''),
                 'streaming': f.get('streaming', ''),
                 'fight_count': counts.get((f.get('venue', ''), f.get('date', '')), 1),
+                'sport': 'Boxing',
+                'undercard': _undercard(bouts.get((f.get('venue', ''), f.get('date', '')), []), f),
                 'weight_class': f.get('weight_class', ''),
                 'event_name': f.get('event_name', ''),
                 'path': f"/boxing-event/{slug}",
