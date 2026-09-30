@@ -16,7 +16,8 @@
     <meta property="og:description" content="Privacy policy and cookie information for FightSchedule.">
     <meta property="og:site_name" content="FightSchedule">
 
-    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -24,25 +25,24 @@
             background: #0d0d0d;
             color: #efe5e4;
             line-height: 1.6;
-            padding: 40px 20px;
         }
-        .container { max-width: 800px; margin: 0 auto; }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
         h1 { font-size: 2.5rem; margin-bottom: 10px; }
         .subtitle { color: #998c8a; margin-bottom: 40px; }
         h2 { font-size: 1.5rem; margin-top: 40px; margin-bottom: 15px; color: #fb923c; }
         p, li { color: #d1d1d1; margin-bottom: 15px; }
-        ul { margin-left: 20px; }
+        ul { margin-left: 20px; list-style: disc; }
+        h1, h2, h3, strong, b { font-weight: 700; }
         a { color: #fb923c; text-decoration: none; }
         a:hover { text-decoration: underline; }
         .back-link { margin-bottom: 30px; }
     </style>
 </head>
 <body>
+    {% from '_site_header.html' import site_header %}
+    {{ site_header('') }}
     <div class="container">
-        <div class="back-link">
-            <a href="/">← Back to Fight Schedule</a>
-        </div>
-        
+
         <h1>Privacy & Cookie Policy</h1>
         <p class="subtitle">Last updated: December 10, 2024</p>
         

@@ -6,6 +6,35 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-30 — Homepage filter left the other sport's cards on screen
+
+**What happened:** Tapping UFC hid the boxing day headings but left 10 boxing
+cards visible (Boxing left 4 UFC cards). The cards had the `hidden` attribute,
+but `.ev { display: grid }` overrode it.
+
+**Root cause:** My browser test asserted `element.hidden`, the flag I had set
+myself, instead of what the visitor sees. A test that reads back its own input
+cannot fail.
+
+**Rule:** Interaction tests assert visible state (`offsetParent`,
+`getComputedStyle`, a screenshot), never the flag the code just set. Any
+element that gets its own `display` must also be covered by
+`[hidden] { display: none !important }`.
+
+## 2026-09-30 — Selected header pill turned white-on-white after a tap
+
+**What happened:** After tapping UFC or Boxing, the chosen pill became a white
+blob with invisible text.
+
+**Root cause:** The JavaScript swapped colour classes but left the
+`hover:text-white` class; on phones hover sticks after a tap. I checked that the
+filter ran, and took screenshots only *before* clicking, so I never saw the
+control after the interaction.
+
+**Rule:** Style interactive state from the element's state (`aria-pressed`,
+`aria-current`) in CSS, not by toggling colour classes. Screenshot every
+control *after* interacting with it, in a touch emulation as well as desktop.
+
 ## 2026-09-30 — Committed after a test that never ran (exit code hidden by a pipe)
 
 **What happened:** I ran `python smoke.py | tail -3 && git commit …`. The

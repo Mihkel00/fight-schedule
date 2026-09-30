@@ -1,0 +1,84 @@
+{# Shared list pieces for the homepage, /results, /ufc and /boxing, and the fight pages.
+   Styles: static/css/list.css. Behaviour: static/js/list.js. #}
+{% from '_watch.html' import watch_link %}
+
+{% macro face(name, img, sport, cls='av') -%}
+{% set ph = '/static/placeholder-fighter-' ~ ('mma' if sport == 'UFC' else 'boxing') ~ '.svg' %}
+{% if img %}<img class="{{ cls }}" src="{{ img }}" alt="{{ name }}" loading="lazy" onerror="this.onerror=null;this.alt='';this.classList.add('ph');this.src='{{ ph }}'">{% else %}<img class="{{ cls }} ph" src="{{ ph }}" alt="" loading="lazy">{% endif %}
+{%- endmacro %}
+
+{# fmt: 'big' (list time), 'long' ("Sun 4 Oct · 3:00 AM"), 'plain' ("3:00 AM").
+   Crawlers and no-JS visitors read the UTC text; list.js rewrites it locally. #}
+{% macro start_time(e, fmt) -%}
+{% if e.time and e.time != 'TBA' and ':' in (e.time|string) -%}
+<time class="fight-time {{ fmt }}" datetime="{{ e.date|iso_utc(e.time) }}" data-utc-time="{{ e.time }}" data-date="{{ e.date }}" data-estimated="{{ e.time_estimated|default(false)|lower }}" data-format="{{ fmt }}">{% if fmt == 'long' %}{{ e.date|format_date }} · {% endif %}{{ '~' if e.time_estimated else '' }}{{ e.time|utc_time }}</time>
+{%- else -%}
+<time class="fight-time {{ fmt }} no-time{{ ' tba' if fmt == 'big' }}" datetime="{{ e.date }}" data-date="{{ e.date }}" data-format="{{ fmt }}">{% if fmt == 'long' %}{{ e.date|format_date }} · {% endif %}Time TBA</time>
+{%- endif %}
+{%- endmacro %}
+
+{% macro sport_chips() -%}
+<div class="chips" role="group" aria-label="Sport">
+    {% for s in ['All', 'UFC', 'Boxing'] %}<button type="button" class="chipf" data-filter="{{ s }}" aria-pressed="{{ 'true' if s == 'All' else 'false' }}">{{ s }}</button>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro result_chip(r, pending=false) -%}
+{% if r %}<span class="res">{{ r|result_text }}</span>{% else %}<span class="res pending">Result pending</span>{% endif %}
+{%- endmacro %}
+
+{# One event card. mode 'upcoming' shows the start time and broadcaster;
+   'results' shows the winner and greys out the loser. #}
+{% macro ev_card(e, mode, placement, uid) -%}
+{% set r = e.result if mode == 'results' else none %}
+{% set w1 = r and r.outcome == 'win' and r.winner == e.fighter1 %}
+{% set w2 = r and r.outcome == 'win' and r.winner == e.fighter2 %}
+{% set uc_id = 'uc-' ~ uid %}
+<article class="ev {{ e.sport|lower }}" data-sport="{{ e.sport }}">
+    <a href="{{ e.path }}" class="ev-main">
+        <span class="top"><span class="tag"><i class="dot"></i>{% if e.sport == 'UFC' %}{{ (e.event_name or 'UFC').split(':')[0] }}{% else %}Boxing{% endif %}</span>
+        <span class="where">{{ e.location or e.venue }}</span></span>
+        <span class="pair">{{ face(e.fighter1, e.fighter1_image, e.sport, 'av' ~ (' lost' if w2 else '')) }}{{ face(e.fighter2, e.fighter2_image, e.sport, 'av b' ~ (' lost' if w1 else '')) }}</span>
+        <span class="names"><b class="{{ 'lost' if w2 }}">{{ e.fighter1|surname }}</b> <i>vs</i> <b class="{{ 'lost' if w1 }}">{{ e.fighter2|surname }}</b>{% if e.weight_class %}<small>{{ e.weight_class }}</small>{% endif %}</span>
+        <span class="t">{% if mode == 'results' %}<span hidden>{{ start_time(e, 'plain') }}</span>{% else %}{{ start_time(e, 'big') }}{% if e.time_estimated and e.time and e.time != 'TBA' %}<span class="est">est.</span>{% endif %}{% endif %}</span>
+    </a>
+    <span class="ev-foot">
+        {% if mode == 'results' %}{{ result_chip(r) }}
+        {% elif e.streaming %}{{ watch_link(e.streaming, e.slug, e.sport, placement, 'chip watch') }}{% endif %}
+        {% if e.undercard %}
+        {% set n = e.undercard|length %}
+        {% set noun = 'result' if mode == 'results' else 'fight' %}
+        <button type="button" class="more" aria-expanded="false" aria-controls="{{ uc_id }}" data-open-label="Hide {{ noun }}s ▴">+{{ n }} {{ noun }}{{ 's' if n != 1 }} ▾</button>
+        {% endif %}
+    </span>
+    {% if e.undercard %}
+    <div class="uc" id="{{ uc_id }}" hidden>
+        <ul>
+            {% set ns = namespace(prelims=false) %}
+            {% for b in e.undercard %}
+            {% if b.card_type == 'Prelims' and not ns.prelims %}{% set ns.prelims = true %}<li class="uc-sub">Prelims</li>{% endif %}
+            <li><span>{{ b.fighter1 }} <i>vs</i> {{ b.fighter2 }}</span>
+                {% if mode == 'results' %}<em class="{{ 'won' if b.result }}">{{ b.result|result_text if b.result else 'Result pending' }}</em>
+                {% elif b.weight_class %}<em>{{ b.weight_class }}</em>{% endif %}</li>
+            {% endfor %}
+        </ul>
+        <a href="{{ e.path }}" class="uc-link">Full card →</a>
+    </div>
+    {% endif %}
+</article>
+{%- endmacro %}
+
+{# Day sections as the server sees them (UTC dates); list.js regroups by local day.
+   order 'asc' for upcoming, 'desc' for results. #}
+{% macro days_list(days, mode, placement, order='asc', empty='Nothing listed right now — check back soon.', key='d') -%}
+<div class="days" data-order="{{ order }}">
+    {% for d in days %}
+    {% set di = loop.index %}
+    <section class="day">
+        <h3 class="day-h">{{ d.date|format_date }}</h3>
+        {% for e in d.events %}{{ ev_card(e, mode, placement, key ~ di ~ '-' ~ loop.index) }}{% endfor %}
+    </section>
+    {% endfor %}
+    {% if not days %}<p class="empty-note">{{ empty }}</p>{% endif %}
+</div>
+{%- endmacro %}
