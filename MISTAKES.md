@@ -6,6 +6,21 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-30 — Committed after a test that never ran (exit code hidden by a pipe)
+
+**What happened:** I ran `python smoke.py | tail -3 && git commit …`. The
+test crashed on import, but `tail` exited 0, so the commit and push went
+ahead. (The change was a Markdown file and the test passes on rerun, but the
+gate did not work.)
+
+**Root cause:** The `&&` rule was followed in form only: the command before
+`&&` was a pipeline, whose status is the last command's (`tail`), not the
+test's.
+
+**Rule:** Never pipe a gating test. Write its output to a file, then gate on
+the test's own exit code: `python test.py > out 2>&1 && git commit …`, and
+read `out` afterwards.
+
 ## 2026-09-30 — Portfolio help was engineering-heavy for a product designer
 
 **What happened:** Asked to help a product designer's case study, I drafted a
