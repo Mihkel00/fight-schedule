@@ -109,6 +109,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/styles.css">
     <style>
+        [hidden] { display: none !important; }
         :root { --bg:#0a0a0a; --card:#141414; --el:#1c1c1c; --bd:#252525; --t1:#f5f5f5; --t2:#a8a8a8; --t3:#737373; --ufc:#ef4444; --box:#fb923c; }
         .wrap { max-width: 1360px; margin: 0 auto; padding: 0 16px; }
         .home { padding: 16px 0 40px; }
@@ -456,8 +457,6 @@
             pills.forEach(function (p) {
                 var on = p.getAttribute('data-filter') === sport;
                 p.setAttribute('aria-pressed', on ? 'true' : 'false');
-                p.classList.toggle('bg-text-primary', on); p.classList.toggle('text-dark-bg', on);
-                p.classList.toggle('text-text-secondary', !on);
             });
             var match = function (el) { return sport === 'All' || el.getAttribute('data-sport') === sport; };
             document.querySelectorAll('article.ev').forEach(function (c) { c.hidden = !match(c); });
