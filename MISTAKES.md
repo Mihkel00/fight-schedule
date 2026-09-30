@@ -6,6 +6,20 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-30 — Boxing cards shown twice (Whittaker–Wallace, Messaudi–Alhambra)
+
+**What happened:** The live site listed several 3 Oct boxing cards twice, each
+claiming "+17 fights". The cache held 19 fights twice over.
+
+**Root cause:** boxingschedule.co started listing that weekend's cards in two
+blocks on the same page. The UFC scraper removes duplicate matchups; the boxing
+scraper and the merge step never did — the code trusted a source to list each
+event once. The earlier cards hid it because nothing grouped them per event.
+
+**Rule:** Every source's output is deduplicated by matchup and date before
+use, and the merged list is deduplicated again. Never assume a scraped page
+lists each item once.
+
 ## 2026-09-30 — Homepage filter left the other sport's cards on screen
 
 **What happened:** Tapping UFC hid the boxing day headings but left 10 boxing

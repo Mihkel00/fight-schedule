@@ -460,6 +460,21 @@ def _parse_rsd(soup):
     return fights
 
 
+def _dedup(fights):
+    """Drop repeats of the same matchup on the same date. The source can list a
+    weekend's cards twice on one page (in two schedule blocks)."""
+    seen, out = set(), []
+    for f in fights:
+        key = (tuple(sorted([(f.get('fighter1') or '').lower(), (f.get('fighter2') or '').lower()])), f.get('date'))
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(f)
+    if len(out) != len(fights):
+        print(f"BoxingSchedule.co: removed {len(fights) - len(out)} duplicate listings")
+    return out
+
+
 def scrape_boxing_events():
     """
     Scrape boxing schedule from BoxingSchedule.co.
@@ -493,7 +508,7 @@ def scrape_boxing_events():
                   f"{len(soup.find_all('p', attrs={'data-start': True}))} legacy date paragraphs")
         else:
             print(f"BoxingSchedule.co Total: Found {len(fights)} fights via {layout} layout")
-        return fights
+        return _dedup(fights)
     except Exception as e:
         print(f"Error in BoxingSchedule.co scraper: {e}")
         return []

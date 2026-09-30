@@ -74,17 +74,16 @@
             <p class="aff-note" style="margin-top:12px">This fight has taken place. The result is added as soon as it is published.</p>
             {% endif %}
 
-            <div class="fp-grid">
+            {% if m.fighter1_tape or m.fighter2_tape %}<div class="tape-wrap">{{ tr.tale_of_the_tape(m, 'accent-orange') }}</div>{% endif %}
+
+            <div class="fp-grid {{ 'solo' if not (event.preview and event.preview.parsed) }}">
                 <div>
                     <h2 class="sec-h">{{ 'Results' if m.is_past else 'Fight card' }} · {{ event.fights|length }} fight{{ 's' if event.fights|length != 1 }}</h2>
                     <div class="card-list">
                         {% for f in event.fights %}{{ bout(f, 'Boxing', loop.first, m.is_past) }}{% endfor %}
                     </div>
                 </div>
-                <div>
-                    <div class="tape-wrap">{{ tr.tale_of_the_tape(m, 'accent-orange') }}</div>
-                    {{ preview_panel(event) }}
-                </div>
+                {% if event.preview and event.preview.parsed %}<div>{{ preview_panel(event) }}</div>{% endif %}
             </div>
         </div>
 

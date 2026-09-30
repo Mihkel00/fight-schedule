@@ -630,6 +630,9 @@ def load_cache(max_age_hours=None):
             
             # Apply time overrides to cached data
             fights = cache_data['fights']
+            # A cache written before listings were deduplicated may hold repeats
+            _seen = set()
+            fights = [f for f in fights if not (_fight_key(f) in _seen or _seen.add(_fight_key(f)))]
             fights = apply_time_overrides(fights)
 
             # Drop events older than the results window so stale cache served
@@ -1269,6 +1272,10 @@ def _scrape_all_sources():
     # Add MMA Fighting UFC fights
     fights.extend(mma_fighting_ufc)
     
+    # Sources can repeat a listing; keep one copy of each matchup per date.
+    _seen = set()
+    fights = [f for f in fights if not (_fight_key(f) in _seen or _seen.add(_fight_key(f)))]
+
     # VALIDATION: check each scraper independently. A single broken source
     # must never blank the whole site, so failed sports fall back to the last
     # known-good cached data for that sport instead of discarding everything.
@@ -1307,6 +1314,8 @@ def _scrape_all_sources():
             origin = 'cache'
             if not carried:
                 carried, origin = [dict(f) for f in load_last_good(sport)], 'last-good snapshot'
+            _seen = set()
+            carried = [f for f in carried if not (_fight_key(f) in _seen or _seen.add(_fight_key(f)))]
             fights = [f for f in fights if f.get('sport') != sport] + carried
             log(f"  -> carried forward {len(carried)} {sport} fights from the {origin}")
         if not ufc_ok and not boxing_ok:
