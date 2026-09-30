@@ -6,6 +6,20 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-09-30 — Portfolio help was engineering-heavy for a product designer
+
+**What happened:** Asked to help a product designer's case study, I drafted a
+stack description, an outage post-mortem and technical trade-offs. The owner:
+"most of this is very technical and not much UX in there."
+
+**Root cause:** I wrote from what I know best — the code and incidents I worked
+on — instead of from the audience: design hiring managers looking for user
+problems, decisions, iterations and outcomes.
+
+**Rule:** Before drafting anything for an audience, name the audience and what
+they judge; translate technical work into what the user experiences and why it
+was decided, and keep implementation detail to a supporting line at most.
+
 ## 2026-09-29 — Event pages and landing day headings show the UTC date next to a local time
 
 **What happened:** A New York visitor sees "Sun, Oct 04 • 8:00 PM" for UFC 332:
