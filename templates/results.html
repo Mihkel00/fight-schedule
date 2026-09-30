@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include '_analytics.html' %}
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fight Results — UFC &amp; Boxing, Last 30 Days | Fight Schedule</title>
+    <meta name="description" content="UFC and boxing results from the last 30 days: winners, methods and rounds for every main event and undercard fight, newest first.">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="canonical" href="https://fightschedule.live/results">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fightschedule.live/results">
+    <meta property="og:title" content="Fight Results — UFC &amp; Boxing, Last 30 Days">
+    <meta property="og:description" content="Winners, methods and rounds for every UFC and boxing fight in the last 30 days.">
+    <meta property="og:image" content="https://fightschedule.live/static/og-image.png">
+    <meta property="og:site_name" content="Fight Schedule">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <script type="application/ld+json">{{ ld.breadcrumbs(('Home', '/'), ('Results', None))|tojson }}</script>
+    <script type="application/ld+json">{{ ld.item_list('Fight results', events|map(attribute='path')|list)|tojson }}</script>
+
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/list.css">
+</head>
+<body class="bg-dark-bg text-text-primary">
+    {% from '_site_header.html' import site_header %}
+    {% from '_list.html' import sport_chips, days_list %}
+    {{ site_header('Results') }}
+
+    <main class="home">
+        <div class="wrap">
+            <div class="page-title"><h1>Fight results</h1> · last 30 days · newest first</div>
+            {{ sport_chips() }}
+            {{ days_list(days, 'results', 'results', 'desc', 'No results in the last 30 days yet.') }}
+            <p class="empty-note" id="filterEmpty" hidden>No results for this sport in the last 30 days.</p>
+            <nav class="more-links" aria-label="Schedules">
+                <a href="/">Upcoming fights →</a>
+            </nav>
+        </div>
+
+        <div class="mt-24 mb-8 text-center">
+            <p class="font-work text-xs text-text-tertiary"><a href="/privacy" class="hover:text-text-secondary transition-colors">Privacy & Cookie Policy</a></p>
+        </div>
+    </main>
+
+    <script src="/static/js/list.js"></script>
+    {% include '_consent.html' %}
+</body>
+</html>

@@ -108,139 +108,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/styles.css">
-    <style>
-        [hidden] { display: none !important; }
-        :root { --bg:#0a0a0a; --card:#141414; --el:#1c1c1c; --bd:#252525; --t1:#f5f5f5; --t2:#a8a8a8; --t3:#737373; --ufc:#ef4444; --box:#fb923c; }
-        .wrap { max-width: 1360px; margin: 0 auto; padding: 0 16px; }
-        .home { padding: 16px 0 40px; }
-
-        /* Big fights: one tall lead card on phones, a sideways row on desktop */
-        .big-head { display: none; }
-        .rail { padding: 0 16px; }
-        .rc { display: none; position: relative; height: 300px; border-radius: 20px; overflow: hidden; background: #1d1d1d; border: 1px solid var(--bd); margin-bottom: 28px; }
-        .rc.lead { display: block; }
-        .rc-link { position: absolute; inset: 0; display: block; }
-        .rc img { position: absolute; bottom: 0; height: 100%; width: 52%; object-fit: cover; object-position: top; }
-        .rc .hl { left: 0; } .rc .hr { right: 0; }
-        .rc .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.92) 18%, rgba(0,0,0,.35) 55%, rgba(0,0,0,0) 80%); }
-        .rc .hc { position: absolute; left: 20px; right: 20px; bottom: 18px; }
-        .rc.has-watch .hc { bottom: 56px; }
-        .rc .rel { position: absolute; top: 14px; left: 14px; font: 600 12px 'Work Sans', sans-serif; background: var(--t1); color: #000; border-radius: 999px; padding: 3px 10px; }
-        .rc .kicker { font: 600 11px 'Work Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
-        .rc.ufc .kicker { color: var(--ufc); } .rc.boxing .kicker { color: var(--box); }
-        .rc h2 { font-family: 'Staatliches', sans-serif; font-weight: 400; font-size: 42px; line-height: 1; margin: 6px 0 8px; text-transform: uppercase; }
-        .rc h2 i { font: italic 15px 'Work Sans', sans-serif; color: var(--t2); margin: 0 4px; vertical-align: middle; text-transform: lowercase; }
-        .rc .meta { font: 600 16px 'Work Sans', sans-serif; }
-        .rc .meta2 { font: 13px 'Work Sans', sans-serif; color: var(--t2); margin-top: 3px; }
-        .rc .rc-watch { position: absolute; left: 20px; bottom: 18px; }
-
-        /* Day list */
-        .tzline { font: 12px 'Work Sans', sans-serif; color: var(--t3); padding: 0 2px 2px; }
-        .tzline h1 { display: inline; font: inherit; margin: 0; }
-        .day-h { position: sticky; top: 64px; z-index: 2; background: var(--bg); display: flex; align-items: baseline; gap: 8px; padding: 14px 2px 10px; font-family: 'Staatliches', sans-serif; font-weight: 400; font-size: 24px; letter-spacing: .02em; white-space: nowrap; }
-        .day-h .ddate { color: var(--t2); }
-        .day-h .rel { font: 600 12px 'Work Sans', sans-serif; color: #000; background: var(--t1); border-radius: 999px; padding: 2px 8px; align-self: center; }
-        .ev { position: relative; display: grid; grid-template-columns: auto minmax(0,1fr) auto; grid-template-areas: "top top top" "pair names t" "watch watch more" "uc uc uc"; column-gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--bd); border-radius: 16px; padding: 14px 16px; margin-bottom: 10px; font-family: 'Work Sans', sans-serif; transition: border-color .2s; }
-        .ev:hover { border-color: #3a3a3a; }
-        .ev::before { content: ''; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; }
-        .ev.ufc::before { background: var(--ufc); } .ev.boxing::before { background: var(--box); }
-        .ev-main, .ev-foot { display: contents; }
-        .ev-main:focus-visible .names { outline: 2px solid var(--t1); outline-offset: 4px; border-radius: 4px; }
-        .ev .top { grid-area: top; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; }
-        .ev .tag { grid-area: tag; font-size: 12px; font-weight: 600; color: var(--t2); letter-spacing: .04em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-        .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-        .ufc .dot { background: var(--ufc); } .boxing .dot { background: var(--box); }
-        .ev .where { grid-area: where; font-size: 12px; color: var(--t3); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-        .ev .pair { grid-area: pair; display: flex; margin-top: 10px; }
-        .av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: top; background: #262626; border: 2px solid var(--card); flex: none; }
-        .av.b { margin-left: -12px; } .av.ph { padding: 6px; opacity: .55; }
-        .ev .names { grid-area: names; margin-top: 10px; min-width: 0; font-family: 'Staatliches', sans-serif; font-size: 20px; line-height: 1.05; text-transform: uppercase; }
-        .ev .names b { font-weight: 400; white-space: nowrap; }
-        .ev .names i { font: italic 12px 'Work Sans', sans-serif; color: var(--t3); margin: 0 5px; text-transform: lowercase; }
-        .ev .names small { display: block; font: 12px 'Work Sans', sans-serif; color: var(--t3); margin-top: 3px; text-transform: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ev .t { grid-area: t; margin-top: 10px; text-align: right; line-height: 1; white-space: nowrap; }
-        .fight-time.big { font-size: 21px; font-weight: 600; letter-spacing: -.01em; color: var(--t1); }
-        .fight-time.big .ap { font-size: 12px; margin-left: 2px; color: var(--t2); }
-        .t .est { display: block; font-size: 10px; font-weight: 500; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
-        .t .tba, .fight-time.big.tba { font-size: 13px; color: var(--t3); font-weight: 500; }
-        .chip { display: inline-flex; align-items: center; gap: 4px; font: 600 12px 'Work Sans', sans-serif; padding: 4px 10px; border-radius: 999px; background: var(--el); border: 1px solid var(--bd); color: var(--t1); }
-        .chip::before { content: '▶'; font-size: 9px; }
-        .chip:hover { border-color: #444; }
-        .ev .watch { grid-area: watch; justify-self: start; margin-top: 12px; }
-        .ev .more { grid-area: more; justify-self: end; margin-top: 12px; font-size: 12px; color: var(--t2); background: none; border: 0; cursor: pointer; padding: 4px 0; }
-        .ev .more:hover { color: var(--t1); }
-        .uc { grid-area: uc; margin-top: 12px; border-top: 1px solid var(--bd); }
-        .uc ul { list-style: none; margin: 0; padding: 0; }
-        .uc li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid #1e1e1e; font-size: 13.5px; }
-        .uc li i { color: var(--t3); font-size: 11px; }
-        .uc li em { font-style: normal; color: var(--t3); font-size: 12px; white-space: nowrap; }
-        .uc .uc-sub { display: block; padding: 12px 0 2px; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--t3); border: 0; }
-        .uc-link { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--t1); }
-        .more-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; font: 500 14px 'Work Sans', sans-serif; }
-        .more-links a { padding: 10px 16px; border: 1px solid var(--bd); border-radius: 999px; color: var(--t2); }
-        .more-links a:hover { color: var(--t1); border-color: #444; }
-        .empty-note { font: 14px 'Work Sans', sans-serif; color: var(--t3); padding: 24px 2px; }
-        .sr-res a { display: flex; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--bd); font: 14px 'Work Sans', sans-serif; }
-        .sr-res a:last-child { border-bottom: 0; }
-        .sr-res small { color: var(--t3); }
-
-        @media (max-width: 420px) {
-            .ev .names { font-size: 19px; }
-            .rc h2 { font-size: 38px; }
-        }
-        @media (min-width: 900px) {
-            .home { padding-top: 28px; }
-            .wrap { padding: 0 40px; }
-            .big-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 14px; }
-            .big-head h2 { font-family: 'Staatliches', sans-serif; font-weight: 400; font-size: 32px; letter-spacing: .02em; text-transform: uppercase; }
-            .arrows { display: flex; gap: 8px; }
-            .arrows button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--bd); background: var(--card); color: var(--t1); font-size: 22px; line-height: 1; cursor: pointer; }
-            .arrows button:hover { border-color: #444; }
-            .rail { display: flex; gap: 18px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
-                    padding: 0 max(40px, calc((100vw - 1360px) / 2 + 40px)); scroll-padding-inline: max(40px, calc((100vw - 1360px) / 2 + 40px)); margin-bottom: 36px; }
-            .rail::-webkit-scrollbar { display: none; }
-            .rc, .rc.lead { display: block; flex: 0 0 420px; height: 440px; margin: 0; scroll-snap-align: start; }
-            .rc.filtered-out { display: none; }
-            .rc img { width: 54%; } .rc .hl { left: -2%; } .rc .hr { right: -2%; }
-            .rc h2 { font-size: 44px; }
-            .tzline { font-size: 13px; }
-            .day-h { font-size: 30px; padding: 22px 2px 14px; top: 64px; }
-            .ev { grid-template-columns: auto minmax(0,1fr) 280px 170px; grid-template-areas: "pair names tag t" "pair names where t" "pair names watch more" "uc uc uc uc"; column-gap: 28px; padding: 22px 28px 22px 32px; border-radius: 20px; margin-bottom: 14px; }
-            .ev::before { top: 22px; bottom: 22px; width: 4px; }
-            .ev .top { display: contents; }
-            .ev .tag { font-size: 13px; align-self: end; }
-            .ev .where { font-size: 14px; color: var(--t2); text-align: left; white-space: normal; }
-            .ev .pair, .ev .names, .ev .t { margin-top: 0; }
-            .av { width: 84px; height: 84px; border-width: 3px; } .av.b { margin-left: -20px; } .av.ph { padding: 12px; }
-            .ev .names { font-size: 36px; }
-            .ev .names i { font-size: 15px; margin: 0 8px; }
-            .ev .names small { font-size: 14px; margin-top: 6px; }
-            .fight-time.big { font-size: 38px; } .fight-time.big .ap { font-size: 15px; }
-            .t .est { font-size: 11px; } .t .tba, .fight-time.big.tba { font-size: 16px; }
-            .ev .watch { margin-top: 6px; align-self: start; font-size: 13px; }
-            .ev .more { margin-top: 6px; align-self: start; font-size: 14px; }
-            .uc { margin-top: 18px; padding-top: 6px; }
-            .uc ul { columns: 2; column-gap: 40px; }
-            .uc li { break-inside: avoid; font-size: 15px; }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/list.css">
 </head>
 <body class="bg-dark-bg text-text-primary">
     {% from '_site_header.html' import site_header %}
     {% from '_watch.html' import watch_link %}
-    {{ site_header('filter') }}
-
-    {% macro face(name, img, sport, cls='av') -%}
-    {% if img %}<img class="{{ cls }}" src="{{ img }}" alt="{{ name }}" loading="lazy" onerror="this.onerror=null;this.alt='';this.classList.add('ph');this.src='/static/placeholder-fighter-{{ 'mma' if sport == 'UFC' else 'boxing' }}.svg'">{% else %}<img class="{{ cls }} ph" src="/static/placeholder-fighter-{{ 'mma' if sport == 'UFC' else 'boxing' }}.svg" alt="" loading="lazy">{% endif %}
-    {%- endmacro %}
-
-    {% macro start_time(e, fmt) -%}
-    {% if e.time and e.time != 'TBA' and ':' in (e.time|string) -%}
-    <time class="fight-time {{ fmt }}" datetime="{{ e.date|iso_utc(e.time) }}" data-utc-time="{{ e.time }}" data-date="{{ e.date }}" data-estimated="{{ e.time_estimated|default(false)|lower }}" data-format="{{ fmt }}">{% if fmt == 'long' %}{{ e.date|format_date }} · {% endif %}{{ '~' if e.time_estimated else '' }}{{ e.time|utc_time }}</time>
-    {%- else -%}
-    <time class="fight-time {{ fmt }} no-time{{ ' tba' if fmt == 'big' }}" datetime="{{ e.date }}" data-date="{{ e.date }}" data-format="{{ fmt }}">{% if fmt == 'long' %}{{ e.date|format_date }} · {% endif %}Time TBA</time>
-    {%- endif %}
-    {%- endmacro %}
+    {% from '_list.html' import start_time, sport_chips, days_list %}
+    {{ site_header('Schedule', search_here=true) }}
 
     <main class="home">
         <div id="searchResults" class="wrap" hidden></div>
@@ -256,12 +130,12 @@
             </div>
             <div class="rail" id="bigRail">
                 {% for e in big %}
-                <article class="rc {{ e.sport|lower }} {{ 'lead' if loop.first }} {{ 'has-watch' if e.streaming }}" data-sport="{{ e.sport }}">
+                <article class="rc {{ e.sport|lower }} {{ 'lead' if loop.first }} {{ 'has-watch' if e.streaming }}" data-sport="{{ e.sport }}" data-rel-chip>
                     <a href="{{ e.path }}" class="rc-link">
                         <img class="hl" src="{{ e.fighter1_image }}" alt="{{ e.fighter1 }}" {% if not loop.first %}loading="lazy"{% endif %}>
                         <img class="hr" src="{{ e.fighter2_image }}" alt="{{ e.fighter2 }}" {% if not loop.first %}loading="lazy"{% endif %}>
                         <span class="shade"></span>
-                        <span class="rel" data-rel-date="{{ e.date }}">{{ e.date|format_date }}</span>
+                        <span class="rel">{{ e.date|format_date }}</span>
                         <div class="hc">
                             <span class="kicker">{% if e.sport == 'UFC' %}{{ (e.event_name or 'UFC').split(':')[0] }}{% else %}{{ e.weight_class or 'Boxing' }}{% endif %}</span>
                             <h2>{{ e.fighter1|surname }} <i>vs</i> {{ e.fighter2|surname }}</h2>
@@ -278,44 +152,8 @@
 
         <div class="wrap fight-section">
             <div class="tzline"><h1>UFC &amp; boxing schedule</h1> · <span id="timezone-display">times in your time zone</span></div>
-            <div id="days">
-                {% for d in days %}
-                <section class="day">
-                    <h3 class="day-h">{{ d.date|format_date }}</h3>
-                    {% for e in d.events %}
-                    {% set uc_id = 'uc-' ~ loop.index ~ '-' ~ d.date %}
-                    <article class="ev {{ e.sport|lower }}" data-sport="{{ e.sport }}">
-                        <a href="{{ e.path }}" class="ev-main">
-                            <span class="top"><span class="tag"><i class="dot"></i>{% if e.sport == 'UFC' %}{{ (e.event_name or 'UFC').split(':')[0] }}{% else %}Boxing{% endif %}</span>
-                            <span class="where">{{ e.location or e.venue }}</span></span>
-                            <span class="pair">{{ face(e.fighter1, e.fighter1_image, e.sport) }}{{ face(e.fighter2, e.fighter2_image, e.sport, 'av b') }}</span>
-                            <span class="names"><b>{{ e.fighter1|surname }}</b> <i>vs</i> <b>{{ e.fighter2|surname }}</b>{% if e.weight_class %}<small>{{ e.weight_class }}</small>{% endif %}</span>
-                            <span class="t">{{ start_time(e, 'big') }}{% if e.time_estimated and e.time and e.time != 'TBA' %}<span class="est">est.</span>{% endif %}</span>
-                        </a>
-                        <span class="ev-foot">
-                            {% if e.streaming %}{{ watch_link(e.streaming, e.slug, e.sport, 'home_list', 'chip watch') }}{% endif %}
-                            {% if e.undercard %}
-                            <button type="button" class="more" aria-expanded="false" aria-controls="{{ uc_id }}" data-count="{{ e.undercard|length }}">+{{ e.undercard|length }} fight{{ 's' if e.undercard|length != 1 }} ▾</button>
-                            {% endif %}
-                        </span>
-                        {% if e.undercard %}
-                        <div class="uc" id="{{ uc_id }}" hidden>
-                            <ul>
-                                {% set ns = namespace(prelims=false) %}
-                                {% for b in e.undercard %}
-                                {% if b.card_type == 'Prelims' and not ns.prelims %}{% set ns.prelims = true %}<li class="uc-sub">Prelims</li>{% endif %}
-                                <li><span>{{ b.fighter1 }} <i>vs</i> {{ b.fighter2 }}</span>{% if b.weight_class %}<em>{{ b.weight_class }}</em>{% endif %}</li>
-                                {% endfor %}
-                            </ul>
-                            <a href="{{ e.path }}" class="uc-link">Full card →</a>
-                        </div>
-                        {% endif %}
-                    </article>
-                    {% endfor %}
-                </section>
-                {% endfor %}
-                {% if not days %}<p class="empty-note">No upcoming fights listed right now — check back soon.</p>{% endif %}
-            </div>
+            {{ sport_chips() }}
+            {{ days_list(days, 'upcoming', 'home_list', 'asc', 'No upcoming fights listed right now — check back soon.') }}
             <p class="empty-note" id="filterEmpty" hidden>No upcoming fights for this sport right now.</p>
             <nav class="more-links" aria-label="Full schedules">
                 <a href="/ufc">Full UFC schedule →</a>
@@ -334,166 +172,21 @@
         </div>
     </main>
 
+    <script src="/static/js/list.js"></script>
     <script>
     (function () {
-        var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
-        function startOf(date, utc) {
-            if (!date) return null;
-            if (utc && /^\d{1,2}:\d{2}/.test(utc)) {
-                var p = utc.split(':');
-                var d = new Date(date + 'T' + p[0].padStart(2, '0') + ':' + p[1].slice(0, 2) + ':00Z');
-                return isNaN(d) ? null : d;
-            }
-            return null;
-        }
-        function dayKey(d) { return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
-        function daysFromToday(d) {
-            var t = new Date(); t.setHours(0, 0, 0, 0);
-            var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            return Math.round((x - t) / 86400000);
-        }
-        function relLabel(n) {
-            if (n === 0) return 'Today';
-            if (n === 1) return 'Tomorrow';
-            if (n > 1 && n < 7) return 'in ' + n + ' days';
-            return '';
-        }
-        function clock(d) {
-            var h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0');
-            return { hm: (h % 12 || 12) + ':' + m, ap: h >= 12 ? 'PM' : 'AM' };
-        }
-        // The local calendar day an item starts on (date-only items keep their date).
-        function localDayOf(el) {
-            var t = el.querySelector('time[data-date]');
-            if (!t) return null;
-            var d = startOf(t.getAttribute('data-date'), t.getAttribute('data-utc-time'));
-            if (d) return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            var p = t.getAttribute('data-date').split('-');
-            return new Date(+p[0], +p[1] - 1, +p[2]);
-        }
-
-        // 1. Times in the visitor's zone
-        document.querySelectorAll('time.fight-time').forEach(function (el) {
-            var fmt = el.getAttribute('data-format');
-            var d = startOf(el.getAttribute('data-date'), el.getAttribute('data-utc-time'));
-            var est = el.getAttribute('data-estimated') === 'true' ? '~' : '';
-            if (!d) {
-                if (fmt === 'long') {
-                    var day = localDayOf(el.closest('article'));
-                    if (day) el.textContent = WEEKDAYS[day.getDay()].slice(0, 3) + ' ' + day.getDate() + ' ' + MONTHS[day.getMonth()] + ' · Time TBA';
-                }
-                return;
-            }
-            var c = clock(d);
-            if (fmt === 'big') {
-                el.textContent = est + c.hm;
-                var ap = document.createElement('span'); ap.className = 'ap'; ap.textContent = c.ap;
-                el.appendChild(ap);
-            } else {
-                el.textContent = WEEKDAYS[d.getDay()].slice(0, 3) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' · ' + est + c.hm + ' ' + c.ap;
-            }
-            if (est) el.title = 'Estimated start time based on the venue region';
-        });
-
-        // 2. Time-zone line
-        try {
-            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            var abbr = new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ')[2];
-            document.getElementById('timezone-display').textContent =
-                'times in ' + tz.split('/').pop().replace(/_/g, ' ') + (abbr ? ' (' + abbr + ')' : '');
-        } catch (e) {}
-
-        // 3. Regroup the list by the visitor's local day
-        try {
-            var box = document.getElementById('days');
-            var cards = Array.prototype.slice.call(box.querySelectorAll('article.ev'));
-            if (cards.length) {
-                var items = cards.map(function (c, i) { var d = localDayOf(c); return { c: c, i: i, d: d, k: d ? dayKey(d) : 0 }; });
-                if (items.every(function (x) { return x.d; })) {
-                    items.sort(function (a, b) { return (a.k - b.k) || (a.i - b.i); });
-                    var sections = [], sec = null, last = null;
-                    items.forEach(function (it) {
-                        if (it.k !== last) {
-                            sec = document.createElement('section'); sec.className = 'day';
-                            var h = document.createElement('h3'); h.className = 'day-h';
-                            var n = document.createElement('span'); n.className = 'dname'; n.textContent = WEEKDAYS[it.d.getDay()];
-                            var dt = document.createElement('span'); dt.className = 'ddate'; dt.textContent = it.d.getDate() + ' ' + MONTHS[it.d.getMonth()];
-                            h.appendChild(n); h.appendChild(document.createTextNode(' ')); h.appendChild(dt);
-                            var r = relLabel(daysFromToday(it.d));
-                            if (r) { var chip = document.createElement('span'); chip.className = 'rel'; chip.textContent = r; h.appendChild(document.createTextNode(' ')); h.appendChild(chip); }
-                            sec.appendChild(h); sections.push(sec); last = it.k;
-                        }
-                        sec.appendChild(it.c);
-                    });
-                    box.replaceChildren.apply(box, sections);
-                }
-            }
-        } catch (e) { /* keep the server's grouping */ }
-
-        // 4. Relative chips on the big cards
-        document.querySelectorAll('.rc').forEach(function (card) {
-            var d = localDayOf(card), chip = card.querySelector('.rel');
-            if (!d || !chip) return;
-            chip.textContent = relLabel(daysFromToday(d)) || (d.getDate() + ' ' + MONTHS[d.getMonth()]);
-        });
-
-        // 5. Undercard open/close
-        document.querySelectorAll('.ev .more').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var list = document.getElementById(btn.getAttribute('aria-controls'));
-                var open = btn.getAttribute('aria-expanded') !== 'true';
-                list.hidden = !open;
-                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-                var n = +btn.getAttribute('data-count');
-                btn.textContent = open ? 'Hide fights ▴' : '+' + n + ' fight' + (n === 1 ? '' : 's') + ' ▾';
-            });
-        });
-
-        // 6. All / UFC / Boxing filter
-        var pills = document.querySelectorAll('.sport-pill');
-        function applyFilter(sport) {
-            pills.forEach(function (p) {
-                var on = p.getAttribute('data-filter') === sport;
-                p.setAttribute('aria-pressed', on ? 'true' : 'false');
-            });
-            var match = function (el) { return sport === 'All' || el.getAttribute('data-sport') === sport; };
-            document.querySelectorAll('article.ev').forEach(function (c) { c.hidden = !match(c); });
-            document.querySelectorAll('#days section.day').forEach(function (s) {
-                s.hidden = !s.querySelector('article.ev:not([hidden])');
-            });
-            var anyEv = !!document.querySelector('#days article.ev:not([hidden])');
-            document.getElementById('filterEmpty').hidden = anyEv || !document.querySelector('#days article.ev');
-            var first = true, anyBig = false;
-            document.querySelectorAll('.rc').forEach(function (c) {
-                var ok = match(c);
-                c.classList.toggle('filtered-out', !ok);
-                c.classList.toggle('lead', ok && first);
-                c.style.display = ok ? '' : 'none';
-                if (ok) { first = false; anyBig = true; }
-            });
-            var bigSec = document.querySelector('.big-section');
-            if (bigSec) bigSec.hidden = !anyBig;
-        }
-        pills.forEach(function (p) {
-            p.addEventListener('click', function () { applyFilter(p.getAttribute('data-filter')); });
-        });
-
-        // 7. Big-fights arrows
+        // Big-fights arrows (hidden when every card already fits)
         window.railScroll = function (dir) {
             var rail = document.getElementById('bigRail');
             if (rail) rail.scrollBy({ left: dir * 438, behavior: 'smooth' });
         };
-
-        (function () {
-            var rail = document.getElementById('bigRail'), arrows = document.querySelector('.arrows');
-            if (!rail || !arrows) return;
-            function check() { arrows.style.visibility = rail.scrollWidth > rail.clientWidth + 4 ? '' : 'hidden'; }
+        var rail = document.getElementById('bigRail'), arrows = document.querySelector('.arrows');
+        if (rail && arrows) {
+            var check = function () { arrows.style.visibility = rail.scrollWidth > rail.clientWidth + 4 ? '' : 'hidden'; };
             check(); window.addEventListener('resize', check);
-        })();
+        }
 
-        // 8. Search
+        // Search
         var allFights = {{ search_fights|tojson }};
         var toggle = document.getElementById('searchToggle');
         var bar = document.getElementById('searchBar');
@@ -510,10 +203,10 @@
         });
         if (location.hash === '#search') openSearch();
         function whenText(f) {
-            var d = startOf(f.date, f.time);
-            if (!d) { var p = f.date.split('-'); return MONTHS[+p[1] - 1] + ' ' + (+p[2]) + ' · Time TBA'; }
-            var c = clock(d);
-            return WEEKDAYS[d.getDay()].slice(0, 3) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + ' · ' + (f.time_estimated ? '~' : '') + c.hm + ' ' + c.ap;
+            var d = FS.startOf(f.date, f.time);
+            if (!d) { var p = f.date.split('-'); return FS.MONTHS[+p[1] - 1] + ' ' + (+p[2]) + ' · Time TBA'; }
+            var c = FS.clock(d);
+            return FS.shortDate(d) + ' · ' + (f.time_estimated ? '~' : '') + c.hm + ' ' + c.ap;
         }
         function render(q) {
             q = q.toLowerCase().trim();
@@ -524,7 +217,7 @@
             });
             var h = document.createElement('p'); h.className = 'tzline';
             h.textContent = hits.length ? hits.length + ' fight' + (hits.length === 1 ? '' : 's') + ' found' : 'No fights found for "' + q + '"';
-            var list = document.createElement('div'); list.className = 'sr-res ev-list';
+            var list = document.createElement('div'); list.className = 'sr-res';
             list.style.cssText = 'background:var(--card);border:1px solid var(--bd);border-radius:16px;margin-top:10px;overflow:hidden';
             hits.slice(0, 50).forEach(function (f) {
                 var a = document.createElement('a'); a.href = f.path;

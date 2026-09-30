@@ -260,6 +260,28 @@ def surname(name):
 
 
 app.jinja_env.filters['surname'] = surname
+
+
+def result_text(r):
+    """One-line result: 'Inoue wins · UD · 12 rounds', 'Walker wins · KO · Round 2'."""
+    if not r:
+        return ''
+    if r.get('outcome') == 'draw':
+        return 'Draw' + (f" · {r['method']}" if r.get('method') else '')
+    if r.get('outcome') != 'win':
+        return 'No contest'
+    bits = [f"{surname(r.get('winner'))} wins"]
+    method = r.get('method') or ''
+    if method:
+        bits.append(method)
+    rnd = r.get('round')
+    if rnd:
+        decision = method.upper() in ('UD', 'SD', 'MD', 'TD', 'DECISION') or 'DEC' in method.upper()
+        bits.append(f"{rnd} rounds" if decision else f"Round {rnd}" + (f", {r['time']}" if r.get('time') else ''))
+    return ' · '.join(bits)
+
+
+app.jinja_env.filters['result_text'] = result_text
 app.jinja_env.globals['ld'] = _ld
 
 
@@ -1519,7 +1541,8 @@ def _undercard(bouts, main, prelims_last=False):
         rest = [b for b in rest if b.get('card_type') != 'Prelims'] + \
                [b for b in rest if b.get('card_type') == 'Prelims']
     return [{'fighter1': b.get('fighter1', ''), 'fighter2': b.get('fighter2', ''),
-             'weight_class': b.get('weight_class', ''), 'card_type': b.get('card_type') or ''}
+             'weight_class': b.get('weight_class', ''), 'card_type': b.get('card_type') or '',
+             'result': b.get('result'), 'result_pending': b.get('result_pending', False)}
             for b in rest]
 
 
@@ -1620,6 +1643,18 @@ def _group_events_for_landing(fights, sport):
     return events, months
 
 
+def _day_sections(events, newest_first=False):
+    """[{'date', 'events'}] in list order; the browser regroups by local day."""
+    key = lambda e: (e['date'] or '9999', e['time'] if e.get('time') and ':' in str(e['time']) else '99:99')
+    days = []
+    for e in sorted(events, key=key, reverse=newest_first):
+        e.setdefault('slug', e['path'].rsplit('/', 1)[-1])
+        if not days or days[-1]['date'] != e['date']:
+            days.append({'date': e['date'], 'events': []})
+        days[-1]['events'].append(e)
+    return days
+
+
 @app.route('/ufc')
 def ufc_schedule():
     """UFC schedule landing page."""
@@ -1647,7 +1682,10 @@ def ufc_schedule():
         'other_path': '/boxing',
         'other_label': 'boxing schedule',
     }
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events, recent_months=recent_months)
+    days = _day_sections(all_events)
+    recent_days = _day_sections([e for e in recent_events if e.get('result') or e.get('result_pending')], newest_first=True)
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events,
+                           recent_months=recent_months, days=days, recent_days=recent_days)
 
 
 @app.route('/boxing')
@@ -1677,7 +1715,20 @@ def boxing_schedule():
         'other_path': '/ufc',
         'other_label': 'UFC schedule',
     }
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events, recent_months=recent_months)
+    days = _day_sections(all_events)
+    recent_days = _day_sections([e for e in recent_events if e.get('result') or e.get('result_pending')], newest_first=True)
+    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events,
+                           recent_months=recent_months, days=days, recent_days=recent_days)
+
+
+@app.route('/results')
+def results_page():
+    """Results from the last 30 days, both sports, newest first."""
+    past = recent_results(fetch_fights())
+    events = (_group_events_for_landing(past, 'UFC')[0] +
+              _group_events_for_landing(past, 'Boxing')[0])
+    days = _day_sections(events, newest_first=True)
+    return render_template('results.html', events=events, days=days)
 
 
 @app.route('/event/<event_slug>')
@@ -1790,8 +1841,8 @@ def event_detail(event_slug):
         'main_event': {
             'fighter1': main_event_fight['fighter1'],
             'fighter2': main_event_fight['fighter2'],
-            'fighter1_image': main_event_fight.get('fighter1_image') or '/static/placeholder-fighter-mma.png',
-            'fighter2_image': main_event_fight.get('fighter2_image') or '/static/placeholder-fighter-mma.png',
+            'fighter1_image': main_event_fight.get('fighter1_image') or get_fighter_image(main_event_fight['fighter1']),
+            'fighter2_image': main_event_fight.get('fighter2_image') or get_fighter_image(main_event_fight['fighter2']),
             'weight_class': weight_class,
             'time': main_event_fight.get('time', 'TBA'),
             **{k: main_event_fight.get(k) for k in ('is_past', 'result', 'result_pending', 'fighter1_tape', 'fighter2_tape', 'sport', 'date')},
@@ -1802,13 +1853,20 @@ def event_detail(event_slug):
                 'fighter2': f['fighter2'],
                 'is_title': f.get('weight_class') == 'Title',
                 'result': f.get('result'),
+                'weight_class': '' if f.get('weight_class') == 'Title' else (f.get('weight_class') or ''),
+                'fighter1_image': f.get('fighter1_image') or get_fighter_image(f['fighter1']),
+                'fighter2_image': f.get('fighter2_image') or get_fighter_image(f['fighter2']),
             }
             for f in main_card_fights
         ],
         'prelims': [
             {
                 'fighter1': f['fighter1'],
-                'fighter2': f['fighter2']
+                'fighter2': f['fighter2'],
+                'result': f.get('result'),
+                'weight_class': '' if f.get('weight_class') == 'Title' else (f.get('weight_class') or ''),
+                'fighter1_image': f.get('fighter1_image') or get_fighter_image(f['fighter1']),
+                'fighter2_image': f.get('fighter2_image') or get_fighter_image(f['fighter2']),
             }
             for f in prelim_fights
         ],
@@ -1951,6 +2009,7 @@ def sitemap():
     pages.append({'loc': 'https://fightschedule.live/', 'lastmod': newest('/'), 'changefreq': 'daily', 'priority': '1.0'})
     pages.append({'loc': 'https://fightschedule.live/ufc', 'lastmod': newest('/event/'), 'changefreq': 'daily', 'priority': '0.9'})
     pages.append({'loc': 'https://fightschedule.live/boxing', 'lastmod': newest('/boxing-event/'), 'changefreq': 'daily', 'priority': '0.9'})
+    pages.append({'loc': 'https://fightschedule.live/results', 'lastmod': today, 'changefreq': 'daily', 'priority': '0.8'})
     pages.append({'loc': 'https://fightschedule.live/privacy', 'lastmod': today, 'changefreq': 'yearly', 'priority': '0.3'})
 
     # UFC events — one URL per event (first non-prelim fight defines the
@@ -2222,6 +2281,7 @@ the typical start for that city.
 - All upcoming fights: https://fightschedule.live/
 - UFC schedule and results: https://fightschedule.live/ufc (results: https://fightschedule.live/ufc#results)
 - Boxing schedule and results: https://fightschedule.live/boxing (results: https://fightschedule.live/boxing#results)
+- All results from the last 30 days: https://fightschedule.live/results
 - One UFC event: https://fightschedule.live/event/<event-slug>
 - One boxing event: https://fightschedule.live/boxing-event/<fighter1>-vs-<fighter2>-<yyyy-mm-dd>
 - Calendar feeds (.ics): https://fightschedule.live/calendar.ics, https://fightschedule.live/calendar/ufc.ics, https://fightschedule.live/calendar/boxing.ics
