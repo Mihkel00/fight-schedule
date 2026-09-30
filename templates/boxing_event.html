@@ -42,6 +42,17 @@
     <script>
         // Timezone conversion for boxing event page
         document.addEventListener('DOMContentLoaded', function() {
+            // Local date label in the server's format ("Sat, Oct 03"), for the
+            // date shown next to a converted time.
+            function localDateLabel(date, utcTime) {
+                const parts = String(utcTime).split(':');
+                const d = new Date(date + 'T' + String(parseInt(parts[0]) || 0).padStart(2, '0') + ':' +
+                                   String(parseInt(parts[1] || '0') || 0).padStart(2, '0') + ':00Z');
+                if (isNaN(d.getTime())) return null;
+                return d.toLocaleDateString('en-US', {weekday: 'short'}) + ', ' +
+                       d.toLocaleDateString('en-US', {month: 'short'}) + ' ' + String(d.getDate()).padStart(2, '0');
+            }
+
             function convertUTCToLocal(date, utcTime) {
                 if (!utcTime || utcTime === 'TBA' || utcTime === '') return 'TBA';
                 
@@ -85,6 +96,9 @@
                     const localTime = convertUTCToLocal(date, utcTime);
                     const prefix = isEstimated ? '~' : '';
                     elem.textContent = prefix + localTime;
+                    const dateEl = elem.parentElement ? elem.parentElement.querySelector('.fight-date') : null;
+                    const dateLabel = dateEl ? localDateLabel(date, utcTime) : null;
+                    if (dateLabel) dateEl.textContent = dateLabel;
                     if (isEstimated) {
                         elem.title = 'Estimated time based on venue region';
                     }
