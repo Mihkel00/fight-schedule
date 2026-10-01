@@ -224,11 +224,11 @@
 /* Desktop: each service is a compact card with its button right beside the
    name (NN/g proximity), instead of rows stretched across the page. */
 @media (min-width: 900px) {
-    .watch-panel { margin-top: 18px; display: inline-block; max-width: 100%; padding: 16px 18px; }
+    .watch-panel { margin-top: 18px; padding: 16px 18px; }
     .watch-panel .rows { display: flex; flex-wrap: wrap; gap: 10px; }
     .watch-panel .wrow { width: 340px; margin: 0; padding: 12px; border: 1px solid #262626; background: #171717; }
     .watch-panel .wrow + .wrow { border-top: 1px solid #262626; }
-    .watch-panel .aff-note { margin-top: 10px; width: 0; min-width: 100%; }
+    .watch-panel .aff-note { margin-top: 10px; }
 }
 .wgo { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .wlogo.has-img { background: #fff; padding: 6px; }
