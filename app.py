@@ -2734,7 +2734,17 @@ _clicks_lock = threading.Lock()
 
 
 # Globals (not context processors) so imported macros in _watch.html can use them
+def brand_logo(key):
+    """Official logo for a watch service, if one has been added as
+    static/brands/<key>.svg (from the service's affiliate/brand kit)."""
+    for ext in ('svg', 'png'):
+        if os.path.exists(os.path.join(app.root_path, 'static', 'brands', f'{key}.{ext}')):
+            return f'/static/brands/{key}.{ext}'
+    return None
+
+
 app.jinja_env.globals.update({
+    'brand_logo': brand_logo,
     'provider_key': _aff.resolve_provider,
     'provider_name': _aff.provider_name,
     'clean_broadcaster': _aff.clean_broadcaster,

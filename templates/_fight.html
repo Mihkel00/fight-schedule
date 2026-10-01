@@ -1,5 +1,6 @@
 {# Pieces shared by the UFC and boxing fight pages. Styles in static/css/list.css. #}
 {% from '_list.html' import face, start_time, result_chip %}
+{% from '_icons.html' import icon %}
 
 {# Photo header. m: the main event (fighter1/2, images, result, is_past);
    when: dict with date/time/time_estimated for the start time. #}
@@ -67,9 +68,11 @@
     <a class="wrow" href="/go/{{ key }}?event={{ slug|urlencode }}&sport={{ sport|lower }}&p=event"
        target="_blank" rel="sponsored nofollow noopener"
        onclick="if(window.gtag){gtag('event','affiliate_click',{provider:'{{ key }}',event_slug:'{{ slug }}',placement:'event'});}">
-        <span class="wlogo wl-{{ key }}" aria-hidden="true">{{ {'paramount-plus': 'P+', 'ufc-fight-pass': 'FP', 'dazn': 'DAZN', 'espn-plus': 'E+'}.get(key, name[:2]) }}</span>
+        {% set logo = brand_logo(key) %}
+        {% if logo %}<span class="wlogo has-img" aria-hidden="true"><img src="{{ logo }}" alt=""></span>
+        {% else %}<span class="wlogo wl-{{ key }}" aria-hidden="true">{{ {'paramount-plus': 'P+', 'ufc-fight-pass': 'FP', 'dazn': 'DAZN', 'espn-plus': 'E+'}.get(key, name[:2]) }}</span>{% endif %}
         <span class="wtext"><b>{{ name }}</b>{% if note %}<small>{{ note }}</small>{% endif %}</span>
-        <span class="wgo">Watch <span aria-hidden="true">↗</span></span>
+        <span class="wgo">Watch {{ icon('arrow-up-right', 14) }}</span>
     </a>
     {% endfor %}
     </div>
@@ -81,7 +84,7 @@
 {# Quiet secondary actions: add one fight to a calendar, or subscribe to all. #}
 {% macro calendar_links(gcal_url, ics_path, label) -%}
 <div class="cal-links">
-    {% if gcal_url %}<a href="{{ gcal_url }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M12 14v4M10 16h4"/></svg>Add to calendar</a>{% endif %}
-    <a href="{{ ics_path }}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h.01"/></svg>{{ label }}</a>
+    {% if gcal_url %}<a href="{{ gcal_url }}" target="_blank" rel="noopener">{{ icon('calendar-plus') }}Add to calendar</a>{% endif %}
+    <a href="{{ ics_path }}">{{ icon('calendar-sync') }}{{ label }}</a>
 </div>
 {%- endmacro %}

@@ -1,0 +1,11 @@
+{# Interface icons from Lucide (https://lucide.dev, ISC licence). Stroke icons
+   drawn in currentColor so they take the text colour. #}
+{% set _paths = {
+    'calendar-plus': '<path d="M16 18h6"/><path d="M16 2v3"/><path d="M19 15v6"/><path d="M21 11.5V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h8.3"/><path d="M3 9h18"/><path d="M8 2v3"/>',
+    'calendar-sync': '<path d="M11 10v4h4"/><path d="m11 14 1.535-1.605a5 5 0 018 1.5"/><path d="M16 2v3"/><path d="m21 18-1.535 1.605a5 5 0 01-8-1.5"/><path d="M21 22v-4h-4"/><path d="M21 8.517V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h3.517"/><path d="M3 9h4"/><path d="M8 2v3"/>',
+    'arrow-up-right': '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+    'tv': '<path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/>',
+} %}
+{% macro icon(name, size=16, cls='') -%}
+<svg class="ico {{ cls }}" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ _paths[name]|safe }}</svg>
+{%- endmacro %}
