@@ -1586,7 +1586,9 @@ def _group_events_for_landing(fights, sport):
                 'time_estimated': f.get('time_estimated', False),
                 'venue': f.get('venue', ''),
                 'location': f.get('location', ''),
-                'streaming': '',
+                # UFC is on Paramount+ in the US (also Latin America and
+                # Australia) since 2026; the UFC source names no broadcaster.
+                'streaming': 'Paramount+',
                 'fight_count': counts.get(name, 1),
                 'sport': 'UFC',
                 'undercard': _undercard(bouts.get(name, []), f, prelims_last=True),
@@ -2245,7 +2247,9 @@ def llms_txt():
                      when(ev), ev.get('venue') or 'venue TBA']
             if ev.get('weight_class'):
                 parts.append(ev['weight_class'])
-            if ev.get('streaming'):
+            if sport == 'UFC':
+                parts.append('broadcast: Paramount+ (US, Latin America, Australia); UFC Fight Pass in most other countries')
+            elif ev.get('streaming'):
                 parts.append(f"broadcast: {ev['streaming']}")
             lines.append('- ' + ' — '.join(parts) + f" — {ev['url']}")
     results = []

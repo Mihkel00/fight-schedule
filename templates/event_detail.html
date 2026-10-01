@@ -67,10 +67,10 @@
                    href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ cal_title }}&dates={{ cal_start }}/{{ cal_start }}&details={{ cal_details }}&location={{ event.venue | urlencode }}">📅 Add to calendar</a>
                 {% endif %}
                 <a class="btn" href="/calendar/ufc.ics">Subscribe to all UFC events</a>
-                {{ watch_link('ESPN+', ufc_slug, 'UFC', 'event', 'chip') }}
+                {{ watch_link('Paramount+', ufc_slug, 'UFC', 'event', 'chip') }}
                 {{ watch_link('UFC Fight Pass', ufc_slug, 'UFC', 'event', 'chip') }}
             </div>
-            <p class="aff-note">We may earn a commission if you subscribe through the watch links. <a href="/privacy#affiliate">Details</a></p>
+            <p class="aff-note">Paramount+ in the US, Latin America and Australia · UFC Fight Pass in most other countries. We may earn a commission if you subscribe through the watch links. <a href="/privacy#affiliate">Details</a></p>
             {% elif m.result_pending and not m.result %}
             <p class="aff-note" style="margin-top:12px">This event has taken place. Results are added as they are published.</p>
             {% endif %}
