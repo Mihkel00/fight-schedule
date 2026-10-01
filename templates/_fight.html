@@ -53,3 +53,35 @@
 </div>
 {% endif %}
 {%- endmacro %}
+
+{# "Where to watch" panel: one row per service, each a tracked /go/ link.
+   services: list of (display name, where it applies or ''). #}
+{% macro watch_panel(services, slug, sport) -%}
+{% set rows = [] %}
+{% for name, note in services %}{% set key = provider_key(name) %}{% if key %}{% set _ = rows.append((key, provider_name(key), note)) %}{% endif %}{% endfor %}
+{% if rows %}
+<section class="watch-panel" aria-labelledby="watch-h">
+    <h2 id="watch-h">Where to watch</h2>
+    <div class="rows">
+    {% for key, name, note in rows %}
+    <a class="wrow" href="/go/{{ key }}?event={{ slug|urlencode }}&sport={{ sport|lower }}&p=event"
+       target="_blank" rel="sponsored nofollow noopener"
+       onclick="if(window.gtag){gtag('event','affiliate_click',{provider:'{{ key }}',event_slug:'{{ slug }}',placement:'event'});}">
+        <span class="wlogo wl-{{ key }}" aria-hidden="true">{{ {'paramount-plus': 'P+', 'ufc-fight-pass': 'FP', 'dazn': 'DAZN', 'espn-plus': 'E+'}.get(key, name[:2]) }}</span>
+        <span class="wtext"><b>{{ name }}</b>{% if note %}<small>{{ note }}</small>{% endif %}</span>
+        <span class="wgo">Watch <span aria-hidden="true">↗</span></span>
+    </a>
+    {% endfor %}
+    </div>
+    <p class="aff-note">Links open the service's site. We may earn a commission if you subscribe. <a href="/privacy#affiliate">Details</a></p>
+</section>
+{% endif %}
+{%- endmacro %}
+
+{# Quiet secondary actions: add one fight to a calendar, or subscribe to all. #}
+{% macro calendar_links(gcal_url, ics_path, label) -%}
+<div class="cal-links">
+    {% if gcal_url %}<a href="{{ gcal_url }}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M12 14v4M10 16h4"/></svg>Add to calendar</a>{% endif %}
+    <a href="{{ ics_path }}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h.01"/></svg>{{ label }}</a>
+</div>
+{%- endmacro %}
