@@ -2805,9 +2805,10 @@ def click_stats(days=30):
     by_provider, by_day, by_event, total = {}, {}, {}, 0
     kinds = {'human': 0, 'bot': 0, 'unknown (before user agents were logged)': 0}
     human_provider, human_lang, bot_agents = {}, {}, {}
-    # 'Real' = not a known bot AND the browser sent a language. Every real
-    # browser sends Accept-Language; scripts that fake a browser user agent
-    # usually don't, so clicks without it are counted separately.
+    # 'Real' = not a known bot, the browser sent a language, AND the click came
+    # from a page on this site (Referer). A visitor tapping a watch link always
+    # sends both; scripts hitting /go/ directly usually send neither referer
+    # nor language (61 of 63 'browser-like' clicks on 2026-10-01 had no referer).
     real = {'total': 0, 'by_day': {}, 'by_placement': {}, 'by_provider': {}, 'by_page': {}, 'by_sport': {}}
 
     def _bump(d, k):
@@ -2815,8 +2816,6 @@ def click_stats(days=30):
 
     def _page(ref):
         path = re.sub(r'^https?://[^/]+', '', ref or '').split('?')[0].split('#')[0]
-        if not ref:
-            return '(no referrer)'
         if path in ('', '/'):
             return 'homepage'
         for prefix, name in (('/results', 'results'), ('/ufc', 'ufc page'), ('/boxing-event/', 'boxing fight page'),
@@ -2845,7 +2844,7 @@ def click_stats(days=30):
                     human_provider[r.get('provider')] = human_provider.get(r.get('provider'), 0) + 1
                     lg = r.get('lang') or '(none)'
                     human_lang[lg] = human_lang.get(lg, 0) + 1
-                    if r.get('lang'):
+                    if r.get('lang') and re.match(r'https?://(www\.)?fightschedule\.live/', r.get('referer') or ''):
                         real['total'] += 1
                         _bump(real['by_day'], r['ts'][:10])
                         _bump(real['by_placement'], r.get('placement') or '(not tagged)')

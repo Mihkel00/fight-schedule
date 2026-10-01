@@ -6,6 +6,23 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-01 — Overstated real watch-link clicks (said ~35–62, it was ~2)
+
+**What happened:** I told the owner about 62 clicks "look like real people"
+and used ~35 as the basis for an earnings estimate. The live breakdown showed
+61 of those 63 had no referrer, i.e. they never came from a page on the site;
+only 2 did.
+
+**Root cause:** I filtered by the signals I had (bot user agent, browser
+language) and presented the remainder as people without checking the one
+signal a real click from our page always carries: the referring page. I
+treated "not caught by my filters" as "real".
+
+**Rule:** Count a click as real only when it carries positive evidence of a
+visit (referrer from our own site, plus a normal browser). When a number is
+the basis for money advice, state how it was derived and its weakest
+assumption.
+
 ## 2026-09-30 — Boxing cards shown twice (Whittaker–Wallace, Messaudi–Alhambra)
 
 **What happened:** The live site listed several 3 Oct boxing cards twice, each
