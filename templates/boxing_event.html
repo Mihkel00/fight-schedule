@@ -43,7 +43,7 @@
 </head>
 <body class="bg-dark-bg text-text-primary">
     {% from '_site_header.html' import site_header %}
-    {% from '_fight.html' import hero, bout, preview_panel %}
+    {% from '_fight.html' import hero, bout, preview_panel, watch_panel, calendar_links %}
     {% from '_watch.html' import watch_link %}
     {% import '_tape_result.html' as tr %}
     {% set m = event.main_event %}
@@ -58,18 +58,13 @@
             {{ hero('Boxing', m.fighter1 ~ ' vs ' ~ m.fighter2, m, {'date': event.date, 'time': event.time, 'time_estimated': event.time_estimated}, where) }}
 
             {% if not m.is_past %}
-            <div class="actions">
-                {% set cal_title = (m.fighter1 ~ ' vs ' ~ m.fighter2) | urlencode %}
-                {% set cal_details = ('Full card and times: ' ~ event.canonical_url) | urlencode %}
-                {% if event.date and event.time and event.time != 'TBA' and ':' in (event.time|string) %}
-                {% set cal_start = event.date | replace('-', '') ~ 'T' ~ event.time | replace(':', '') ~ '00Z' %}
-                <a class="btn primary" target="_blank" rel="noopener"
-                   href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ cal_title }}&dates={{ cal_start }}/{{ cal_start }}&details={{ cal_details }}&location={{ where | urlencode }}">📅 Add to calendar</a>
-                {% endif %}
-                <a class="btn" href="/calendar/boxing.ics">Subscribe to all boxing events</a>
-                {% if event.streaming %}{{ watch_link(event.streaming, slug, 'Boxing', 'event', 'chip') }}{% endif %}
-            </div>
-            {% if event.streaming and provider_key(event.streaming) %}<p class="aff-note">We may earn a commission if you subscribe through the watch link. <a href="/privacy#affiliate">Details</a></p>{% endif %}
+            {% set gcal = none %}
+            {% if event.date and event.time and event.time != 'TBA' and ':' in (event.time|string) %}
+            {% set cal_start = event.date | replace('-', '') ~ 'T' ~ event.time | replace(':', '') ~ '00Z' %}
+            {% set gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' ~ ((m.fighter1 ~ ' vs ' ~ m.fighter2)|urlencode) ~ '&dates=' ~ cal_start ~ '/' ~ cal_start ~ '&details=' ~ (('Full card and times: ' ~ event.canonical_url)|urlencode) ~ '&location=' ~ (where|urlencode) %}
+            {% endif %}
+            {% if event.streaming %}{{ watch_panel([(event.streaming, '')], slug, 'Boxing') }}{% endif %}
+            {{ calendar_links(gcal, '/calendar/boxing.ics', 'Subscribe to all boxing events') }}
             {% elif m.result_pending and not m.result %}
             <p class="aff-note" style="margin-top:12px">This fight has taken place. The result is added as soon as it is published.</p>
             {% endif %}

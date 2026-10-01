@@ -44,7 +44,7 @@
 <body class="bg-dark-bg text-text-primary">
     {% from '_site_header.html' import site_header %}
     {% from '_list.html' import start_time %}
-    {% from '_fight.html' import hero, bout, preview_panel %}
+    {% from '_fight.html' import hero, bout, preview_panel, watch_panel, calendar_links %}
     {% from '_watch.html' import watch_link %}
     {% import '_tape_result.html' as tr %}
     {% set m = event.main_event %}
@@ -58,19 +58,13 @@
             {{ hero('UFC', event.event_name, m, {'date': event.date, 'time': m.time}, event.venue, 'main card' if event.prelims else '') }}
 
             {% if not m.is_past %}
-            <div class="actions">
-                {% set cal_title = event.event_name | urlencode %}
-                {% set cal_details = ('Full card and times: ' ~ event.canonical_url) | urlencode %}
-                {% if event.date and m.time and m.time != 'TBA' %}
-                {% set cal_start = event.date | replace('-', '') ~ 'T' ~ m.time | replace(':', '') ~ '00Z' %}
-                <a class="btn primary" target="_blank" rel="noopener"
-                   href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ cal_title }}&dates={{ cal_start }}/{{ cal_start }}&details={{ cal_details }}&location={{ event.venue | urlencode }}">📅 Add to calendar</a>
-                {% endif %}
-                <a class="btn" href="/calendar/ufc.ics">Subscribe to all UFC events</a>
-                {{ watch_link('ESPN+', ufc_slug, 'UFC', 'event', 'chip') }}
-                {{ watch_link('UFC Fight Pass', ufc_slug, 'UFC', 'event', 'chip') }}
-            </div>
-            <p class="aff-note">We may earn a commission if you subscribe through the watch links. <a href="/privacy#affiliate">Details</a></p>
+            {% set gcal = none %}
+            {% if event.date and m.time and m.time != 'TBA' %}
+            {% set cal_start = event.date | replace('-', '') ~ 'T' ~ m.time | replace(':', '') ~ '00Z' %}
+            {% set gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' ~ (event.event_name|urlencode) ~ '&dates=' ~ cal_start ~ '/' ~ cal_start ~ '&details=' ~ (('Full card and times: ' ~ event.canonical_url)|urlencode) ~ '&location=' ~ (event.venue|urlencode) %}
+            {% endif %}
+            {{ watch_panel([('Paramount+', 'US, Latin America and Australia'), ('UFC Fight Pass', 'Most other countries')], ufc_slug, 'UFC') }}
+            {{ calendar_links(gcal, '/calendar/ufc.ics', 'Subscribe to all UFC events') }}
             {% elif m.result_pending and not m.result %}
             <p class="aff-note" style="margin-top:12px">This event has taken place. Results are added as they are published.</p>
             {% endif %}

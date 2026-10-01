@@ -1586,7 +1586,9 @@ def _group_events_for_landing(fights, sport):
                 'time_estimated': f.get('time_estimated', False),
                 'venue': f.get('venue', ''),
                 'location': f.get('location', ''),
-                'streaming': '',
+                # UFC is on Paramount+ in the US (also Latin America and
+                # Australia) since 2026; the UFC source names no broadcaster.
+                'streaming': 'Paramount+',
                 'fight_count': counts.get(name, 1),
                 'sport': 'UFC',
                 'undercard': _undercard(bouts.get(name, []), f, prelims_last=True),
@@ -2245,7 +2247,9 @@ def llms_txt():
                      when(ev), ev.get('venue') or 'venue TBA']
             if ev.get('weight_class'):
                 parts.append(ev['weight_class'])
-            if ev.get('streaming'):
+            if sport == 'UFC':
+                parts.append('broadcast: Paramount+ (US, Latin America, Australia); UFC Fight Pass in most other countries')
+            elif ev.get('streaming'):
                 parts.append(f"broadcast: {ev['streaming']}")
             lines.append('- ' + ' — '.join(parts) + f" — {ev['url']}")
     results = []
@@ -2730,7 +2734,17 @@ _clicks_lock = threading.Lock()
 
 
 # Globals (not context processors) so imported macros in _watch.html can use them
+def brand_logo(key):
+    """Official logo for a watch service, if one has been added as
+    static/brands/<key>.svg (from the service's affiliate/brand kit)."""
+    for ext in ('svg', 'png'):
+        if os.path.exists(os.path.join(app.root_path, 'static', 'brands', f'{key}.{ext}')):
+            return f'/static/brands/{key}.{ext}'
+    return None
+
+
 app.jinja_env.globals.update({
+    'brand_logo': brand_logo,
     'provider_key': _aff.resolve_provider,
     'provider_name': _aff.provider_name,
     'clean_broadcaster': _aff.clean_broadcaster,
@@ -2791,6 +2805,25 @@ def click_stats(days=30):
     by_provider, by_day, by_event, total = {}, {}, {}, 0
     kinds = {'human': 0, 'bot': 0, 'unknown (before user agents were logged)': 0}
     human_provider, human_lang, bot_agents = {}, {}, {}
+    # 'Real' = not a known bot AND the browser sent a language. Every real
+    # browser sends Accept-Language; scripts that fake a browser user agent
+    # usually don't, so clicks without it are counted separately.
+    real = {'total': 0, 'by_day': {}, 'by_placement': {}, 'by_provider': {}, 'by_page': {}, 'by_sport': {}}
+
+    def _bump(d, k):
+        d[k] = d.get(k, 0) + 1
+
+    def _page(ref):
+        path = re.sub(r'^https?://[^/]+', '', ref or '').split('?')[0].split('#')[0]
+        if not ref:
+            return '(no referrer)'
+        if path in ('', '/'):
+            return 'homepage'
+        for prefix, name in (('/results', 'results'), ('/ufc', 'ufc page'), ('/boxing-event/', 'boxing fight page'),
+                             ('/boxing', 'boxing page'), ('/event/', 'ufc fight page')):
+            if path.startswith(prefix):
+                return name
+        return 'other'
     if os.path.exists(CLICKS_FILE):
         with open(CLICKS_FILE) as f:
             for line in f:
@@ -2812,6 +2845,13 @@ def click_stats(days=30):
                     human_provider[r.get('provider')] = human_provider.get(r.get('provider'), 0) + 1
                     lg = r.get('lang') or '(none)'
                     human_lang[lg] = human_lang.get(lg, 0) + 1
+                    if r.get('lang'):
+                        real['total'] += 1
+                        _bump(real['by_day'], r['ts'][:10])
+                        _bump(real['by_placement'], r.get('placement') or '(not tagged)')
+                        _bump(real['by_provider'], r.get('provider'))
+                        _bump(real['by_page'], _page(r.get('referer')))
+                        _bump(real['by_sport'], r.get('sport') or '-')
                 by_provider[r.get('provider')] = by_provider.get(r.get('provider'), 0) + 1
                 by_day[r['ts'][:10]] = by_day.get(r['ts'][:10], 0) + 1
                 by_event[r.get('event') or '-'] = by_event.get(r.get('event') or '-', 0) + 1
@@ -2820,7 +2860,8 @@ def click_stats(days=30):
             'bot_agents': sorted(bot_agents.items(), key=lambda kv: -kv[1])[:15],
             'by_provider': by_provider, 'by_day': dict(sorted(by_day.items())),
             'top_events': sorted(by_event.items(), key=lambda kv: -kv[1])[:20],
-            'configured_affiliates': [k for k in _aff.PROVIDERS if _aff.is_affiliate_configured(k)]}
+            'configured_affiliates': [k for k in _aff.PROVIDERS if _aff.is_affiliate_configured(k)],
+            'real_clicks': {**real, 'by_day': dict(sorted(real['by_day'].items()))}}
 
 
 @app.route('/privacy')
