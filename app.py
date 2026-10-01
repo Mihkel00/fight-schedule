@@ -600,6 +600,70 @@ def score_fight_for_featuring(fight, today_date):
 
     return score
 
+_EPOCH = datetime(2000, 1, 1)
+
+
+def _bout_start(f):
+    try:
+        return datetime.strptime(f"{f.get('date')} {f.get('time')}", '%Y-%m-%d %H:%M')
+    except (TypeError, ValueError):
+        return None
+
+
+def _named_in_title(f, title):
+    t = (title or '').lower()
+    return bool(t) and all(surname(f.get(k) or '').lower() in t for k in ('fighter1', 'fighter2'))
+
+
+def normalize_ufc_cards(fights):
+    """Put each UFC card's main event first and label main card vs prelims from
+    the data, not from list order. ESPN lists bouts earliest first (main event
+    last) and labels them all 'Main Card'; the site treats the first bout of an
+    event as its main event. Order within a card: latest start first, the bout
+    named in the event title first of all. Idempotent (stores 'bout_order')."""
+    groups, order = {}, []
+    for f in fights:
+        if f.get('sport') == 'UFC' and f.get('event_name'):
+            key = f['event_name']
+            if key not in groups:
+                groups[key] = []
+                order.append(key)
+            groups[key].append(f)
+    if not groups:
+        return fights
+    for key in order:
+        g = groups[key]
+        if all('bout_order' in f for f in g):
+            g.sort(key=lambda f: f['bout_order'])
+            continue
+        starts = {_bout_start(f) for f in g} - {None}
+        if len(starts) > 1:
+            # ESPN order is earliest first: reverse it, then latest segment first
+            g.reverse()
+            g.sort(key=lambda f: (_bout_start(f) is None, -((_bout_start(f) or _EPOCH) - _EPOCH).total_seconds()))
+            latest = max(starts)
+            if all((f.get('card_type') or 'Main Card') == 'Main Card' for f in g):
+                for f in g:
+                    f['card_type'] = 'Main Card' if _bout_start(f) == latest else 'Prelims'
+        named = next((f for f in g if _named_in_title(f, key)), None)
+        if named is not None and g[0] is not named:
+            g.remove(named)
+            g.insert(0, named)
+        for i, f in enumerate(g):
+            f['bout_order'] = i
+    out, done = [], set()
+    for f in fights:
+        if f.get('sport') == 'UFC' and f.get('event_name'):
+            key = f['event_name']
+            if key in done:
+                continue
+            done.add(key)
+            out.extend(groups[key])
+        else:
+            out.append(f)
+    return out
+
+
 def load_cache(max_age_hours=None):
     """
     Load cached fight data if it exists and is fresh
@@ -633,6 +697,7 @@ def load_cache(max_age_hours=None):
             # A cache written before listings were deduplicated may hold repeats
             _seen = set()
             fights = [f for f in fights if not (_fight_key(f) in _seen or _seen.add(_fight_key(f)))]
+            fights = normalize_ufc_cards(fights)
             fights = apply_time_overrides(fights)
 
             # Drop events older than the results window so stale cache served
@@ -1362,6 +1427,7 @@ def _scrape_all_sources():
                 fights.append(dict(f)); seen_pairs.add(key); carried_past += 1
     log(f"Carried forward {carried_past} completed fights for results")
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
+    fights = normalize_ufc_cards(fights)
 
     fights_before_filter = len(fights)
     fights = [f for f in fights if f.get('date', '') >= cutoff]

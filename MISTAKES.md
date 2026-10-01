@@ -6,6 +6,22 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-01 — UFC cards showed the opening bout as the main event
+
+**What happened:** After ESPN came back, UFC 332 appeared everywhere as
+"McGee vs Nolan" (the first bout) instead of Silva vs Wang, with the 20:00 UTC
+opener as its start time and a fight page dated a day early.
+
+**Root cause:** The code took "first non-prelim bout in the list" as the main
+event. That only held because the restored data happened to list the main
+event first; ESPN lists bouts earliest first and labels every bout "Main
+Card". I relied on list order instead of data that identifies the main event.
+
+**Rule:** Identify the main event from the data itself (the bout named in the
+event title, else the latest start), never from list position, and derive
+main card vs prelims from start times when the source's labels don't
+distinguish them. Re-check live pages after a data source recovers.
+
 ## 2026-10-01 — Overstated real watch-link clicks (said ~35–62, it was ~2)
 
 **What happened:** I told the owner about 62 clicks "look like real people"
