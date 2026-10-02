@@ -30,3 +30,4 @@ last_good.json
 last_good.json.tmp
 data/runs/
 data/snapshots/
+usage.jsonl

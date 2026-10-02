@@ -26,6 +26,7 @@ from bs4 import BeautifulSoup
 # accepts too.
 from scrapers import scrape_ufc as scrape_ufc_events, scrape_boxing as scrape_boxing_events
 import runs as _runs
+import usage as _usage
 import image_pipeline as _images
 import locks as _locks
 import structured_data as _ld
@@ -2705,6 +2706,9 @@ def debug_state():
         threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
         return jsonify({'started': True, 'pending_fighters': len(pending)})
 
+    if part == 'usage':
+        return jsonify(_usage.stats(days=int(request.args.get('days', 30))))
+
     if part == 'check':
         # Run the named invariants over what the site is serving right now (read-only)
         import invariants as _inv
@@ -2945,6 +2949,55 @@ _BOT_UA = re.compile(r'bot|crawl|spider|slurp|preview|fetch|scrap|headless|pytho
 def _is_bot(ua):
     """Best-effort: empty user agents and known crawler / tool signatures."""
     return (not ua) or bool(_BOT_UA.search(ua))
+
+
+def _from_this_site(req):
+    """Did this request come from a page on fightschedule.live (or a local dev
+    server)? Scripts hitting endpoints directly send no Referer/Origin."""
+    src = req.headers.get('Origin') or req.headers.get('Referer') or ''
+    host = req.host.split(':')[0]
+    return bool(re.match(r'https?://(www\.)?' + re.escape(host) + r'(:\d+)?(/|$)', src))
+
+
+@app.after_request
+def _count_page_view(resp):
+    """One usage record per HTML page served to a browser. Cookie-free; no IP."""
+    try:
+        if (request.method == 'GET' and resp.status_code == 200
+                and resp.mimetype == 'text/html'
+                and not request.path.startswith(('/admin', '/api', '/static', '/go/', '/health'))):
+            ua = request.headers.get('User-Agent') or ''
+            _usage.record('view', _usage.page_type(request.path), bot=_is_bot(ua),
+                          lang=(request.headers.get('Accept-Language') or '').strip())
+    except Exception:
+        pass
+    return resp
+
+
+@app.route('/api/t', methods=['POST'])
+def usage_beacon():
+    """Tap counter. Body: {"name": "card", "page": "/ufc", "detail": "UFC"}.
+    Always 204; invalid or oversized bodies are dropped silently."""
+    try:
+        if request.content_length and request.content_length > 600:
+            return '', 204
+        data = request.get_json(force=True, silent=True) or {}
+        name, detail = data.get('name'), data.get('detail')
+        if not _usage.valid_tap(name, detail):
+            return '', 204
+        ua = request.headers.get('User-Agent') or ''
+        _usage.record('tap', _usage.page_type(str(data.get('page') or request.headers.get('Referer') or '')),
+                      name=name, detail=detail or None, bot=_is_bot(ua),
+                      lang=(request.headers.get('Accept-Language') or '').strip(),
+                      referer_ok=_from_this_site(request))
+    except Exception:
+        pass
+    resp = make_response('', 204)
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
+
+
+_csrf.exempt(usage_beacon)
 
 
 @app.route('/go/<provider>')

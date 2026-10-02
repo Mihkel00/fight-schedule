@@ -44,6 +44,34 @@
     }
     window.FS = { startOf: startOf, clock: clock, shortDate: shortDate, MONTHS: MONTHS };
 
+    // 0. Usage counts (cookie-free; see /privacy#usage). One tiny request per tap.
+    function tap(name, detail) {
+        try {
+            var body = JSON.stringify({ name: name, detail: detail || null, page: location.pathname });
+            if (navigator.sendBeacon) navigator.sendBeacon('/api/t', new Blob([body], { type: 'application/json' }));
+            else fetch('/api/t', { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' }, keepalive: true });
+        } catch (e) {}
+    }
+    window.FS_tap = tap;
+    document.addEventListener('click', function (ev) {
+        var el = ev.target.closest('a, button');
+        if (!el) return;
+        var c = el.classList;
+        if (c.contains('ev-main')) tap('card', el.closest('article') && el.closest('article').getAttribute('data-sport'));
+        else if (c.contains('rc-link')) tap('big_card', el.closest('article') && el.closest('article').getAttribute('data-sport'));
+        else if (c.contains('chipf')) tap('filter', el.getAttribute('data-filter'));
+        else if (c.contains('more')) tap(el.getAttribute('aria-expanded') === 'true' ? 'undercard_close' : 'undercard_open');
+        else if (c.contains('uc-link')) tap('full_card');
+        else if (c.contains('wrow') || c.contains('watch') || c.contains('rc-watch')) tap('watch', (el.getAttribute('href') || '').split('/go/')[1] ? (el.getAttribute('href') || '').split('/go/')[1].split('?')[0] : null);
+        else if (el.closest('.cal-links')) tap((el.getAttribute('href') || '').indexOf('.ics') !== -1 ? 'calendar_feed' : 'calendar_add');
+        else if (c.contains('nav-pill')) tap('nav', el.textContent.trim());
+        else if (el.id === 'searchToggle') tap('search_open');
+        else if (el.hasAttribute('data-tab')) tap('tab', el.getAttribute('data-tab'));
+        else if (el.closest('.crumbs')) tap('crumb');
+        else if (el.closest('.page-foot')) tap('foot_link', el.textContent.trim());
+        else if (el.closest('.arrows')) tap('rail_scroll');
+    }, true);
+
     // 1. Times in the visitor's zone
     document.querySelectorAll('time.fight-time, time[data-format="date"]').forEach(function (el) {
         var fmt = el.getAttribute('data-format') || 'plain';
