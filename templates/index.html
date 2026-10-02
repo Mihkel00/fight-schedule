@@ -218,7 +218,12 @@
             if (hits.length) results.appendChild(list);
             results.hidden = false;
         }
-        input.addEventListener('input', function () { render(input.value); });
+        var searched = false;
+        input.addEventListener('input', function () {
+            if (!searched && input.value.trim()) { searched = true; if (window.FS_tap) FS_tap('search'); }
+            if (!input.value.trim()) searched = false;
+            render(input.value);
+        });
     })();
     </script>
     {% include '_consent.html' %}
