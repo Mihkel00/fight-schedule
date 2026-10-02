@@ -55,7 +55,7 @@
         <div class="wrap">
             <div class="crumbs">{% if m.is_past %}<a href="/results">Results</a>{% else %}<a href="/ufc">UFC schedule</a>{% endif %} › {{ event.event_name.split(':')[0] }}</div>
 
-            {{ hero('UFC', event.event_name, m, {'date': event.date, 'time': m.time}, event.venue, 'main card' if event.prelims else '') }}
+            {{ hero('UFC', event.event_name.split(':')[0], m, {'date': event.date, 'time': m.time}, event.venue, 'main card' if event.prelims else '') }}
 
             {% if not m.is_past %}
             {% set gcal = none %}
@@ -64,7 +64,7 @@
             {% set gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' ~ (event.event_name|urlencode) ~ '&dates=' ~ cal_start ~ '/' ~ cal_start ~ '&details=' ~ (('Full card and times: ' ~ event.canonical_url)|urlencode) ~ '&location=' ~ (event.venue|urlencode) %}
             {% endif %}
             {{ watch_panel([('Paramount+', 'US, Latin America and Australia'), ('UFC Fight Pass', 'Most other countries')], ufc_slug, 'UFC') }}
-            {{ calendar_links(gcal, '/calendar/ufc.ics', 'Subscribe to all UFC events') }}
+            {{ calendar_links(gcal, '/calendar/ufc.ics', 'All UFC events to calendar') }}
             {% elif m.result_pending and not m.result %}
             <p class="aff-note" style="margin-top:12px">This event has taken place. Results are added as they are published.</p>
             {% endif %}

@@ -53,7 +53,7 @@
 
     <main class="home">
         <div class="wrap">
-            <div class="page-title"><h1>{{ page.heading }} — {{ page.tagline }}</h1> · <span id="timezone-display">times in your time zone</span></div>
+            <div class="page-title"><h1>{{ page.heading }}</h1> · <span id="timezone-display">times in your time zone</span></div>
 
             <div class="seg" role="tablist" aria-label="Upcoming or results">
                 <button type="button" role="tab" data-tab="upcoming" aria-selected="true" aria-controls="tab-upcoming">Upcoming</button>
@@ -61,21 +61,13 @@
             </div>
 
             <section id="tab-upcoming" role="tabpanel">
-                {{ days_list(days, 'upcoming', page.sport|lower ~ '_list', 'asc', 'No upcoming events right now — check back soon.', 'u') }}
+                {{ days_list(days, 'upcoming', page.sport|lower ~ '_list', 'asc', 'No upcoming events right now — check back soon.', 'u', show_sport=false) }}
             </section>
             <section id="tab-results" role="tabpanel" hidden>
-                {{ days_list(recent_days, 'results', page.sport|lower ~ '_results', 'desc', 'No results in the last 30 days yet.', 'r') }}
+                {{ days_list(recent_days, 'results', page.sport|lower ~ '_results', 'desc', 'No results in the last 30 days yet.', 'r', show_sport=false) }}
             </section>
 
-            <div class="page-foot">
-                <p>{{ page.footer_text }}</p>
-                <p style="margin-top:6px">Also see the <a href="{{ page.other_path }}">{{ page.other_label }}</a>, <a href="/results">all recent results</a>
-                or the <a href="/">full schedule</a>, or <a href="{{ page.ics_path }}">subscribe to the {{ page.sport }} calendar (.ics)</a>.</p>
-            </div>
-        </div>
-
-        <div class="mt-24 mb-8 text-center">
-            <p class="font-work text-xs text-text-tertiary"><a href="/privacy" class="hover:text-text-secondary transition-colors">Privacy & Cookie Policy</a></p>
+            <p class="page-foot"><a href="{{ page.other_path }}">{{ page.other_label|capitalize }}</a> · <a href="/results">Results</a> · <a href="{{ page.ics_path }}">{{ page.sport }} calendar feed</a> · <a href="/privacy">Privacy &amp; cookies</a></p>
         </div>
     </main>
 

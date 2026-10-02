@@ -151,24 +151,11 @@
         {% endif %}
 
         <div class="wrap fight-section">
-            <div class="tzline"><h1>UFC &amp; boxing schedule</h1> · <span id="timezone-display">times in your time zone</span></div>
+            <div class="tzline"><h1 class="sr-only">UFC &amp; boxing schedule</h1><span id="timezone-display">Times in your time zone</span></div>
             {{ sport_chips() }}
             {{ days_list(days, 'upcoming', 'home_list', 'asc', 'No upcoming fights listed right now — check back soon.') }}
             <p class="empty-note" id="filterEmpty" hidden>No upcoming fights for this sport right now.</p>
-            <nav class="more-links" aria-label="Full schedules">
-                <a href="/ufc">Full UFC schedule →</a>
-                <a href="/boxing">Full boxing schedule →</a>
-            </nav>
-        </div>
-
-        <!-- Minimal footer -->
-        <div class="mt-24 mb-8 text-center">
-            <p class="font-work text-xs text-text-tertiary">
-                Fight Schedule • Updated daily with the latest UFC and Boxing events
-            </p>
-            <p class="font-work text-xs text-text-tertiary mt-2">
-                <a href="/privacy" class="hover:text-text-secondary transition-colors">Privacy & Cookie Policy</a>
-            </p>
+            <p class="page-foot"><a href="/ufc">UFC schedule</a> · <a href="/boxing">Boxing schedule</a> · <a href="/privacy">Privacy &amp; cookies</a></p>
         </div>
     </main>
 

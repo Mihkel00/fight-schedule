@@ -18,15 +18,16 @@
         return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - t) / 86400000);
     }
     function aheadLabel(n) {
-        if (n === 0) return 'Today';
-        if (n === 1) return 'Tomorrow';
+        if (n === 0) return 'today';
+        if (n === 1) return 'tomorrow';
         return n > 1 && n < 7 ? 'in ' + n + ' days' : '';
     }
     function agoLabel(n) {
-        if (n === 0) return 'Today';
-        if (n === -1) return 'Yesterday';
+        if (n === 0) return 'today';
+        if (n === -1) return 'yesterday';
         return n < -1 ? (-n) + ' days ago' : '';
     }
+    function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
     function clock(d) {
         var h = d.getHours();
         return { hm: (h % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0'), ap: h >= 12 ? 'PM' : 'AM' };
@@ -44,15 +45,14 @@
     window.FS = { startOf: startOf, clock: clock, shortDate: shortDate, MONTHS: MONTHS };
 
     // 1. Times in the visitor's zone
-    document.querySelectorAll('time.fight-time').forEach(function (el) {
+    document.querySelectorAll('time.fight-time, time[data-format="date"]').forEach(function (el) {
         var fmt = el.getAttribute('data-format') || 'plain';
         var d = startOf(el.getAttribute('data-date'), el.getAttribute('data-utc-time'));
         var est = el.getAttribute('data-estimated') === 'true' ? '~' : '';
         if (!d) {
-            if (fmt === 'long') {
-                var p = (el.getAttribute('data-date') || '').split('-');
-                if (p.length === 3) el.textContent = shortDate(new Date(+p[0], +p[1] - 1, +p[2])) + ' · Time TBA';
-            }
+            var p = (el.getAttribute('data-date') || '').split('-');
+            if (fmt === 'long' && p.length === 3) el.textContent = shortDate(new Date(+p[0], +p[1] - 1, +p[2])) + ' · Time TBA';
+            if (fmt === 'date' && p.length === 3) el.textContent = shortDate(new Date(+p[0], +p[1] - 1, +p[2]));
             return;
         }
         var c = clock(d);
@@ -74,7 +74,8 @@
         try {
             var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             var abbr = new Date().toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ')[2];
-            tzEl.textContent = 'times in ' + tz.split('/').pop().replace(/_/g, ' ') + (abbr ? ' (' + abbr + ')' : '');
+            var prefix = tzEl.getAttribute('data-prefix') || (tzEl.textContent.charAt(0) === 'T' ? 'Times in ' : 'times in ');
+            tzEl.textContent = prefix + tz.split('/').pop().replace(/_/g, ' ') + (abbr ? ' (' + abbr + ')' : '');
         } catch (e) {}
     }
 
@@ -112,7 +113,7 @@
     document.querySelectorAll('[data-rel-chip]').forEach(function (host) {
         var chip = host.querySelector('.rel'), d = localDayOf(host);
         if (!chip || !d) return;
-        chip.textContent = aheadLabel(daysFromToday(d)) || (d.getDate() + ' ' + MONTHS[d.getMonth()]);
+        chip.textContent = cap(aheadLabel(daysFromToday(d)) || (d.getDate() + ' ' + MONTHS[d.getMonth()]));
     });
 
     // 5. Undercard open/close
