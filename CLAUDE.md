@@ -31,6 +31,12 @@ When the owner points out a mistake, or one is discovered, add an entry to
   after any template change that introduces new classes.
 - The debug API (`/api/debug/state?token=…`) is the way to see production
   state; the sandbox cannot reach external hosts other than the site itself.
+  Source health: `/health` (public, 200/503) and `part=health`, `part=run_log`,
+  `part=snapshots`, `part=snapshot&source=Boxing|UFC` (the raw page a source
+  sent). Every scrape saves its raw pages under `DATA_DIR/snapshots/` and a run
+  record under `DATA_DIR/runs/` (see `runs.py`). A production page that
+  parses wrongly is fetched with `part=snapshot` and becomes a test fixture
+  before the parser is changed.
 - Test with a copy of live data (`part=cache`, `part=profiles`, …) in a
   scratch `DATA_DIR`; never commit files under `data/`.
 - Commits: gate commit/push on tests passing; never chain them past a test

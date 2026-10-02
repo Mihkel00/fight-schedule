@@ -45,9 +45,8 @@ def _load():
 
 
 def _save(state):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    with open(STATE_FILE, 'w') as f:
-        json.dump(state, f)
+    from runs import write_json_atomic
+    write_json_atomic(STATE_FILE, state)
 
 
 def report(source, ok, detail=''):
