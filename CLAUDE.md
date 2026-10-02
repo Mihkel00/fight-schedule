@@ -39,6 +39,13 @@ When the owner points out a mistake, or one is discovered, add an entry to
   before the parser is changed.
 - Test with a copy of live data (`part=cache`, `part=profiles`, …) in a
   scratch `DATA_DIR`; never commit files under `data/`.
+- Tests: `pytest -q` (tests/, fixtures in tests/fixtures/) must pass before any
+  commit — `pytest -q > out 2>&1 && git commit …`, never through a pipe. GitHub
+  Actions runs the same suite on every push. When a production page parses
+  wrongly, fetch it with `part=snapshot`, save it under tests/fixtures/ with the
+  correct expected output, and only then change the parser. Browser checks
+  (Playwright, scratchpad `site_browser.py`, `tz_browser.py`) run locally before
+  anything that changes templates or JS.
 - Commits: gate commit/push on tests passing; never chain them past a test
   without `&&`.
 

@@ -614,9 +614,20 @@ def _bout_start(f):
         return None
 
 
+def _name_in_text(name, text):
+    """True if some word of the fighter's name (3+ letters, not a suffix)
+    appears as a whole word in text. Handles 'Wang Cong' in 'Silva vs. Wang'
+    (family name first) as well as 'Silva' in it."""
+    def fold(t):   # 'Procházka' -> 'prochazka', so accents on either side don't matter
+        return ''.join(c for c in unicodedata.normalize('NFKD', t or '') if not unicodedata.combining(c)).lower()
+    text = fold(text)
+    words = [w for w in re.findall(r'\w{3,}', fold(name)) if w not in _NAME_SUFFIXES]
+    return any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in words)
+
+
 def _named_in_title(f, title):
     t = (title or '').lower()
-    return bool(t) and all(surname(f.get(k) or '').lower() in t for k in ('fighter1', 'fighter2'))
+    return bool(t) and all(_name_in_text(f.get(k) or '', t) for k in ('fighter1', 'fighter2'))
 
 
 def normalize_ufc_cards(fights):
@@ -1655,6 +1666,7 @@ def _undercard(bouts, main, prelims_last=False):
                [b for b in rest if b.get('card_type') == 'Prelims']
     return [{'fighter1': b.get('fighter1', ''), 'fighter2': b.get('fighter2', ''),
              'weight_class': b.get('weight_class', ''), 'card_type': b.get('card_type') or '',
+             'date': b.get('date'), 'time': b.get('time'),
              'result': b.get('result'), 'result_pending': b.get('result_pending', False)}
             for b in rest]
 
@@ -2692,6 +2704,13 @@ def debug_state():
         pending = _profile_work_list(fights, load_profiles())
         threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
         return jsonify({'started': True, 'pending_fighters': len(pending)})
+
+    if part == 'check':
+        # Run the named invariants over what the site is serving right now (read-only)
+        import invariants as _inv
+        fs = _fetch_fights_raw()
+        checks = _inv.model_checks(fs)
+        return jsonify({'fights': len(fs), 'healthy': all(c['ok'] for c in checks), 'checks': checks})
 
     if part == 'health':
         return jsonify(_runs.health(extra={'lock_error': _locks.last_error, 'cache_age_hours': _cache_age_hours()}))
