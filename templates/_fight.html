@@ -19,7 +19,7 @@
         <div class="big"><span class="{{ 'lost' if w2 }}">{{ m.fighter1|surname }}</span> <i>vs</i> <span class="{{ 'lost' if w1 }}">{{ m.fighter2|surname }}</span></div>
         {% if m.is_past %}
         <div>{{ result_chip(r) }}</div>
-        <div class="meta2">{{ start_time(when, 'long') }} · {{ where }}</div>
+        <div class="meta2"><time class="fight-date" datetime="{{ when.date }}" data-date="{{ when.date }}" data-format="date">{{ when.date|format_date }}</time> · {{ where }}</div>
         {% else %}
         <div class="meta">{{ start_time(when, 'long') }}{% if time_note %}<small>{{ time_note }}</small>{% endif %}</div>
         <div class="meta2">{{ where }}</div>
@@ -76,7 +76,7 @@
     </a>
     {% endfor %}
     </div>
-    <p class="aff-note">Links open the service's site. We may earn a commission if you subscribe. <a href="/privacy#affiliate">Details</a></p>
+    <p class="aff-note">We may earn a commission if you subscribe. <a href="/privacy#affiliate">Details</a></p>
 </section>
 {% endif %}
 {%- endmacro %}

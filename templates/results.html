@@ -38,17 +38,11 @@
 
     <main class="home">
         <div class="wrap">
-            <div class="page-title"><h1>Fight results</h1> · last 30 days · newest first</div>
+            <div class="page-title"><h1>Results</h1> · last 30 days</div>
             {{ sport_chips() }}
             {{ days_list(days, 'results', 'results', 'desc', 'No results in the last 30 days yet.') }}
             <p class="empty-note" id="filterEmpty" hidden>No results for this sport in the last 30 days.</p>
-            <nav class="more-links" aria-label="Schedules">
-                <a href="/">Upcoming fights →</a>
-            </nav>
-        </div>
-
-        <div class="mt-24 mb-8 text-center">
-            <p class="font-work text-xs text-text-tertiary"><a href="/privacy" class="hover:text-text-secondary transition-colors">Privacy & Cookie Policy</a></p>
+            <p class="page-foot"><a href="/">Upcoming fights</a> · <a href="/privacy">Privacy &amp; cookies</a></p>
         </div>
     </main>
 

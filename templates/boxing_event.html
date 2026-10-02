@@ -55,7 +55,9 @@
         <div class="wrap">
             <div class="crumbs">{% if m.is_past %}<a href="/results">Results</a>{% else %}<a href="/boxing">Boxing schedule</a>{% endif %} › {{ m.fighter1 }} vs {{ m.fighter2 }}</div>
 
-            {{ hero('Boxing', m.fighter1 ~ ' vs ' ~ m.fighter2, m, {'date': event.date, 'time': event.time, 'time_estimated': event.time_estimated}, where) }}
+            {% set wc = (m.weight_class or event.fights[0].weight_class or '') %}
+            {% set kicker = (wc|replace('Title ', '') ~ ' title') if wc.startswith('Title') else (wc or 'Boxing') %}
+            {{ hero('Boxing', kicker, m, {'date': event.date, 'time': event.time, 'time_estimated': event.time_estimated}, where) }}
 
             {% if not m.is_past %}
             {% set gcal = none %}
@@ -64,7 +66,7 @@
             {% set gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' ~ ((m.fighter1 ~ ' vs ' ~ m.fighter2)|urlencode) ~ '&dates=' ~ cal_start ~ '/' ~ cal_start ~ '&details=' ~ (('Full card and times: ' ~ event.canonical_url)|urlencode) ~ '&location=' ~ (where|urlencode) %}
             {% endif %}
             {% if event.streaming %}{{ watch_panel([(event.streaming, '')], slug, 'Boxing') }}{% endif %}
-            {{ calendar_links(gcal, '/calendar/boxing.ics', 'Subscribe to all boxing events') }}
+            {{ calendar_links(gcal, '/calendar/boxing.ics', 'All boxing events to calendar') }}
             {% elif m.result_pending and not m.result %}
             <p class="aff-note" style="margin-top:12px">This fight has taken place. The result is added as soon as it is published.</p>
             {% endif %}

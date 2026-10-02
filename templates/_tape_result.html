@@ -25,11 +25,13 @@
 {%- endmacro %}
 
 {% macro _stat(label, v1, v2) -%}
+{% if v1 is not none or v2 is not none %}
 <div class="tape-row grid items-center gap-2 py-2.5 border-t border-dark-border font-work">
     <span class="text-text-primary text-sm sm:text-base text-right leading-snug">{{ v1 if v1 is not none else '—' }}</span>
     <span class="text-text-tertiary text-center text-[10px] sm:text-xs uppercase tracking-wide px-1 whitespace-nowrap">{{ label }}</span>
     <span class="text-text-primary text-sm sm:text-base text-left leading-snug">{{ v2 if v2 is not none else '—' }}</span>
 </div>
+{% endif %}
 {%- endmacro %}
 
 {% macro tale_of_the_tape(fight, accent) -%}
