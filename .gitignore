@@ -28,3 +28,5 @@ fights_cache.json.tmp
 .*.lock
 last_good.json
 last_good.json.tmp
+data/runs/
+data/snapshots/
