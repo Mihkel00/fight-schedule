@@ -475,42 +475,84 @@ def _dedup(fights):
     return out
 
 
-def scrape_boxing_events():
-    """
-    Scrape boxing schedule from BoxingSchedule.co.
-
-    Tries the current <article class="rs-card"> layout first and falls back to
-    the legacy <p data-start> layout, so a redesign in either direction still
-    yields data.
-
-    Returns list of fight dicts:
-        fighter1, fighter2, date (YYYY-MM-DD), time (HH:MM UTC or 'TBA'),
-        time_estimated, venue, location, sport='Boxing', weight_class,
-        rounds, is_main_event, streaming
-    """
+def _snapshot(url, status, body, error=None):
     try:
-        print("Scraping BoxingSchedule.co...")
-        response = requests.get("https://boxingschedule.co", headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
-        if response.status_code != 200:
-            print(f"BoxingSchedule.co error: Status {response.status_code}")
-            return []
-        soup = BeautifulSoup(response.content, 'html.parser')
+        import runs
+        return runs.save_snapshot('Boxing', 'schedule', url, status, body, error=error, ext='html')
+    except Exception:
+        return None
 
-        fights, layout = _parse_rsd(soup), 'rsd-event'
-        if not fights:
-            fights, layout = _parse_cards(soup), 'rs-card'
-        if not fights:
-            fights, layout = _parse_legacy(soup), 'legacy'
-        if not fights:
-            print(f"BoxingSchedule.co: 0 fights parsed — page is {len(response.content)} bytes, "
-                  f"{len(soup.select('article.rsd-event'))} rsd-event articles, "
-                  f"{len(soup.select('article.rs-card'))} rs-card articles, "
-                  f"{len(soup.find_all('p', attrs={'data-start': True}))} legacy date paragraphs")
-        else:
-            print(f"BoxingSchedule.co Total: Found {len(fights)} fights via {layout} layout")
-        return _dedup(fights)
+
+def fetch(url="https://boxingschedule.co"):
+    """One HTTP request. Returns {'url', 'status', 'body', 'error', 'snapshot'};
+    the raw body is saved either way."""
+    status, body, error = None, b'', None
+    try:
+        resp = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+        status, body = resp.status_code, resp.content
+        if resp.status_code != 200:
+            error = f'HTTP {resp.status_code}'
     except Exception as e:
-        print(f"Error in BoxingSchedule.co scraper: {e}")
-        return []
-        traceback.print_exc()
-        return []
+        error = f'{type(e).__name__}: {e}'
+    snap = _snapshot(url, status, body, error)
+    return {'url': url, 'status': status, 'body': body, 'error': error,
+            'snapshot': snap.get('file') if snap else None}
+
+
+def parse(body):
+    """Parse a saved page. Returns {'fights', 'outcome', 'layout', 'layouts'}.
+    layouts: how many event containers each known layout found, so an unknown
+    redesign ('layout_unknown', all zero) is distinct from a page that has the
+    containers but no bouts ('parsed' with 0 fights)."""
+    soup = BeautifulSoup(body or b'', 'html.parser')
+    layouts = {
+        'rsd-event': len(soup.select('article.rsd-event')),
+        'rs-card': len(soup.select('article.rs-card')),
+        'legacy': len(soup.find_all('p', attrs={'data-start': True})),
+    }
+    fights, layout = [], None
+    for name, fn in (('rsd-event', _parse_rsd), ('rs-card', _parse_cards), ('legacy', _parse_legacy)):
+        if layouts[name]:
+            try:
+                fights = fn(soup)
+            except Exception as e:
+                print(f"BoxingSchedule.co: {name} parser crashed: {e}")
+                fights = []
+            if fights:
+                layout = name
+                break
+    if not any(layouts.values()):
+        outcome = 'layout_unknown'
+    else:
+        outcome = 'parsed'
+        layout = layout or max(layouts, key=layouts.get)
+    return {'fights': _dedup(fights), 'outcome': outcome, 'layout': layout, 'layouts': layouts,
+            'bytes': len(body or b'')}
+
+
+def scrape_boxing():
+    """Fetch and parse boxingschedule.co.
+
+    Returns {'fights', 'outcome', 'layout', 'layouts', 'snapshots', 'diagnostics'}
+    with outcome 'parsed' | 'http_error' | 'layout_unknown'. Never returns a
+    bare empty list for a page it could not read.
+    """
+    print("Scraping BoxingSchedule.co...")
+    r = fetch()
+    snapshots = [r['snapshot']] if r['snapshot'] else []
+    if r['error']:
+        print(f"BoxingSchedule.co error: {r['error']}")
+        return {'fights': [], 'outcome': 'http_error', 'layout': None, 'layouts': {}, 'snapshots': snapshots,
+                'diagnostics': {'status': r['status'], 'error': r['error'], 'bytes': len(r['body'] or b'')}}
+    p = parse(r['body'])
+    if p['outcome'] == 'layout_unknown':
+        print(f"BoxingSchedule.co: unknown layout — page is {p['bytes']} bytes, no known event containers")
+    else:
+        print(f"BoxingSchedule.co Total: Found {len(p['fights'])} fights via {p['layout']} layout")
+    return {'fights': p['fights'], 'outcome': p['outcome'], 'layout': p['layout'], 'layouts': p['layouts'],
+            'snapshots': snapshots, 'diagnostics': {'status': r['status'], 'bytes': p['bytes'], 'layouts': p['layouts']}}
+
+
+def scrape_boxing_events():
+    """Backward-compatible wrapper: just the list of fights."""
+    return scrape_boxing()['fights']

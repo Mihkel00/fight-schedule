@@ -8,9 +8,13 @@ locks use flock on files in DATA_DIR, which every worker shares, so a job
 a time. flock is released automatically if the process dies.
 """
 
+import logging
 import os
 import time
 from contextlib import contextmanager
+
+logger = logging.getLogger(__name__)
+last_error = None   # set when flock itself fails (not "busy"); shown on /health
 
 DATA_DIR = os.environ.get('DATA_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
 
@@ -34,10 +38,19 @@ def job_lock(name, wait_seconds=0.0):
                 fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 acquired = True
                 break
-            except (BlockingIOError, OSError):
+            except BlockingIOError:
+                # another worker holds it
                 if time.time() >= deadline:
                     break
                 time.sleep(0.5)
+            except OSError as e:
+                # flock is not supported here (unusual filesystem). Treating that
+                # as "busy" would stop every job forever; run unlocked and say so.
+                global last_error
+                last_error = f'{name}: flock failed: {e}'
+                logger.warning(last_error)
+                acquired = True
+                break
         yield acquired
     finally:
         if acquired:

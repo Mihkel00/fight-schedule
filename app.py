@@ -21,7 +21,11 @@ import markdown
 from bs4 import BeautifulSoup
 
 # Import scrapers
-from scrapers import scrape_ufc_events, scrape_boxing_events
+# The scrapers return a result dict (fights + outcome + diagnostics); tests may
+# replace these names with functions returning a plain list, which _run_source
+# accepts too.
+from scrapers import scrape_ufc as scrape_ufc_events, scrape_boxing as scrape_boxing_events
+import runs as _runs
 import image_pipeline as _images
 import locks as _locks
 import structured_data as _ld
@@ -600,6 +604,70 @@ def score_fight_for_featuring(fight, today_date):
 
     return score
 
+_EPOCH = datetime(2000, 1, 1)
+
+
+def _bout_start(f):
+    try:
+        return datetime.strptime(f"{f.get('date')} {f.get('time')}", '%Y-%m-%d %H:%M')
+    except (TypeError, ValueError):
+        return None
+
+
+def _named_in_title(f, title):
+    t = (title or '').lower()
+    return bool(t) and all(surname(f.get(k) or '').lower() in t for k in ('fighter1', 'fighter2'))
+
+
+def normalize_ufc_cards(fights):
+    """Put each UFC card's main event first and label main card vs prelims from
+    the data, not from list order. ESPN lists bouts earliest first (main event
+    last) and labels them all 'Main Card'; the site treats the first bout of an
+    event as its main event. Order within a card: latest start first, the bout
+    named in the event title first of all. Idempotent (stores 'bout_order')."""
+    groups, order = {}, []
+    for f in fights:
+        if f.get('sport') == 'UFC' and f.get('event_name'):
+            key = f['event_name']
+            if key not in groups:
+                groups[key] = []
+                order.append(key)
+            groups[key].append(f)
+    if not groups:
+        return fights
+    for key in order:
+        g = groups[key]
+        if all('bout_order' in f for f in g):
+            g.sort(key=lambda f: f['bout_order'])
+            continue
+        starts = {_bout_start(f) for f in g} - {None}
+        if len(starts) > 1:
+            # ESPN order is earliest first: reverse it, then latest segment first
+            g.reverse()
+            g.sort(key=lambda f: (_bout_start(f) is None, -((_bout_start(f) or _EPOCH) - _EPOCH).total_seconds()))
+            latest = max(starts)
+            if all((f.get('card_type') or 'Main Card') == 'Main Card' for f in g):
+                for f in g:
+                    f['card_type'] = 'Main Card' if _bout_start(f) == latest else 'Prelims'
+        named = next((f for f in g if _named_in_title(f, key)), None)
+        if named is not None and g[0] is not named:
+            g.remove(named)
+            g.insert(0, named)
+        for i, f in enumerate(g):
+            f['bout_order'] = i
+    out, done = [], set()
+    for f in fights:
+        if f.get('sport') == 'UFC' and f.get('event_name'):
+            key = f['event_name']
+            if key in done:
+                continue
+            done.add(key)
+            out.extend(groups[key])
+        else:
+            out.append(f)
+    return out
+
+
 def load_cache(max_age_hours=None):
     """
     Load cached fight data if it exists and is fresh
@@ -633,6 +701,7 @@ def load_cache(max_age_hours=None):
             # A cache written before listings were deduplicated may hold repeats
             _seen = set()
             fights = [f for f in fights if not (_fight_key(f) in _seen or _seen.add(_fight_key(f)))]
+            fights = normalize_ufc_cards(fights)
             fights = apply_time_overrides(fights)
 
             # Drop events older than the results window so stale cache served
@@ -665,10 +734,7 @@ def save_cache(fights, keep_timestamp=False):
             'fights': fights
         }
         # write-then-rename: readers in the other worker never see a half-written file
-        tmp = CACHE_FILE + '.tmp'
-        with open(tmp, 'w') as f:
-            json.dump(cache_data, f)
-        os.replace(tmp, CACHE_FILE)
+        _runs.write_json_atomic(CACHE_FILE, cache_data)
         logger.info(f"[OK] Cache saved: {len(fights)} fights at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     except Exception as e:
         logger.error(f"Error saving cache: {e}")
@@ -789,10 +855,7 @@ def sync_page_versions(fights, reason=''):
         for u in removed:
             stored.pop(u, None)
         if changed or removed:
-            tmp = PAGE_VERSIONS_FILE + '.tmp'
-            with open(tmp, 'w') as f:
-                json.dump(stored, f)
-            os.replace(tmp, PAGE_VERSIONS_FILE)
+            _runs.write_json_atomic(PAGE_VERSIONS_FILE, stored)
     if changed or removed:
         logger.info(f"Page versions ({reason}): {len(changed)} changed, {len(removed)} removed")
         hubs = ['https://fightschedule.live/']
@@ -858,10 +921,7 @@ def load_profiles():
 
 
 def save_profiles(data):
-    tmp = PROFILES_FILE + '.tmp'
-    with open(tmp, 'w') as f:
-        json.dump(data, f, ensure_ascii=False)
-    os.replace(tmp, PROFILES_FILE)
+    _runs.write_json_atomic(PROFILES_FILE, data)
 
 
 def _hours_since(ts):
@@ -1108,10 +1168,7 @@ def archive_results(fights):
                 archive.append(clean)
                 added += 1
         archive.sort(key=lambda x: x.get('date') or '')
-        tmp = RESULTS_ARCHIVE_FILE + '.tmp'
-        with open(tmp, 'w') as fh:
-            json.dump(archive, fh, ensure_ascii=False)
-        os.replace(tmp, RESULTS_ARCHIVE_FILE)
+        _runs.write_json_atomic(RESULTS_ARCHIVE_FILE, archive)
     if added:
         logger.info(f"Results archive: +{added} fights ({len(archive)} total)")
     return added
@@ -1150,10 +1207,7 @@ def save_last_good(sport, fights, merge=False):
             keys = {_fight_key(f) for f in clean}
             clean = [f for f in existing if _fight_key(f) not in keys] + clean
         data[sport] = {'saved_at': datetime.utcnow().isoformat() + 'Z', 'fights': clean}
-        tmp = LAST_GOOD_FILE + '.tmp'
-        with open(tmp, 'w') as fh:
-            json.dump(data, fh, ensure_ascii=False)
-        os.replace(tmp, LAST_GOOD_FILE)
+        _runs.write_json_atomic(LAST_GOOD_FILE, data)
 
 
 # Only scraped fields are archived; derived fields (images, tape, results) are
@@ -1223,6 +1277,52 @@ def _fetch_fights_raw():
     return fights
 
 
+FLOOR = {'UFC': 10, 'Boxing': 5}   # fewer fights than this = treat the scrape as failed
+
+
+def _run_source(source, fn, log):
+    """Run one scraper and write its run record. Returns (fights, status, record).
+    status: 'ok' | 'partial' | 'failed' (see runs.py). fn may return a result
+    dict or, in tests, a plain list."""
+    started = time.time()
+    try:
+        result = fn()
+    except Exception as e:
+        logger.error(f"{source} scraper crashed: {e}", exc_info=True)
+        result = {'fights': [], 'outcome': 'crash', 'diagnostics': {'error': f'{type(e).__name__}: {e}'}}
+    if isinstance(result, list):
+        result = {'fights': result, 'outcome': 'parsed' if result else 'empty', 'layout': None}
+    fights = result.get('fights') or []
+    outcome = result.get('outcome') or 'parsed'
+    n = len(fights)
+    checks = [
+        {'name': 'fetched', 'ok': outcome not in ('http_error', 'crash'), 'detail': outcome},
+        {'name': 'layout_known', 'ok': outcome != 'layout_unknown', 'detail': result.get('layout')},
+        {'name': 'floor', 'ok': n >= FLOOR[source], 'detail': f'{n} fights, floor {FLOOR[source]}'},
+    ]
+    if source == 'UFC' and result.get('months'):
+        failed = [m for m, i in result['months'].items() if i.get('error')]
+        checks.append({'name': 'all_months', 'ok': not failed, 'detail': f'failed: {failed}' if failed else 'all months read'})
+    # all_months is informational: a half-read ESPN is used (partial), not failed
+    if not all(c['ok'] for c in checks if c['name'] != 'all_months'):
+        status = 'failed'
+    elif outcome == 'partial' or not all(c['ok'] for c in checks):
+        status = 'partial'
+    else:
+        status = 'ok'
+    counts = {'fights': n}
+    if source == 'UFC' and result.get('months'):
+        counts['months'] = {m: i.get('fights', 0) for m, i in result['months'].items()}
+    if result.get('layouts'):
+        counts['layouts'] = result['layouts']
+    rec = _runs.write_run(source, status, outcome, counts=counts, checks=checks, layout=result.get('layout'),
+                          snapshots=result.get('snapshots'), diagnostics=result.get('diagnostics'),
+                          duration_s=round(time.time() - started, 1),
+                          note='; '.join(f"{c['name']}: {c['detail']}" for c in checks if not c['ok']) or None)
+    log(f"{source}: {status} ({outcome}), {n} fights, layout={result.get('layout')}, {rec['duration_s']}s")
+    return fights, status, rec
+
+
 def _scrape_all_sources():
     """Fetch upcoming UFC and Boxing fights from multiple sources"""
     # Open debug log file
@@ -1242,7 +1342,7 @@ def _scrape_all_sources():
     
     # 1. Scrape BoxingSchedule.co for boxing
     log("--- BOXINGSCHEDULE.CO ---")
-    boxingschedule_fights = scrape_boxing_events()
+    boxingschedule_fights, boxing_status, boxing_run = _run_source('Boxing', scrape_boxing_events, log)
     log(f"BoxingSchedule.co found: {len(boxingschedule_fights)} fights\n")
     for fight in boxingschedule_fights[:5]:
         log(f"  • {fight['fighter1']} vs {fight['fighter2']} - {fight['date']} {'[MAIN]' if fight.get('is_main_event') else ''}")
@@ -1251,9 +1351,9 @@ def _scrape_all_sources():
     
     
     # 2. Scrape MMA Fighting for UFC schedule
-    log("\n--- MMA FIGHTING UFC ---")
-    mma_fighting_ufc = scrape_ufc_events()
-    log(f"MMA Fighting UFC found: {len(mma_fighting_ufc)} fights\n")
+    log("\n--- ESPN UFC ---")
+    mma_fighting_ufc, ufc_status, ufc_run = _run_source('UFC', scrape_ufc_events, log)
+    log(f"ESPN UFC found: {len(mma_fighting_ufc)} fights\n")
     for fight in mma_fighting_ufc[:5]:
         log(f"  • {fight['fighter1']} vs {fight['fighter2']} - {fight['date']} - {fight['venue']}")
     if len(mma_fighting_ufc) > 5:
@@ -1282,12 +1382,15 @@ def _scrape_all_sources():
     ufc_count = len(mma_fighting_ufc)
     boxing_count = len(boxingschedule_fights)
 
-    ufc_ok = ufc_count >= 10
-    boxing_ok = boxing_count >= 5
+    # A run is usable when its record says ok or partial (fetched, known
+    # layout, at least FLOOR fights). Step 3 of the robustness plan replaces
+    # this with per-row and per-run checks against the last good run.
+    ufc_ok = ufc_status != 'failed'
+    boxing_ok = boxing_status != 'failed'
     try:
         import alerts as _alerts
-        _alerts.report('UFC', ufc_ok, f'{ufc_count} fights')
-        _alerts.report('Boxing', boxing_ok, f'{boxing_count} fights')
+        _alerts.report('UFC', ufc_ok, ufc_run.get('note') or f'{ufc_count} fights')
+        _alerts.report('Boxing', boxing_ok, boxing_run.get('note') or f'{boxing_count} fights')
     except Exception as e:
         logger.warning(f"alerting failed: {e}")
 
@@ -1362,6 +1465,7 @@ def _scrape_all_sources():
                 fights.append(dict(f)); seen_pairs.add(key); carried_past += 1
     log(f"Carried forward {carried_past} completed fights for results")
     fights.sort(key=lambda x: x['date'] if x['date'] else '9999-12-31')
+    fights = normalize_ufc_cards(fights)
 
     fights_before_filter = len(fights)
     fights = [f for f in fights if f.get('date', '') >= cutoff]
@@ -2187,6 +2291,27 @@ def calendar_ics(sport=None):
     return response
 
 
+@app.route('/health')
+def health():
+    """200 when every source has a recent successful run, else 503. For an
+    uptime monitor; the JSON body says what is wrong. Nothing here is secret."""
+    h = _runs.health(extra={'lock_error': _locks.last_error,
+                            'cache_age_hours': _cache_age_hours()})
+    resp = jsonify(h)
+    resp.status_code = 200 if h['healthy'] else 503
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
+
+
+def _cache_age_hours():
+    try:
+        with open(CACHE_FILE) as fh:
+            stamp = json.load(fh).get('timestamp')
+        return round((datetime.now() - datetime.fromisoformat(stamp)).total_seconds() / 3600, 1)
+    except Exception:
+        return None
+
+
 @app.route('/robots.txt')
 def robots():
     """Generate robots.txt. AI search / training crawlers are welcome, but a
@@ -2195,7 +2320,7 @@ def robots():
     agents = ['*', 'GPTBot', 'ChatGPT-User', 'OAI-SearchBot', 'ClaudeBot', 'Claude-Web', 'anthropic-ai',
               'PerplexityBot', 'Google-Extended', 'Googlebot', 'Bytespider', 'CCBot', 'cohere-ai',
               'Amazonbot', 'YouBot', 'Meta-ExternalAgent']
-    rules = 'Allow: /\nDisallow: /admin/\nDisallow: /go/\nDisallow: /api/\n'
+    rules = 'Allow: /\nDisallow: /admin/\nDisallow: /go/\nDisallow: /api/\nDisallow: /health\n'
     groups = [f'User-agent: {ua}\n{rules}' for ua in agents]
     txt = groups[0] + '\n# AI search and training crawlers\n' + '\n'.join(groups[1:]) + \
         '\nSitemap: https://fightschedule.live/sitemap.xml\n'
@@ -2509,6 +2634,8 @@ def debug_state():
             started = datetime.now()
             try:
                 got = fn()
+                if isinstance(got, dict):
+                    got = got.get('fights') or []
                 dates = sorted(f.get('date', '') for f in got if f.get('date'))
                 out[name] = {
                     'count': len(got),
@@ -2565,6 +2692,36 @@ def debug_state():
         pending = _profile_work_list(fights, load_profiles())
         threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
         return jsonify({'started': True, 'pending_fighters': len(pending)})
+
+    if part == 'health':
+        return jsonify(_runs.health(extra={'lock_error': _locks.last_error, 'cache_age_hours': _cache_age_hours()}))
+
+    if part == 'run_log':
+        # Recent run records per source, newest last
+        src = request.args.get('source')
+        sources = [src] if src else ['UFC', 'Boxing']
+        return jsonify({s: _runs.list_runs(s, limit=int(request.args.get('limit', 20))) for s in sources})
+
+    if part == 'snapshot':
+        # Raw body of a saved source page: &file=<sidecar 'file'> or the newest for &source=
+        rel = request.args.get('file')
+        if not rel:
+            snaps = _runs.list_snapshots(request.args.get('source') or 'Boxing', limit=1)
+            if not snaps:
+                return jsonify({'error': 'no snapshots yet'}), 404
+            rel = snaps[0]['file']
+        try:
+            body = _runs.read_snapshot(rel)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 404
+        resp = make_response(body)
+        resp.headers['Content-Type'] = 'application/json' if rel.endswith('.json.gz') else 'text/html; charset=utf-8'
+        return resp
+
+    if part == 'snapshots':
+        src = request.args.get('source')
+        sources = [src] if src else ['UFC', 'Boxing']
+        return jsonify({s: _runs.list_snapshots(s, limit=int(request.args.get('limit', 20))) for s in sources})
 
     if part == 'versions':
         v = _load_versions()
@@ -2625,6 +2782,10 @@ def debug_state():
                     if future:
                         save_last_good(sport, future, merge=True)
             threading.Thread(target=refresh_profiles, args=(current,), daemon=True).start()
+        if added:
+            sports = {f.get('sport') for f in incoming if isinstance(f, dict)}
+            _runs.write_run(sports.pop() if len(sports) == 1 else 'mixed', 'manual', 'backfill',
+                            counts={'fights': len(added)}, note='debug API backfill')
         return jsonify({'added': added, 'total_now': len(current)})
 
     if part == 'page_probe':
@@ -2805,9 +2966,10 @@ def click_stats(days=30):
     by_provider, by_day, by_event, total = {}, {}, {}, 0
     kinds = {'human': 0, 'bot': 0, 'unknown (before user agents were logged)': 0}
     human_provider, human_lang, bot_agents = {}, {}, {}
-    # 'Real' = not a known bot AND the browser sent a language. Every real
-    # browser sends Accept-Language; scripts that fake a browser user agent
-    # usually don't, so clicks without it are counted separately.
+    # 'Real' = not a known bot, the browser sent a language, AND the click came
+    # from a page on this site (Referer). A visitor tapping a watch link always
+    # sends both; scripts hitting /go/ directly usually send neither referer
+    # nor language (61 of 63 'browser-like' clicks on 2026-10-01 had no referer).
     real = {'total': 0, 'by_day': {}, 'by_placement': {}, 'by_provider': {}, 'by_page': {}, 'by_sport': {}}
 
     def _bump(d, k):
@@ -2815,8 +2977,6 @@ def click_stats(days=30):
 
     def _page(ref):
         path = re.sub(r'^https?://[^/]+', '', ref or '').split('?')[0].split('#')[0]
-        if not ref:
-            return '(no referrer)'
         if path in ('', '/'):
             return 'homepage'
         for prefix, name in (('/results', 'results'), ('/ufc', 'ufc page'), ('/boxing-event/', 'boxing fight page'),
@@ -2845,7 +3005,7 @@ def click_stats(days=30):
                     human_provider[r.get('provider')] = human_provider.get(r.get('provider'), 0) + 1
                     lg = r.get('lang') or '(none)'
                     human_lang[lg] = human_lang.get(lg, 0) + 1
-                    if r.get('lang'):
+                    if r.get('lang') and re.match(r'https?://(www\.)?fightschedule\.live/', r.get('referer') or ''):
                         real['total'] += 1
                         _bump(real['by_day'], r['ts'][:10])
                         _bump(real['by_placement'], r.get('placement') or '(not tagged)')
