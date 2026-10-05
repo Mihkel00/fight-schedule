@@ -40,8 +40,7 @@
 .ev-main:focus-visible .names { outline: 2px solid var(--t1); outline-offset: 4px; border-radius: 4px; }
 .ev .top { grid-area: top; display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; }
 .ev .tag { grid-area: tag; font-size: 12px; font-weight: 600; color: var(--t2); letter-spacing: .04em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-.dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-.ufc .dot { background: var(--ufc); } .boxing .dot { background: var(--box); }
+.ev.ufc .tag { color: var(--ufc); } .ev.boxing .tag { color: var(--box); }
 .ev .where { grid-area: where; font-size: 12px; color: var(--t3); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .ev .pair { grid-area: pair; display: flex; margin-top: 10px; }
 .av { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; object-position: top; background: #262626; border: 2px solid var(--card); flex: none; }
@@ -237,3 +236,31 @@
 .wlogo.has-img { background: #fff; padding: 6px; }
 .wlogo.has-img img { width: 100%; height: 100%; object-fit: contain; }
 .cal-links .ico { color: var(--t3); }
+
+/* Polish: surfaces lifted with light (a dark page has nothing for a shadow to
+   darken), photo cards lit from above, one motion curve, and typesetting. */
+:root { --ease-out: cubic-bezier(0.22, 1, 0.36, 1); --lift-bg: #1a1a1a; }
+.ev, .card-list, .panel, .watch-panel, .tape-wrap > div, .seg {
+  background: var(--lift-bg); border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px -4px rgba(0,0,0,0.55);
+}
+.ev:hover { border-color: rgba(255,255,255,0.14); }
+.rc, .hero { border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 8px 24px -4px rgba(0,0,0,0.55); }
+.rc::after, .hero::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 3;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0) 40%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.4); }
+.ev, .wrow, .nav-pill, .btn, .chipf { transition-timing-function: var(--ease-out); }
+/* Small text links: a hairline at rest, a white rule grows in on hover. */
+.crumbs a, .page-foot a, .aff-note a {
+  text-decoration: none; padding-bottom: .08em;
+  background-image: linear-gradient(color-mix(in srgb, currentColor 35%, transparent), color-mix(in srgb, currentColor 35%, transparent)), linear-gradient(var(--t1), var(--t1));
+  background-size: 100% 1px, 0% .12em; background-position: 0 100%, 0 100%; background-repeat: no-repeat;
+  transition: background-size .45s var(--ease-out);
+}
+.crumbs a:hover, .page-foot a:hover, .aff-note a:hover, .crumbs a:focus-visible, .page-foot a:focus-visible, .aff-note a:focus-visible { background-size: 100% 1px, 100% .12em; }
+h1, h2, h3, h4, .names, .big { text-wrap: balance; }
+p, li { text-wrap: pretty; }
+time, .ddate, .tape-row, .meta, .meta2 { font-variant-numeric: tabular-nums; }
+::selection { background: rgba(245,245,245,.9); color: #0a0a0a; }
+:focus-visible { outline: 2px solid var(--t1); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .crumbs a, .page-foot a, .aff-note a { transition: none !important; } }

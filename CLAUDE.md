@@ -46,6 +46,8 @@ When the owner points out a mistake, or one is discovered, add an entry to
   correct expected output, and only then change the parser. Browser checks
   (Playwright, scratchpad `site_browser.py`, `tz_browser.py`) run locally before
   anything that changes templates or JS.
+- Tests run with the clock frozen to the fixtures' day (`FIXTURE_NOW` in
+  `tests/conftest.py`); a new fixture set brings its own date.
 - Commits: gate commit/push on tests passing; never chain them past a test
   without `&&`.
 

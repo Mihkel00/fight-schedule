@@ -6,6 +6,20 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-05 — Tests started failing on their own when the calendar moved on
+
+**What happened:** A page test looked for UFC 332 on the homepage. Once
+4 October passed, the event moved to Results and the test failed on unchanged
+code. CI would have gone red on the next push for no real reason.
+
+**Root cause:** The tests read the real clock while the fixtures are a frozen
+snapshot of 2 October. I wrote assertions about "upcoming" and "past" without
+pinning "today", so the suite had a built-in expiry date.
+
+**Rule:** Tests run on the fixtures' own day: the clock is frozen in
+`tests/conftest.py` to the date the fixtures were captured. A new fixture set
+comes with its own frozen date.
+
 ## 2026-10-01 — UFC cards showed the opening bout as the main event
 
 **What happened:** After ESPN came back, UFC 332 appeared everywhere as
