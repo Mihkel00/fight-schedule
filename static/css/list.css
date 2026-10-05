@@ -264,3 +264,9 @@ time, .ddate, .tape-row, .meta, .meta2 { font-variant-numeric: tabular-nums; }
 ::selection { background: rgba(245,245,245,.9); color: #0a0a0a; }
 :focus-visible { outline: 2px solid var(--t1); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .crumbs a, .page-foot a, .aff-note a { transition: none !important; } }
+
+/* Photo credits: a line under the fight-page photo, a note in footers */
+.photo-credit { font: 12px/1.45 'Work Sans', sans-serif; color: var(--t3); margin: 8px 4px 0; }
+.photo-credit a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.25); text-underline-offset: 2px; }
+.photo-credit a:hover { color: var(--t2); }
+.page-foot + .photo-note { margin-top: -32px; }

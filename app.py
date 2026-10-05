@@ -1251,6 +1251,7 @@ def _refresh_cache(wait=False):
             fights = _scrape_all_sources()
         if fights:
             threading.Thread(target=refresh_profiles, args=(fights,), daemon=True).start()
+            threading.Thread(target=_images.fill_credits, daemon=True).start()
         return fights
     except Exception as e:
         logger.error(f"Background scrape failed: {e}", exc_info=True)
@@ -2927,7 +2928,24 @@ def brand_logo(key):
     return None
 
 
+def photo_credits(sport, m):
+    """Credits for the two hero photos on a fight page: a list of
+    {'credit': …, 'who': surname or None}. Same credit for both → one entry."""
+    out = []
+    for side in ('fighter1', 'fighter2'):
+        img = m.get(f'{side}_image') if hasattr(m, 'get') else None
+        c = _images.credit_for(m.get(side), sport, shown=img) if img else None
+        out.append((c, (m.get(side) or '').split()[-1] if m.get(side) else None))
+    known = [(c, who) for c, who in out if c]
+    if not known:
+        return []
+    if len(known) == 2 and known[0][0] == known[1][0]:
+        return [{'credit': known[0][0], 'who': None}]
+    return [{'credit': c, 'who': who} for c, who in known]
+
+
 app.jinja_env.globals.update({
+    'photo_credits': photo_credits,
     'brand_logo': brand_logo,
     'provider_key': _aff.resolve_provider,
     'provider_name': _aff.provider_name,

@@ -23,6 +23,7 @@ A.app.config['WTF_CSRF_ENABLED'] = False
 A.ping_indexnow = lambda u: None
 A.refresh_profiles = lambda *a, **k: None
 A._maybe_start_profile_job = lambda f: None
+A._images.fill_credits = lambda *a, **k: 0    # no Wikimedia calls from tests
 _SEEDED = set(os.listdir(_SCRATCH))   # files app.py copies in at import; keep them
 
 # The fixtures are a snapshot of 2 October 2026. Every test runs on that day,

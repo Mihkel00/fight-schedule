@@ -57,6 +57,10 @@ When the owner points out a mistake, or one is discovered, add an entry to
   copyrighted; Wikimedia photos need author/licence credit and share-alike for
   crops. Do not press "Apply new rules" on the image dry run (13 of 18 new
   images are UFC.com) until this is decided.
+  Credits (2026-10-05): UFC.com photos show "Photo: UFC"; Wikimedia photos show
+  author / licence once `fill_credits()` has fetched them (after each scrape).
+  Not credited, origin unknown: ~62 old boxing photos and 9 pasted URLs
+  (Google thumbnails, GQ, Fightmag…), which are the ones to replace first.
 - **Rotate `DEBUG_API_TOKEN`**: it has appeared in chat and in URLs, and the
   debug API can now write (backfill).
 - **Second boxing schedule source**: boxing-schedule.com probed as parseable
