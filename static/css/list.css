@@ -130,8 +130,10 @@
 .ev .res { grid-area: watch; justify-self: start; margin-top: 12px; }
 .lost { color: var(--t3) !important; }
 .av.lost, img.lost { opacity: .45; filter: grayscale(1); }
-.av.won { position: relative; z-index: 1; box-shadow: 0 0 0 2px #22c55e; }
-@media (min-width: 900px) { .av.won { box-shadow: 0 0 0 3px #22c55e; } }
+/* The ring sits on a wrapper: the photo's black-and-white filter would grey it */
+.won-ring { position: relative; z-index: 1; display: inline-flex; flex: none; border-radius: 50%; box-shadow: 0 0 0 2px #22c55e; }
+.won-ring.b { margin-left: -12px; } .won-ring .av.b { margin-left: 0; }
+@media (min-width: 900px) { .won-ring { box-shadow: 0 0 0 3px #22c55e; } .won-ring.b { margin-left: -20px; } }
 .uc li em.won { color: #4ade80; }
 
 /* ---- page intro, crumbs, switch ---- */
@@ -270,3 +272,8 @@ time, .ddate, .tape-row, .meta, .meta2 { font-variant-numeric: tabular-nums; }
 .photo-credit a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.25); text-underline-offset: 2px; }
 .photo-credit a:hover { color: var(--t2); }
 .page-foot + .photo-note { margin-top: -32px; }
+
+/* Fighter photos in black and white, so photos from different sources read as one set */
+.av:not(.ph), .rc img, .hero img:not(.ph) { filter: grayscale(1) contrast(1.06); }
+.av.lost, img.lost { filter: grayscale(1); }
+.hero img.lost { filter: grayscale(1) brightness(.55); }

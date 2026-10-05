@@ -115,3 +115,16 @@ def test_sport_label_is_coloured_text_without_dot(client):
     assert 'class="dot"' not in h
     css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'list.css')).read()
     assert '.ev.ufc .tag { color: var(--ufc); }' in css and '.ev.boxing .tag { color: var(--box); }' in css
+
+
+def test_photos_are_black_and_white_with_green_winner_ring():
+    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'list.css')).read()
+    assert '.av:not(.ph), .rc img, .hero img:not(.ph) { filter: grayscale(1)' in css
+    with A.app.app_context():
+        t = A.app.jinja_env.from_string("{% from '_list.html' import face %}"
+                                        "{{ face('A', '/a.png', 'UFC', 'av won') }}|{{ face('B', '/b.png', 'UFC', 'av b won') }}"
+                                        "|{{ face('C', '/c.png', 'UFC', 'av lost') }}")
+        a, b, c = [x.strip() for x in t.render().split('|')]
+    assert a.startswith('<span class="won-ring"><img class="av won"') and a.endswith('</span>')
+    assert b.startswith('<span class="won-ring b"><img class="av b won"')
+    assert c.startswith('<img class="av lost"')
