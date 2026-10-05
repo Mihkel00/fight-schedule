@@ -4,7 +4,9 @@
 
 {% macro face(name, img, sport, cls='av') -%}
 {% set ph = '/static/placeholder-fighter-' ~ ('mma' if sport == 'UFC' else 'boxing') ~ '.svg' %}
+{% set won = ' won' in cls %}{% if won %}<span class="won-ring{{ ' b' if ' b ' in cls ~ ' ' }}">{% endif -%}
 {% if img %}<img class="{{ cls }}" src="{{ img }}" alt="{{ name }}" loading="lazy" onerror="this.onerror=null;this.alt='';this.classList.add('ph');this.src='{{ ph }}'">{% else %}<img class="{{ cls }} ph" src="{{ ph }}" alt="" loading="lazy">{% endif %}
+{%- if won %}</span>{% endif %}
 {%- endmacro %}
 
 {# fmt: 'big' (list time), 'long' ("Sun 4 Oct · 3:00 AM"), 'plain' ("3:00 AM").

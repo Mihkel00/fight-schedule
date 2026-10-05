@@ -208,6 +208,118 @@ def is_retrying(name):
     return bool(e and e.get('retrying'))
 
 
+# ── photo credits ───────────────────────────────────────────────────────────
+# Shown under the photos on fight pages. Only photos whose origin is known are
+# credited: UFC.com headshots ("UFC") and Wikimedia files (author, licence,
+# link — what Creative Commons licences require). Wikimedia details are fetched
+# once per file by fill_credits() and stored on the entry as 'credit'.
+
+_WIKIMEDIA_HOSTS = ('upload.wikimedia.org', 'thumb.wikimedia.org', 'commons.wikimedia.org')
+
+
+def _bare(url):
+    return (url or '').split('?')[0]
+
+
+def wikimedia_file(url):
+    """(api, 'File:Name.jpg') for a Wikimedia image URL, else None. Files under
+    /wikipedia/en/ live on English Wikipedia (often non-free), the rest on Commons."""
+    m = re.match(r'https?://([^/]+)/(.*)', url or '')
+    if not m or m.group(1) not in _WIKIMEDIA_HOSTS:
+        return None
+    path = requests.utils.unquote(m.group(2).split('?')[0])
+    if path.startswith('wiki/Special:FilePath/'):
+        return 'https://commons.wikimedia.org/w/api.php', 'File:' + path.split('/', 2)[2]
+    parts = path.split('/')
+    if len(parts) < 4 or parts[0] != 'wikipedia':
+        return None
+    wiki = parts[1]
+    rest = parts[2:]
+    if rest[0] == 'thumb':
+        rest = rest[1:]
+    if len(rest) < 3:
+        return None
+    api = 'https://en.wikipedia.org/w/api.php' if wiki == 'en' else 'https://commons.wikimedia.org/w/api.php'
+    return api, 'File:' + rest[2]
+
+
+def _plain(html):
+    return re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', '', html or '')).strip()
+
+
+def fetch_wikimedia_credit(url):
+    """Author / licence / file page for a Wikimedia image, or None."""
+    f = wikimedia_file(url)
+    if not f:
+        return None
+    api, title = f
+    try:
+        r = requests.get(api, params={'action': 'query', 'titles': title, 'prop': 'imageinfo',
+                                      'iiprop': 'extmetadata|url', 'format': 'json'},
+                         headers={'User-Agent': _UA_BOT}, timeout=10)
+        pages = r.json().get('query', {}).get('pages', {})
+        info = next(iter(pages.values()))['imageinfo'][0]
+    except Exception:
+        return None
+    em = info.get('extmetadata') or {}
+    val = lambda k: (em.get(k) or {}).get('value') or ''
+    artist_html = val('Artist')
+    href = re.search(r'href="([^"]+)"', artist_html)
+    author_url = href.group(1) if href else None
+    if author_url and author_url.startswith('//'):
+        author_url = 'https:' + author_url
+    licence = _plain(val('LicenseShortName'))
+    free = not val('NonFree') and bool(licence) and licence.lower() not in ('fair use', 'non-free')
+    return {'author': _plain(artist_html)[:80] or None, 'author_url': author_url,
+            'license': licence or None, 'license_url': val('LicenseUrl') or None,
+            'file_url': info.get('descriptionurl'), 'free': free,
+            'fetched_at': datetime.utcnow().isoformat(timespec='seconds')}
+
+
+def fill_credits(limit=60):
+    """Fetch Wikimedia credits for stored photos that don't have one yet."""
+    done = 0
+    for k, e in list(load_meta().items()):
+        if done >= limit:
+            break
+        if not isinstance(e, dict) or e.get('status') == 'rejected' or not e.get('path'):
+            continue
+        src = e.get('source_url') or ''
+        if e.get('credit', {}).get('for') == src or not wikimedia_file(src):
+            continue
+        c = fetch_wikimedia_credit(src)
+        if c:
+            c['for'] = src
+            update_entry(e.get('name') or k, credit=c)
+            done += 1
+        time.sleep(0.2)
+    return done
+
+
+def credit_for(name, sport, shown=None):
+    """Credit for the photo shown for a fighter, or None when its origin is not
+    known. `shown` is the URL on the page; no credit if it is not the stored photo.
+    Returns {'text', 'author', 'author_url', 'license', 'license_url', 'file_url'}."""
+    if not name:
+        return None
+    e = load_meta().get(key(name)) or {}
+    path = e.get('path') or (None if e.get('status') == 'rejected' else legacy_image(name))
+    if not path or (shown and _bare(shown) != _bare(path)):
+        return None
+    src = e.get('source') or 'legacy'
+    url = e.get('source_url') or ''
+    if src == 'ufc' or 'ufc.com/' in url or (
+            src == 'legacy' and sport == 'UFC' and _bare(path).startswith('/static/fighters/') and _bare(path).endswith('.png')):
+        return {'text': 'UFC'}
+    if src in ('wikipedia', 'wikidata') or wikimedia_file(url):
+        c = e.get('credit') or {}
+        if c.get('for') != url or not c.get('free'):
+            return None
+        return {'text': 'Wikimedia Commons', 'author': c.get('author'), 'author_url': c.get('author_url'),
+                'license': c.get('license'), 'license_url': c.get('license_url'), 'file_url': c.get('file_url')}
+    return None
+
+
 # ── candidate sources ────────────────────────────────────────────────────────
 
 def espn_candidate(name, sport):

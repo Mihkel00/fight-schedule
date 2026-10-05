@@ -26,6 +26,18 @@
         {% endif %}
     </div>
 </div>
+{{ photo_credit_line(sport, m) }}
+{%- endmacro %}
+
+{# Who took the hero photos. Only photos of known origin are credited. #}
+{% macro photo_credit_line(sport, m) -%}
+{% set cr = photo_credits(sport, m) %}
+{% if cr %}<p class="photo-credit">{{ 'Photos' if cr|length > 1 or not cr[0].who else 'Photo' }}:
+{%- for x in cr %}{% set c = x.credit %} {% if c.text == 'UFC' %}UFC{% else %}
+{%- if c.author %}{% if c.author_url %}<a href="{{ c.author_url }}" target="_blank" rel="noopener">{{ c.author }}</a>{% else %}{{ c.author }}{% endif %} / {% endif -%}
+<a href="{{ c.file_url }}" target="_blank" rel="noopener">Wikimedia Commons</a>
+{%- if c.license %}, {% if c.license_url %}<a href="{{ c.license_url }}" target="_blank" rel="noopener">{{ c.license }}</a>{% else %}{{ c.license }}{% endif %}{% endif %}, cropped
+{%- endif %}{% if x.who %} ({{ x.who }}){% endif %}{{ ' ·' if not loop.last }}{% endfor %}</p>{% endif %}
 {%- endmacro %}
 
 {# One row of the fight card. #}
