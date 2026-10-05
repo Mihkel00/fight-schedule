@@ -1,1 +1,2 @@
 pytest>=8
+time-machine>=2.14

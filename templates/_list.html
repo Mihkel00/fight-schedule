@@ -36,7 +36,7 @@
 {% set uc_id = 'uc-' ~ uid %}
 <article class="ev {{ e.sport|lower }}" data-sport="{{ e.sport }}">
     <a href="{{ e.path }}" class="ev-main">
-        <span class="top">{% if e.sport == 'UFC' %}<span class="tag"><i class="dot"></i>{{ (e.event_name or 'UFC').split(':')[0] }}</span>{% elif show_sport %}<span class="tag"><i class="dot"></i>Boxing</span>{% else %}<span class="tag"></span>{% endif %}
+        <span class="top">{% if e.sport == 'UFC' %}<span class="tag">{{ (e.event_name or 'UFC').split(':')[0] }}</span>{% elif show_sport %}<span class="tag">Boxing</span>{% else %}<span class="tag"></span>{% endif %}
         <span class="where">{{ e.location or e.venue }}</span></span>
         <span class="pair">{{ face(e.fighter1, e.fighter1_image, e.sport, 'av' ~ (' lost' if w2 else '') ~ (' won' if w1 else '')) }}{{ face(e.fighter2, e.fighter2_image, e.sport, 'av b' ~ (' lost' if w1 else '') ~ (' won' if w2 else '')) }}</span>
         <span class="names"><b class="{{ 'lost' if w2 }}">{{ e.fighter1|surname }}</b> <i>vs</i> <b class="{{ 'lost' if w1 }}">{{ e.fighter2|surname }}</b>{% if e.weight_class %}<small>{{ e.weight_class }}</small>{% endif %}</span>

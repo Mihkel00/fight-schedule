@@ -1,6 +1,7 @@
 """Rendered pages: every bout shown once, crawler-visible UTC times, no link
 inside a link, structured data present."""
 import collections
+import os
 import re
 
 import app as A
@@ -107,3 +108,10 @@ def test_robots_disallows_private_paths(client):
     rb = client.get('/robots.txt').get_data(as_text=True)
     for p in ('/admin/', '/go/', '/api/', '/health'):
         assert f'Disallow: {p}' in rb
+
+
+def test_sport_label_is_coloured_text_without_dot(client):
+    h = client.get('/').get_data(as_text=True)
+    assert 'class="dot"' not in h
+    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'list.css')).read()
+    assert '.ev.ufc .tag { color: var(--ufc); }' in css and '.ev.boxing .tag { color: var(--box); }' in css

@@ -16,6 +16,7 @@ os.environ.pop('ANTHROPIC_API_KEY', None)
 sys.path.insert(0, ROOT)
 
 import pytest  # noqa: E402
+import time_machine  # noqa: E402
 import app as A  # noqa: E402
 
 A.app.config['WTF_CSRF_ENABLED'] = False
@@ -23,6 +24,16 @@ A.ping_indexnow = lambda u: None
 A.refresh_profiles = lambda *a, **k: None
 A._maybe_start_profile_job = lambda f: None
 _SEEDED = set(os.listdir(_SCRATCH))   # files app.py copies in at import; keep them
+
+# The fixtures are a snapshot of 2 October 2026. Every test runs on that day,
+# so "upcoming" and "past" mean the same thing whenever the suite runs.
+FIXTURE_NOW = '2026-10-02T12:00:00Z'
+
+
+@pytest.fixture(autouse=True)
+def _fixture_day():
+    with time_machine.travel(FIXTURE_NOW, tick=True):
+        yield
 
 
 def fixture_path(name):
