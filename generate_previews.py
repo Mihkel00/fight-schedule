@@ -3,7 +3,7 @@ Pre-generate AI previews on deployment to avoid slow page loads
 """
 import sys
 import os
-from app import fetch_fights, get_or_generate_preview, is_big_name_fight, logger
+from app import fetch_fights, get_or_generate_preview, is_big_name_fight, logger, boxing_preview_id
 
 def generate_all_previews():
     """Generate previews for featured and main card fights"""
@@ -52,9 +52,7 @@ def generate_all_previews():
                 if fight.get('sport') == 'UFC':
                     preview_id = f"{fight['event_name'].lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
                 else:
-                    fighter1_slug = fight['fighter1'].lower().replace(' ', '-')
-                    fighter2_slug = fight['fighter2'].lower().replace(' ', '-')
-                    preview_id = f"boxing_{fighter1_slug}_{fighter2_slug}_{fight['date']}"
+                    preview_id = boxing_preview_id(fight['fighter1'], fight['fighter2'], fight['date'])
                 
                 # Generate preview
                 is_title = fight.get('weight_class') == 'Title'
@@ -64,7 +62,9 @@ def generate_all_previews():
                     fighter2=fight['fighter2'],
                     sport=fight['sport'],
                     is_title=is_title,
-                    weight_class=fight.get('weight_class')
+                    weight_class=fight.get('weight_class'),
+                    wait=True,
+                    fight_date=fight['date']
                 )
                 
                 if preview:

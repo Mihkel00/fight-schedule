@@ -278,3 +278,9 @@ time, .ddate, .tape-row, .meta, .meta2 { font-variant-numeric: tabular-nums; }
 .av:not(.ph), .rc img, .hero img:not(.ph) { filter: grayscale(1) contrast(1.06); }
 .av.lost, img.lost { filter: grayscale(1); }
 .hero img.lost { filter: grayscale(1) brightness(.55); }
+
+/* Preview: says it is an AI summary, and which records it is built from */
+.ai-tag { display: inline-block; margin-left: 8px; vertical-align: 2px; font: 600 10px 'Work Sans', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--t2); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 2px 7px; }
+.src-line { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08); font: 12px/1.45 'Work Sans', sans-serif; color: var(--t3); }
+.src-line a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.25); text-underline-offset: 2px; }
+.src-line a:hover { color: var(--t2); }

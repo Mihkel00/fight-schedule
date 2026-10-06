@@ -28,6 +28,7 @@ from scrapers import scrape_ufc as scrape_ufc_events, scrape_boxing as scrape_bo
 import runs as _runs
 import usage as _usage
 import image_pipeline as _images
+import previews as _previews
 import locks as _locks
 import structured_data as _ld
 
@@ -385,134 +386,102 @@ def load_previews():
         return {}
 
 def save_preview(preview_id, preview_data):
-    """Save a fight preview to cache"""
+    """Save a fight preview to the cache file (atomic, safe across workers)."""
     try:
-        # Parse JSON if text contains structured data
-        if 'text' in preview_data:
-            try:
-                parsed = json.loads(preview_data['text'])
-                preview_data['parsed'] = parsed
-            except:
-                # Fallback if not valid JSON
-                pass
-        
-        previews = load_previews()
-        previews[preview_id] = preview_data
-        with open(data_path('fight_previews.json'), 'w', encoding='utf-8') as f:
-            json.dump(previews, f, indent=2, ensure_ascii=False)
+        with _locks.job_lock('previews', wait_seconds=15):
+            previews = load_previews()
+            previews[preview_id] = preview_data
+            _runs.write_json_atomic(data_path('fight_previews.json'), previews)
         logger.info(f"Saved preview: {preview_id}")
     except Exception as e:
         logger.error(f"Failed to save preview: {e}")
 
-def generate_fight_preview(fighter1, fighter2, sport, is_title, weight_class=None):
-    """Generate AI preview using Claude API"""
-    
+PREVIEW_MODEL = 'claude-haiku-4-5-20251001'
+_preview_jobs = set()
+_preview_jobs_lock = threading.Lock()
+
+
+def _call_preview_model(prompt):
+    """One request to the model; the reply text, or None on any failure."""
     if not ANTHROPIC_API_KEY:
-        logger.warning("No Anthropic API key set - skipping preview generation")
         return None
-    
-    # Build the prompt
-    title_context = "Title Fight: Yes" if is_title else "Title Fight: No"
-    weight_info = f"Weight Class: {weight_class}" if weight_class else "Weight Class: Unknown"
-    
-    prompt = f"""Generate a brief fight preview in JSON format with this EXACT structure:
-
-{{
-  "context": "One punchy sentence (15 words max) - why this fight matters",
-  "fighter1_edge": [
-    "First key strength (10 words max)",
-    "Second key strength (10 words max)"
-  ],
-  "fighter2_edge": [
-    "First key strength (10 words max)",
-    "Second key strength (10 words max)"
-  ],
-  "what_to_watch": "Two sentences max (25 words total) - key moments, rounds, or factors that will decide the fight. NO predictions."
-}}
-
-Fighter 1: {fighter1}
-Fighter 2: {fighter2}
-Sport: {sport}
-{title_context}
-{weight_info}
-
-CRITICAL RULES:
-- Total output under 100 words
-- Respond ONLY with valid JSON, no other text
-- Be specific and punchy
-- No predictions or calling the winner
-- Focus on what makes this fight interesting
-
-Example good output:
-{{
-  "context": "Bantamweight title rematch after controversial decision",
-  "fighter1_edge": [
-    "Relentless wrestling pressure breaks opponents late",
-    "Superior cardio outlasts elite competition"
-  ],
-  "fighter2_edge": [
-    "Surgical striking slices through aggressive pressure",
-    "Elite takedown defense neutralizes wrestling attacks"
-  ],
-  "what_to_watch": "Watch the opening two rounds—whoever controls distance there wins the mental battle. If Merab clinches early, it's a grind. If Yan stays at range, it's a striking clinic."
-}}"""
-
     try:
-        logger.info(f"Generating preview for {fighter1} vs {fighter2}...")
-        
-        response = requests.post(
+        r = requests.post(
             "https://api.anthropic.com/v1/messages",
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01"
-            },
-            json={
-                "model": "claude-haiku-4-5-20251001",
-                "max_tokens": 500,
-                "messages": [{"role": "user", "content": prompt}]
-            },
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            preview_text = response.json()['content'][0]['text']
-            # Strip markdown code blocks if present
-            preview_text = preview_text.replace('```json', '').replace('```', '').strip()
-            logger.info("Preview generated successfully")
-            return preview_text
-        else:
-            logger.error(f"API request failed: {response.status_code}")
+            headers={"Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY,
+                     "anthropic-version": "2023-06-01"},
+            json={"model": PREVIEW_MODEL, "max_tokens": 600, "messages": [{"role": "user", "content": prompt}]},
+            timeout=30)
+        if r.status_code != 200:
+            logger.error(f"Preview API request failed: {r.status_code}")
             return None
-            
+        return r.json()['content'][0]['text']
     except Exception as e:
         logger.error(f"Preview generation error: {e}")
         return None
 
-def get_or_generate_preview(preview_id, fighter1, fighter2, sport, is_title, weight_class=None):
-    """Get cached preview or generate new one"""
-    
-    # Check cache first
-    previews = load_previews()
-    
-    if preview_id in previews:
-        logger.info(f"Using cached preview for {preview_id}")
-        return previews[preview_id]
-    
-    # Generate new preview
-    preview_text = generate_fight_preview(fighter1, fighter2, sport, is_title, weight_class)
-    
-    if preview_text:
-        preview_data = {
-            'fighter1': fighter1,
-            'fighter2': fighter2,
-            'text': preview_text,
-            'generated_at': datetime.now().isoformat(),
-            'manual_override': False
-        }
-        save_preview(preview_id, preview_data)
-        return preview_data
-    
+
+def _make_grounded_preview(preview_id, facts, sources, fighter1, fighter2):
+    """Write a preview from the facts, check it, retry once with the problems
+    listed, and store the outcome (shown only if it passed)."""
+    problems, text, parsed = None, None, None
+    for _ in range(2):
+        text = _call_preview_model(_previews.build_prompt(facts, problems))
+        if text is None:
+            return None                     # API down / no key: store nothing, try again later
+        parsed = _previews.parse(text)
+        problems = _previews.check(parsed, facts)
+        if not problems:
+            break
+    entry = {'fighter1': fighter1, 'fighter2': fighter2, 'text': text, 'parsed': parsed,
+             'generated_at': datetime.now().isoformat(), 'grounded': True,
+             'facts_hash': _previews.facts_hash(facts), 'ok': not problems, 'problems': problems or [],
+             'sources': sources, 'model': PREVIEW_MODEL, 'manual_override': False}
+    if problems:
+        logger.warning(f"Preview {preview_id} rejected: {problems}")
+    save_preview(preview_id, entry)
+    return entry
+
+
+def boxing_preview_id(fighter1, fighter2, date_iso):
+    """Cache key of a boxing preview (names sorted, so either order matches)."""
+    a, b = sorted([fighter1, fighter2])
+    slug = lambda n: n.lower().replace(' ', '-').replace("'", '')
+    return f"boxing_{slug(a)}_{slug(b)}_{date_iso}"
+
+
+def get_or_generate_preview(preview_id, fighter1, fighter2, sport, is_title, weight_class=None, wait=False, fight_date=None):
+    """The checked preview for a fight, or None. Previews are written only from
+    our stored Wikipedia facts (see previews.py) and regenerated when those facts
+    change. Pages never wait on the model: a missing preview is made in the
+    background (wait=True makes it now, for generate_previews.py)."""
+    entry = load_previews().get(preview_id)
+    if fight_date and fight_date < date.today().isoformat():
+        # A finished fight keeps the preview it had; it is never rewritten with hindsight
+        return entry if entry and entry.get('grounded') and entry.get('ok') else None
+    facts, sources = _previews.build_facts(fighter1, fighter2, sport, weight_class, is_title,
+                                           load_profiles(), _tape, _profile_key, before=fight_date)
+    if not _previews.has_any_record(facts):
+        return None                         # nothing to ground it on: no preview
+    if entry and entry.get('grounded') and entry.get('facts_hash') == _previews.facts_hash(facts):
+        return entry if entry.get('ok') else None
+    if not ANTHROPIC_API_KEY:
+        return None
+    if wait:
+        entry = _make_grounded_preview(preview_id, facts, sources, fighter1, fighter2)
+        return entry if entry and entry.get('ok') else None
+    with _preview_jobs_lock:
+        if preview_id in _preview_jobs:
+            return None
+        _preview_jobs.add(preview_id)
+
+    def run():
+        try:
+            _make_grounded_preview(preview_id, facts, sources, fighter1, fighter2)
+        finally:
+            with _preview_jobs_lock:
+                _preview_jobs.discard(preview_id)
+    threading.Thread(target=run, daemon=True).start()
     return None
 
 # ============================================================================
@@ -2029,7 +1998,8 @@ def event_detail(event_slug):
         fighter2=main_event_fight['fighter2'],
         sport='UFC',
         is_title=(main_event_fight.get('weight_class') == 'Title'),
-        weight_class=None  # UFC doesn't extract weight classes
+        weight_class=None,  # UFC doesn't extract weight classes
+        fight_date=main_event_fight['date']
     )
     
     event_data['preview'] = preview
@@ -2194,10 +2164,7 @@ def boxing_event_detail(event_slug):
     
     # Generate AI preview for main event
     # Create preview ID from sorted fighter names + date for consistency
-    fighters_sorted = sorted([main_event_fight['fighter1'], main_event_fight['fighter2']])
-    fighter1_slug = fighters_sorted[0].lower().replace(' ', '-').replace("'", '')
-    fighter2_slug = fighters_sorted[1].lower().replace(' ', '-').replace("'", '')
-    preview_id = f"boxing_{fighter1_slug}_{fighter2_slug}_{main_event_fight['date']}"
+    preview_id = boxing_preview_id(main_event_fight['fighter1'], main_event_fight['fighter2'], main_event_fight['date'])
     
     preview = get_or_generate_preview(
         preview_id=preview_id,
@@ -2205,7 +2172,8 @@ def boxing_event_detail(event_slug):
         fighter2=main_event_fight['fighter2'],
         sport='Boxing',
         is_title=('Title' in main_event_fight.get('weight_class', '')),
-        weight_class=main_event_fight.get('weight_class')
+        weight_class=main_event_fight.get('weight_class'),
+        fight_date=main_event_fight['date']
     )
     
     event_data['preview'] = preview
