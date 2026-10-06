@@ -98,3 +98,33 @@ def test_page_type_mapping():
 
 def test_privacy_page_describes_usage_counts(client):
     assert 'id="usage"' in client.get('/privacy').get_data(as_text=True)
+
+
+def test_seen_beacon_is_its_own_count(client):
+    h = dict(BROWSER, Referer='http://localhost/')
+    for _ in range(3):
+        client.get('/', headers=BROWSER)                                     # server views
+    client.post('/api/t', json={'name': 'seen', 'page': '/'}, headers=h)    # one person looked
+    client.post('/api/t', json={'name': 'card', 'detail': 'UFC', 'page': '/'}, headers=h)
+    client.get('/', headers={'User-Agent': 'curl/8.0'})                      # bot: raw only
+    recs = _records()
+    assert [r['kind'] for r in recs if r['kind'] != 'view'] == ['seen', 'tap']
+    seen = next(r for r in recs if r['kind'] == 'seen')
+    assert seen['name'] is None and seen['detail'] is None
+    s = usage.stats(days=1)
+    assert s['seen_total'] == 1 and s['seen_by_page'] == {'homepage': 1}
+    assert s['views_by_page'] == {'homepage': 3}
+    assert sum(s['raw_views_by_day'].values()) == 4
+    assert s['taps_by_name'] == {'card': 1}, 'seen is not a tap'
+
+
+def test_seen_needs_a_real_page_load_from_the_site(client):
+    client.post('/api/t', json={'name': 'seen', 'page': '/'}, headers=BROWSER)        # no referer
+    client.post('/api/t', json={'name': 'seen', 'page': '/'}, headers={'User-Agent': 'python-requests/2.31',
+                                                                        'Referer': 'http://localhost/'})
+    assert usage.stats(days=1)['seen_total'] == 0
+
+
+def test_page_script_reports_seen_after_five_visible_seconds():
+    js = open('static/js/list.js').read()
+    assert "tap('seen')" in js and 'need = 5000' in js and 'visibilitychange' in js
