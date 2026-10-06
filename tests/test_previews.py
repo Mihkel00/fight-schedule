@@ -198,3 +198,74 @@ def test_finished_fight_keeps_its_preview(data_dir, monkeypatch):
     assert e['parsed'] == GOOD and calls == []
     assert A.get_or_generate_preview('other', 'Daniel Dubois', 'Fabio Wardley', 'Boxing', True, wait=True,
                                      fight_date='2026-09-01') is None and calls == []
+
+
+# ── misses found in the first live batch (2026-10-06) ───────────────────────
+
+REACH = {'ciryl gane': _profile('Ciryl Gane', 14, 2, 9, 36, 196, 81, []),
+         'josh hokit': _profile('Josh Hokit', 10, 0, 6, 28, 185, 73, [])}
+
+
+def _reach_facts():
+    return P.build_facts('Josh Hokit', 'Ciryl Gane', 'UFC', None, False, REACH, A._tape, A._profile_key)[0]
+
+
+def test_wrong_difference_is_rejected_even_spelled_out():
+    base = {'context': 'Unbeaten Hokit meets Gane', 'fighter1_edge': ['Perfect 10-0 record with 6 knockout wins'],
+            'what_to_watch': 'Watch whether Hokit can close the distance.'}
+    bad = dict(base, fighter2_edge=['Four-inch reach advantage at 81 inches versus 73'])
+    assert any('4-inch reach difference is wrong' in p for p in P.check(bad, _reach_facts()))
+    good = dict(base, fighter2_edge=['Eight-inch reach advantage at 81 inches versus 73'])
+    assert P.check(good, _reach_facts()) == []
+    assert P.check(dict(good, what_to_watch='Watch the first three rounds and round 2.'), _reach_facts()) == []
+
+
+def test_title_wins_are_not_title_defenses():
+    prof = {'alexander volkanovski': _profile('Alexander Volkanovski', 28, 4, 13, 38, 168, 71, [
+        {'date': '2026-02-01', 'result': 'Win', 'opponent': 'Diego Lopes', 'method': 'Decision', 'round': '5',
+         'notes': 'Defended the UFC Featherweight Championship. Tied the record for the most UFC Featherweight title wins (8).'}]),
+        'movsar evloev': _profile('Movsar Evloev', 20, 0, 3, 32, 170, 72, [])}
+    facts = P.build_facts('Alexander Volkanovski', 'Movsar Evloev', 'UFC', None, True, prof, A._tape, A._profile_key)[0]
+    base = {'context': 'Champion Volkanovski faces unbeaten Evloev', 'fighter2_edge': ['Perfect 20-0 record'],
+            'what_to_watch': 'Watch whether this goes five rounds.'}
+    assert any('defenses' in p for p in P.check(dict(base, fighter1_edge=['8 UFC Featherweight title defenses']), facts))
+    assert P.check(dict(base, fighter1_edge=['Record 8 UFC Featherweight title wins']), facts) == []
+
+
+def test_check_version_is_part_of_the_hash():
+    f = _facts()[0]
+    h = P.facts_hash(f)
+    P.CHECK_VERSION += 1
+    try:
+        assert P.facts_hash(f) != h
+    finally:
+        P.CHECK_VERSION -= 1
+
+
+def test_numbers_are_tied_to_their_own_words():
+    prof = {'renato moicano': _profile('Renato Moicano', 21, 7, 5, 37, 180, 72, []),
+            'tom nolan': _profile('Tom Nolan', 11, 1, 6, 25, 185, 73, [])}
+    facts = P.build_facts('Renato Moicano', 'Tom Nolan', 'UFC', None, False, prof, A._tape, A._profile_key)[0]
+    base = {'context': 'Veteran Moicano meets Nolan', 'fighter1_edge': ['21 wins in a 21-7 record'],
+            'what_to_watch': 'Watch the first round.'}
+    assert P.check(dict(base, fighter2_edge=['Taller by 2 inches with one-inch reach advantage']), facts) == []
+    assert P.check(dict(base, fighter2_edge=['12 years younger at 25 years old']), facts) == []
+    assert any('age gap' in p for p in P.check(dict(base, fighter2_edge=['Ten years younger at 25 years old']), facts))
+
+
+def test_recent_means_one_of_the_last_two_fights():
+    fights = [{'date': d, 'result': 'Win', 'opponent': o, 'method': 'KO', 'round': '1'} for d, o in
+              (('2026-06-01', 'Alpha One'), ('2026-01-01', 'Beta Two'), ('2025-06-01', 'Colby Covington'))]
+    prof = {'joaquin buckley': _profile('Joaquin Buckley', 21, 7, 15, 32, 178, 76, fights),
+            'mike malott': _profile('Mike Malott', 14, 2, 6, 34, 185, 75, [])}
+    facts = P.build_facts('Joaquin Buckley', 'Mike Malott', 'UFC', None, False, prof, A._tape, A._profile_key)[0]
+    base = {'context': 'Buckley meets Malott', 'fighter2_edge': ['14 wins in a 14-2 record'], 'what_to_watch': 'Watch the first round.'}
+    assert any('called recent' in p for p in P.check(dict(base, fighter1_edge=['Recent TKO win over Colby Covington']), facts))
+    assert P.check(dict(base, fighter1_edge=['Recent KO win over Beta Two']), facts) == []
+
+
+def test_no_claims_about_a_fighter_without_record():
+    facts = P.build_facts('Daniel Dubois', 'Jiri Unknown', 'UFC', None, False, PROFILES, A._tape, A._profile_key)[0]
+    base = {'context': 'Dubois returns', 'fighter1_edge': ['22 of 23 wins by stoppage']}
+    assert any('no record' in p for p in P.check(dict(base, what_to_watch="Unknown's knockout power (28 KO wins) is the threat."), facts))
+    assert P.check(dict(base, what_to_watch="Unknown's record is unavailable, so watch Dubois's start."), facts) == []

@@ -3072,8 +3072,9 @@ def usage_beacon():
         if not _usage.valid_tap(name, detail):
             return '', 204
         ua = request.headers.get('User-Agent') or ''
-        _usage.record('tap', _usage.page_type(str(data.get('page') or request.headers.get('Referer') or '')),
-                      name=name, detail=detail or None, bot=_is_bot(ua),
+        seen = name == _usage.SEEN
+        _usage.record('seen' if seen else 'tap', _usage.page_type(str(data.get('page') or request.headers.get('Referer') or '')),
+                      name=None if seen else name, detail=None if seen else (detail or None), bot=_is_bot(ua),
                       lang=(request.headers.get('Accept-Language') or '').strip(),
                       referer_ok=_from_this_site(request))
     except Exception:
@@ -3184,7 +3185,7 @@ def click_stats(days=30):
 
 # Date of the last change to the privacy policy: shown on the page and used
 # as its sitemap lastmod. Update it whenever templates/privacy.html changes.
-PRIVACY_UPDATED = date(2026, 10, 2)
+PRIVACY_UPDATED = date(2026, 10, 6)
 
 
 @app.route('/privacy')

@@ -6,6 +6,22 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-06 — The preview check let a wrong number through on day one
+
+**What happened:** The first live grounded previews included "Four-inch reach
+advantage at 81 inches versus 73" (it is 8) and "8 title defenses" (our data
+says 8 title *wins*). The check passed both.
+
+**Root cause:** I tested the check against the two errors I already knew
+about, and whitelisted 0–5 as "probably rounds", so any small number, or one
+the model calculated itself, went unchecked. A check written only from known
+failures misses the next kind.
+
+**Rule:** Before calling a checker done, read a batch of real outputs
+(10 or more) by hand against the data, and add a test case for every
+miss. Numbers the model may compute (differences) are recomputed by the
+checker, never whitelisted by size.
+
 ## 2026-10-06 — Said 14 titles would be cut off; measured, it was 2
 
 **What happened:** Asked whether the new page titles were too long, I said

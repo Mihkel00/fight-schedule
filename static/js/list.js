@@ -53,6 +53,29 @@
         } catch (e) {}
     }
     window.FS_tap = tap;
+
+    // A page counts as "seen" once it has been on screen for 5 seconds in total.
+    // Most bots never run this script and the ones that do rarely stay, so this
+    // is the people count; the server's own count includes everything.
+    (function () {
+        var need = 5000, shown = 0, since = null, timer = null, sent = false;
+        function start() {
+            if (sent || since !== null) return;
+            since = Date.now();
+            timer = setTimeout(function () {
+                shown += Date.now() - since; since = null;
+                if (shown >= need) { sent = true; tap('seen'); } else start();
+            }, need - shown);
+        }
+        function stop() {
+            if (since === null) return;
+            clearTimeout(timer); shown += Date.now() - since; since = null;
+        }
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') start(); else stop();
+        });
+        if (document.visibilityState === 'visible') start();
+    })();
     document.addEventListener('click', function (ev) {
         var el = ev.target.closest('a, button');
         if (!el) return;

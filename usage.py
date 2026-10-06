@@ -36,7 +36,10 @@ PAGE_TYPES = (('/results', 'results'), ('/ufc', 'ufc page'), ('/boxing-event/', 
 # Taps the page reports (see static/js/list.js). Anything else is dropped.
 TAP_NAMES = {'card', 'big_card', 'filter', 'undercard_open', 'undercard_close', 'full_card', 'watch',
              'calendar_add', 'calendar_feed', 'nav', 'search_open', 'search', 'tab', 'crumb', 'foot_link',
-             'rail_scroll'}
+             'rail_scroll', 'seen'}
+
+# Sent by list.js once a page has been visible for 5 seconds: the people count.
+SEEN = 'seen'
 
 
 def page_type(path_or_url):
@@ -97,6 +100,9 @@ def stats(days=30):
     taps = defaultdict(int)           # (page, name, detail) -> n
     taps_by_name = defaultdict(int)
     taps_day = defaultdict(int)
+    seen = defaultdict(int)           # page -> n, pages a person actually looked at
+    seen_day = defaultdict(int)
+    raw_views_day = defaultdict(int)  # every server-side view, bots included
     dropped = {'bot': 0, 'no_language': 0, 'not_from_site': 0}
     total = 0
     if os.path.exists(USAGE_FILE):
@@ -109,6 +115,8 @@ def stats(days=30):
                 if r.get('ts', '') < cutoff:
                     continue
                 total += 1
+                if r.get('kind') == 'view':
+                    raw_views_day[r['ts'][:10]] += 1
                 if r.get('bot'):
                     dropped['bot'] += 1
                     continue
@@ -122,6 +130,9 @@ def stats(days=30):
                 if r['kind'] == 'view':
                     views[r['page']] += 1
                     views_day[day] += 1
+                elif r['kind'] == 'seen':
+                    seen[r['page']] += 1
+                    seen_day[day] += 1
                 elif r['kind'] == 'tap':
                     taps[(r['page'], r['name'], r.get('detail'))] += 1
                     taps_by_name[r['name']] += 1
@@ -138,6 +149,12 @@ def stats(days=30):
         'days': days,
         'records': total,
         'dropped': dropped,
+        # People: pages seen for 5+ seconds (script-confirmed). 'views' below are the
+        # server count after the user-agent filter, an upper bound.
+        'seen_total': sum(seen.values()),
+        'seen_by_page': dict(sorted(seen.items(), key=lambda kv: -kv[1])),
+        'seen_by_day': dict(sorted(seen_day.items())),
+        'raw_views_by_day': dict(sorted(raw_views_day.items())),
         'views_by_page': dict(sorted(views.items(), key=lambda kv: -kv[1])),
         'views_by_day': dict(sorted(views_day.items())),
         'taps_by_name': dict(sorted(taps_by_name.items(), key=lambda kv: -kv[1])),

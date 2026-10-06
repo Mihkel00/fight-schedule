@@ -49,7 +49,7 @@ def test_sitemap_keeps_old_pages_and_honest_dates(client):
     assert 'https://fightschedule.live' + UFC_URL + '</loc>' in xml
     assert 'https://fightschedule.live' + BOX_URL + '</loc>' in xml
     lastmod = dict(re.findall(r'<loc>https://fightschedule.live(/[a-z]*)</loc>\s*<lastmod>([^<]+)</lastmod>', xml))
-    assert lastmod['/privacy'] == '2026-10-02'
+    assert lastmod['/privacy'] == A.PRIVACY_UPDATED.isoformat()
     assert lastmod['/results'] < '2026-10-02', 'Results: the newest result, not "today"'
 
 
@@ -62,4 +62,5 @@ def test_archived_pages_are_not_reported_removed(data_dir, seeded_cache):
 
 
 def test_privacy_page_shows_real_update_date(client):
-    assert 'Last updated: 2 October 2026' in client.get('/privacy').get_data(as_text=True)
+    d = A.PRIVACY_UPDATED
+    assert f'Last updated: {d.day} {d:%B %Y}' in client.get('/privacy').get_data(as_text=True)
