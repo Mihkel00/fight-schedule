@@ -6,6 +6,21 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-06 — Said 14 titles would be cut off; measured, it was 2
+
+**What happened:** Asked whether the new page titles were too long, I said
+14 of 48 would be truncated in Google and proposed shortening them. That
+came from a "55–60 characters" rule of thumb applied to character counts.
+When the owner asked whether I had checked our case, measuring each title's
+pixel width at Google's display size (Arial 20px, ~600px) showed 46 of 48 fit.
+
+**Root cause:** I answered with a generic SEO rule and presented it as a
+finding about our pages, without measuring what the rule is a proxy for.
+
+**Rule:** Claims about our pages are measured on our pages first. When a
+rule of thumb stands in for a real limit (characters for pixels), measure
+the real limit, or label the answer as a rule of thumb.
+
 ## 2026-10-06 — Deploy failed; I named the wrong cause before reading the log
 
 **What happened:** The Railway deploy for PR #77 failed and the old version
