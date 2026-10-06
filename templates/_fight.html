@@ -15,8 +15,10 @@
     <span class="shade"></span>
     <span class="rel">{{ 'Result' if m.is_past else when.date|format_date }}</span>
     <div class="hc">
-        <h1>{{ title }}</h1>
-        <div class="big"><span class="{{ 'lost' if w2 }}">{{ m.fighter1|surname }}</span> <i>vs</i> <span class="{{ 'lost' if w1 }}">{{ m.fighter2|surname }}</span></div>
+        {# One H1 holding the label and the matchup, so the page's main heading
+           names the fight ("UFC 333 Volkanovski vs Evloev"), not just "Heavyweight title". #}
+        <h1 class="hh"><span class="kick">{{ title }}</span>
+        <span class="big"><span class="{{ 'lost' if w2 }}">{{ m.fighter1|surname }}</span> <i>vs</i> <span class="{{ 'lost' if w1 }}">{{ m.fighter2|surname }}</span></span></h1>
         {% if m.is_past %}
         <div>{{ result_chip(r) }}</div>
         <div class="meta2"><time class="fight-date" datetime="{{ when.date }}" data-date="{{ when.date }}" data-format="date">{{ when.date|format_date }}</time> · {{ where }}</div>

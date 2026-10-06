@@ -2035,11 +2035,88 @@ def event_detail(event_slug):
     event_data['preview'] = preview
     
     # SEO metadata
-    event_data['meta_description'] = f"{matched_event_name} on {main_event_fight['date']} at {main_event_fight['venue']}. Full fight card, main card and prelims."
+    event_data['page_title'], event_data['meta_description'] = fight_page_seo(
+        'UFC', matched_event_name, event_data.get('date') or main_event_fight['date'], main_event_fight.get('venue'),
+        main_event_fight.get('location'), bool(main_event_fight.get('is_past')))
     event_data['canonical_url'] = f"https://fightschedule.live/event/{event_slug}"
-    event_data['page_title'] = f"{matched_event_name} - Fight Schedule"
     
     return render_template('event_detail.html', event=event_data)
+
+# ── Search titles and descriptions for fight pages ──────────────────────────
+# Shaped like the searches people make ("X vs Y start time", "UFC 333 results").
+# Kept under ~65 characters (titles) / ~160 (descriptions), where Google cuts.
+
+TITLE_MAX = 65
+DESC_MAX = 160
+
+
+def _long_date(iso):
+    """'2026-10-24' -> 'Saturday 24 October 2026' (the date in UTC)."""
+    try:
+        d = datetime.strptime(iso, '%Y-%m-%d')
+    except (TypeError, ValueError):
+        return iso or 'date TBA'
+    return f"{d:%A} {d.day} {d:%B %Y}"
+
+
+def _place_text(venue, location):
+    """'London' + 'London' -> 'London'; drops TBA and repeats."""
+    parts = []
+    for x in (venue, location):
+        x = (x or '').strip()
+        if x and x.upper() != 'TBA' and not any(x.lower() in p.lower() for p in parts):
+            parts = [p for p in parts if p.lower() not in x.lower()] + [x]
+    return ', '.join(parts)
+
+
+def _fit_title(*candidates):
+    for c in candidates:
+        if len(c) <= TITLE_MAX:
+            return c
+    return candidates[-1]
+
+
+def _boxing_kind(weight_class):
+    """'Title Heavyweight' -> 'heavyweight title fight'; 'Middleweight' -> 'middleweight bout'."""
+    wc = (weight_class or '').strip()
+    title = wc.startswith('Title')
+    division = wc[5:].strip().lower() if title else wc.lower()
+    return f"{division + ' ' if division else ''}{'title fight' if title else 'bout'}"
+
+
+def fight_page_seo(sport, name, date_iso, venue, location, is_past, kind=None, streaming=None):
+    """(page_title, meta_description) for a UFC event or boxing card page.
+    name: 'UFC 333: Volkanovski vs. Evloev' or 'Daniel Dubois vs Fabio Wardley'."""
+    when = _long_date(date_iso)
+    place = _place_text(venue, location)
+    sep = 'at' if sport == 'UFC' else 'in'
+
+    def desc_fit(make):
+        """The fullest description that fits ~160 characters: with the place, then without."""
+        for at in ((f" {sep} {place}" if place else ''), ''):
+            d = make(at)
+            if len(d) <= DESC_MAX:
+                return d
+        return d
+
+    if sport == 'UFC':
+        if is_past:
+            title = _fit_title(f"{name}: Results & Full Fight Card", f"{name}: Results", name)
+            desc = desc_fit(lambda at: f"{name} results and the full fight card, {when}{at}.")
+        else:
+            title = _fit_title(f"{name}: Start Time, Date & Fight Card", f"{name}: Start Time & Card", name)
+            desc = desc_fit(lambda at: f"{name}, {when}{at}. Start times in your time zone, full card and where to watch.")
+    else:
+        if is_past:
+            title = _fit_title(f"{name}: Result & Full Card", f"{name}: Result", name)
+            desc = desc_fit(lambda at: f"{name} result: {kind or 'bout'}, {when}{at}. Plus the full undercard.")
+        else:
+            title = _fit_title(f"{name}: Start Time, Date & Full Card", f"{name}: Start Time & Card", name)
+            watch = f" ({streaming})" if streaming else ''
+            desc = desc_fit(lambda at: f"{name}, {kind or 'bout'}, {when}{at}. Start time in your time zone, "
+                                       f"full undercard and where to watch{watch}.")
+    return title, desc
+
 
 @app.route('/boxing-event/<event_slug>')
 def boxing_event_detail(event_slug):
@@ -2134,9 +2211,12 @@ def boxing_event_detail(event_slug):
     event_data['preview'] = preview
     
     # SEO metadata
-    event_data['meta_description'] = f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']} - {main_event_fight.get('weight_class', 'Boxing match')} on {main_event_fight['date']} at {main_event_fight['venue']}, {main_event_fight['location']}. Full fight card and AI-powered preview."
+    event_data['page_title'], event_data['meta_description'] = fight_page_seo(
+        'Boxing', f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']}", main_event_fight['date'],
+        main_event_fight.get('venue'), main_event_fight.get('location'), bool(main_event_fight.get('is_past')),
+        kind=_boxing_kind(main_event_fight.get('weight_class')),
+        streaming=_aff.clean_broadcaster(main_event_fight.get('streaming')) if main_event_fight.get('streaming') else None)
     event_data['canonical_url'] = f"https://fightschedule.live/boxing-event/{event_slug}"
-    event_data['page_title'] = f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']} - Fight Schedule"
     
     return render_template('boxing_event.html', event=event_data)
 

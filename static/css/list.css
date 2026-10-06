@@ -157,9 +157,10 @@
 .hero .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.94) 20%, rgba(0,0,0,.35) 58%, rgba(0,0,0,0) 82%); }
 .hero .hc { position: absolute; left: 20px; right: 20px; bottom: 18px; font-family: 'Work Sans', sans-serif; }
 .hero .rel { position: absolute; top: 14px; left: 14px; font: 600 12px 'Work Sans', sans-serif; background: var(--t1); color: #000; border-radius: 999px; padding: 3px 10px; }
-.hero h1 { font: 600 11px 'Work Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; margin: 0; }
-.hero.ufc h1 { color: var(--ufc); } .hero.boxing h1 { color: var(--box); }
-.hero .big { font-family: 'Staatliches', sans-serif; font-size: 44px; line-height: 1; margin: 6px 0 8px; text-transform: uppercase; }
+.hero h1.hh { font: inherit; margin: 0; }
+.hero .kick { display: block; font: 600 11px 'Work Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.hero.ufc .kick { color: var(--ufc); } .hero.boxing .kick { color: var(--box); }
+.hero .big { display: block; font-family: 'Staatliches', sans-serif; font-weight: 400; font-size: 44px; line-height: 1; margin: 6px 0 8px; text-transform: uppercase; }
 .hero .big i { font: italic 15px 'Work Sans', sans-serif; color: var(--t2); margin: 0 4px; vertical-align: middle; text-transform: lowercase; }
 .hero .meta { font-size: 16px; font-weight: 600; } .hero .meta small { color: var(--t3); font-weight: 500; font-size: 13px; margin-left: 4px; }
 .hero .meta2 { font-size: 13px; color: var(--t2); margin-top: 3px; }
