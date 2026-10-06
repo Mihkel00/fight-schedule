@@ -99,5 +99,11 @@ def generate_all_previews():
         return False
 
 if __name__ == "__main__":
-    success = generate_all_previews()
-    sys.exit(0 if success else 1)
+    # Previews are optional: this runs before the web server starts, so it must
+    # never stop a deploy. Failures are logged and the exit code is always 0.
+    try:
+        if not generate_all_previews():
+            logger.warning("No previews generated or cached; starting the site anyway")
+    except BaseException as e:   # includes SystemExit / KeyboardInterrupt from deep inside
+        logger.error(f"Preview pre-generation crashed: {e}; starting the site anyway")
+    sys.exit(0)
