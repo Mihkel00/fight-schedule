@@ -157,9 +157,10 @@
 .hero .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.94) 20%, rgba(0,0,0,.35) 58%, rgba(0,0,0,0) 82%); }
 .hero .hc { position: absolute; left: 20px; right: 20px; bottom: 18px; font-family: 'Work Sans', sans-serif; }
 .hero .rel { position: absolute; top: 14px; left: 14px; font: 600 12px 'Work Sans', sans-serif; background: var(--t1); color: #000; border-radius: 999px; padding: 3px 10px; }
-.hero h1 { font: 600 11px 'Work Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; margin: 0; }
-.hero.ufc h1 { color: var(--ufc); } .hero.boxing h1 { color: var(--box); }
-.hero .big { font-family: 'Staatliches', sans-serif; font-size: 44px; line-height: 1; margin: 6px 0 8px; text-transform: uppercase; }
+.hero h1.hh { font: inherit; margin: 0; }
+.hero .kick { display: block; font: 600 11px 'Work Sans', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+.hero.ufc .kick { color: var(--ufc); } .hero.boxing .kick { color: var(--box); }
+.hero .big { display: block; font-family: 'Staatliches', sans-serif; font-weight: 400; font-size: 44px; line-height: 1; margin: 6px 0 8px; text-transform: uppercase; }
 .hero .big i { font: italic 15px 'Work Sans', sans-serif; color: var(--t2); margin: 0 4px; vertical-align: middle; text-transform: lowercase; }
 .hero .meta { font-size: 16px; font-weight: 600; } .hero .meta small { color: var(--t3); font-weight: 500; font-size: 13px; margin-left: 4px; }
 .hero .meta2 { font-size: 13px; color: var(--t2); margin-top: 3px; }
@@ -277,3 +278,9 @@ time, .ddate, .tape-row, .meta, .meta2 { font-variant-numeric: tabular-nums; }
 .av:not(.ph), .rc img, .hero img:not(.ph) { filter: grayscale(1) contrast(1.06); }
 .av.lost, img.lost { filter: grayscale(1); }
 .hero img.lost { filter: grayscale(1) brightness(.55); }
+
+/* Preview: says it is an AI summary, and which records it is built from */
+.ai-tag { display: inline-block; margin-left: 8px; vertical-align: 2px; font: 600 10px 'Work Sans', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--t2); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; padding: 2px 7px; }
+.src-line { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08); font: 12px/1.45 'Work Sans', sans-serif; color: var(--t3); }
+.src-line a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255,255,255,.25); text-underline-offset: 2px; }
+.src-line a:hover { color: var(--t2); }

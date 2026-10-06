@@ -15,8 +15,10 @@
     <span class="shade"></span>
     <span class="rel">{{ 'Result' if m.is_past else when.date|format_date }}</span>
     <div class="hc">
-        <h1>{{ title }}</h1>
-        <div class="big"><span class="{{ 'lost' if w2 }}">{{ m.fighter1|surname }}</span> <i>vs</i> <span class="{{ 'lost' if w1 }}">{{ m.fighter2|surname }}</span></div>
+        {# One H1 holding the label and the matchup, so the page's main heading
+           names the fight ("UFC 333 Volkanovski vs Evloev"), not just "Heavyweight title". #}
+        <h1 class="hh"><span class="kick">{{ title }}</span>
+        <span class="big"><span class="{{ 'lost' if w2 }}">{{ m.fighter1|surname }}</span> <i>vs</i> <span class="{{ 'lost' if w1 }}">{{ m.fighter2|surname }}</span></span></h1>
         {% if m.is_past %}
         <div>{{ result_chip(r) }}</div>
         <div class="meta2"><time class="fight-date" datetime="{{ when.date }}" data-date="{{ when.date }}" data-format="date">{{ when.date|format_date }}</time> · {{ where }}</div>
@@ -57,12 +59,14 @@
 {% macro preview_panel(event) -%}
 {% if event.preview and event.preview.parsed %}
 {% set p = event.preview.parsed %}
-<h2 class="sec-h">Preview</h2>
+<h2 class="sec-h">Preview <span class="ai-tag">AI summary</span></h2>
 <div class="panel">
     {% if p.context %}<p class="ctx">{{ p.context }}</p>{% endif %}
     {% if p.fighter1_edge %}<h3>{{ event.main_event.fighter1 }}'s edge</h3><ul>{% for x in p.fighter1_edge %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
     {% if p.fighter2_edge %}<h3>{{ event.main_event.fighter2 }}'s edge</h3><ul>{% for x in p.fighter2_edge %}<li>{{ x }}</li>{% endfor %}</ul>{% endif %}
     {% if p.what_to_watch %}<h3>What to watch</h3><p>{{ p.what_to_watch }}</p>{% endif %}
+    {% if event.preview.sources %}<p class="src-line">Based on Wikipedia records:
+    {%- for s in event.preview.sources %} <a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.name }}</a>{{ ' ·' if not loop.last }}{% endfor %}</p>{% endif %}
 </div>
 {% endif %}
 {%- endmacro %}
