@@ -859,7 +859,7 @@ def sync_page_versions(fights, reason=''):
     now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
     with _versions_lock, _locks.job_lock('versions', wait_seconds=15):
         stored = _load_versions()
-        current = _event_fingerprints(fights)
+        current = _event_fingerprints(fights + archived_fights(fights))
         changed = [u for u, h in current.items() if stored.get(u, {}).get('hash') != h]
         removed = [u for u in stored if u not in current]
         for u in changed:
@@ -1225,7 +1225,8 @@ def save_last_good(sport, fights, merge=False):
 # Only scraped fields are archived; derived fields (images, tape, results) are
 # recomputed on display so they always reflect the latest data.
 _ARCHIVE_FIELDS = ('fighter1', 'fighter2', 'date', 'time', 'time_estimated', 'venue', 'location', 'sport',
-                   'event_name', 'weight_class', 'card_type', 'rounds', 'is_main_event', 'streaming')
+                   'event_name', 'weight_class', 'card_type', 'rounds', 'is_main_event', 'streaming',
+                   'bout_order')
 
 
 def _refresh_cache(wait=False):
@@ -1265,6 +1266,24 @@ def fetch_fights():
     fights = _fetch_fights_raw()
     _maybe_start_profile_job(fights)
     return enrich_fights(fights)
+
+
+def archived_fights(live):
+    """Finished fights older than the results window, from the archive. Their
+    pages stay online (and in the sitemap) after they leave the lists, so
+    links and search results for past fights keep working."""
+    cutoff = _retention_cutoff_iso()
+    seen = {_fight_key(f) for f in live}
+    old = [dict(f) for f in load_results_archive()
+           if f.get('date', '') < cutoff and _fight_key(f) not in seen]
+    return normalize_ufc_cards(old) if old else []
+
+
+def fights_for_pages():
+    """Live fights plus archived ones: what fight pages and the sitemap use."""
+    fights = fetch_fights()
+    old = archived_fights(fights)
+    return fights + enrich_fights(old) if old else fights
 
 
 def _fetch_fights_raw():
@@ -1864,7 +1883,7 @@ def results_page():
 def event_detail(event_slug):
     """Show detailed page for a specific event with full card"""
     logger.info(f"--> Event detail accessed: {event_slug}")
-    fights = fetch_fights()
+    fights = fights_for_pages()
     
     # Extract date from slug (last 10 chars: YYYY-MM-DD)
     # Slug format: "ufc-323-dvalishvili-vs-yan-2-2025-01-25"
@@ -2027,7 +2046,7 @@ def boxing_event_detail(event_slug):
     """Show boxing event details using fighter names in URL"""
     logger.info(f"Boxing event accessed: {event_slug}")
     
-    all_fights = fetch_fights()
+    all_fights = fights_for_pages()
     boxing_fights = [f for f in all_fights if f.get('sport') == 'Boxing']
     
     # Parse slug: fighter1-vs-fighter2-YYYY-MM-DD
@@ -2127,8 +2146,9 @@ def boxing_event_detail(event_slug):
 def sitemap():
     """Generate dynamic sitemap"""
     from xml.sax.saxutils import escape as xml_escape
-    fights = fetch_fights()
+    fights = fights_for_pages()
     today = datetime.now().strftime('%Y-%m-%d')
+    last_result = max((f['date'] for f in fights if f.get('is_past') and f.get('date')), default=today)
 
     pages = []
     versions = _load_versions()
@@ -2138,8 +2158,8 @@ def sitemap():
     pages.append({'loc': 'https://fightschedule.live/', 'lastmod': newest('/'), 'changefreq': 'daily', 'priority': '1.0'})
     pages.append({'loc': 'https://fightschedule.live/ufc', 'lastmod': newest('/event/'), 'changefreq': 'daily', 'priority': '0.9'})
     pages.append({'loc': 'https://fightschedule.live/boxing', 'lastmod': newest('/boxing-event/'), 'changefreq': 'daily', 'priority': '0.9'})
-    pages.append({'loc': 'https://fightschedule.live/results', 'lastmod': today, 'changefreq': 'daily', 'priority': '0.8'})
-    pages.append({'loc': 'https://fightschedule.live/privacy', 'lastmod': today, 'changefreq': 'yearly', 'priority': '0.3'})
+    pages.append({'loc': 'https://fightschedule.live/results', 'lastmod': last_result, 'changefreq': 'daily', 'priority': '0.8'})
+    pages.append({'loc': 'https://fightschedule.live/privacy', 'lastmod': PRIVACY_UPDATED.isoformat(), 'changefreq': 'yearly', 'priority': '0.3'})
 
     # UFC events — one URL per event (first non-prelim fight defines the
     # canonical date; must stay in sync with the redirect in event_detail)
@@ -3114,10 +3134,15 @@ def click_stats(days=30):
             'real_clicks': {**real, 'by_day': dict(sorted(real['by_day'].items()))}}
 
 
+# Date of the last change to the privacy policy: shown on the page and used
+# as its sitemap lastmod. Update it whenever templates/privacy.html changes.
+PRIVACY_UPDATED = date(2026, 10, 2)
+
+
 @app.route('/privacy')
 def privacy():
     """Privacy and cookie policy page"""
-    return render_template('privacy.html')
+    return render_template('privacy.html', updated=f"{PRIVACY_UPDATED.day} {PRIVACY_UPDATED:%B %Y}")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
