@@ -6,6 +6,24 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-06 — A deploy failed because an optional AI step ran before the server
+
+**What happened:** The deploy for PR #77 failed and the old version kept
+running. The start command was `python generate_previews.py && gunicorn …`:
+when the preview script finds or makes no preview (for example, the AI call
+fails for the newly featured fights), it exits with an error and the web
+server never starts. I told the owner "merge to deploy" without checking
+the deploy result.
+
+**Root cause:** An optional nice-to-have (AI previews) was wired as a hard
+precondition for serving the site, so a failure in an outside service blocked
+every deploy. And "merged" was treated as "deployed".
+
+**Rule:** Nothing optional runs in front of the web server in a way that can
+stop it: pre-start steps always exit 0 and log their failures. After a merge,
+confirm the deploy (GitHub deployment status, or a change visible on the live
+site) before calling it live.
+
 ## 2026-10-05 — Tests started failing on their own when the calendar moved on
 
 **What happened:** A page test looked for UFC 332 on the homepage. Once
