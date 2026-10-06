@@ -6,23 +6,26 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
-## 2026-10-06 — A deploy failed because an optional AI step ran before the server
+## 2026-10-06 — Deploy failed; I named the wrong cause before reading the log
 
-**What happened:** The deploy for PR #77 failed and the old version kept
-running. The start command was `python generate_previews.py && gunicorn …`:
-when the preview script finds or makes no preview (for example, the AI call
-fails for the newly featured fights), it exits with an error and the web
-server never starts. I told the owner "merge to deploy" without checking
-the deploy result.
+**What happened:** The Railway deploy for PR #77 failed and the old version
+kept running. I told the owner "merge to deploy" without checking the deploy
+result. Then, without the build log, I presented the AI preview step in the
+start command as the likely cause and opened PR #78 for it. The real log
+said `railpack prepare exited with an error`: Railway had switched the
+service from Nixpacks to Railpack overnight, and the repo still carried the
+legacy `nixpacks.toml`. The preview step was a real but separate risk
+(`generate_previews.py && gunicorn` stops the server if the script exits 1).
 
-**Root cause:** An optional nice-to-have (AI previews) was wired as a hard
-precondition for serving the site, so a failure in an outside service blocked
-every deploy. And "merged" was treated as "deployed".
+**Root cause:** I treated "merged" as "deployed", and diagnosed from the
+code I knew instead of from the failing system's own output. The build had
+not even reached our code.
 
-**Rule:** Nothing optional runs in front of the web server in a way that can
-stop it: pre-start steps always exit 0 and log their failures. After a merge,
-confirm the deploy (GitHub deployment status, or a change visible on the live
-site) before calling it live.
+**Rule:** After a merge, confirm the deploy (GitHub deployment status or a
+change visible on the live site) before calling it live. When a deploy
+fails, get the build/deploy log first and name the failing stage before
+proposing a cause; say "unknown until we see the log" rather than guess.
+Optional pre-start steps must never be able to stop the server.
 
 ## 2026-10-05 — Tests started failing on their own when the calendar moved on
 

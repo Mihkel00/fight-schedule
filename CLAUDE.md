@@ -22,6 +22,10 @@ When the owner points out a mistake, or one is discovered, add an entry to
 ## Project facts
 
 - Flask app on Railway; persistent volume at `DATA_DIR` (`/data`).
+- Railway builds with Railpack (since 2026-10-06; Nixpacks is gone). Build and
+  start settings live only in `railpack.json`, with no Procfile or `nixpacks.toml`. Check a
+  change with a local `railpack prepare .` (build from github.com/railwayapp/railpack).
+  A merge is not a deploy: confirm the GitHub deployment status or the live site.
 - Data sources: ESPN (UFC schedule), boxingschedule.co (boxing schedule —
   has redesigned twice; parsers for all three layouts are kept), Wikipedia
   (fighter profiles, results, images), Wikidata and UFC.com (images).

@@ -6,10 +6,16 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def test_procfile_does_not_gate_the_server_on_previews():
-    proc = open(os.path.join(ROOT, 'Procfile')).read()
-    assert 'generate_previews.py &&' not in proc
-    assert 'gunicorn app:app' in proc
+def test_start_command_does_not_gate_the_server_on_previews():
+    """Railway builds with Railpack; railpack.json is the one place the start
+    command lives (no Procfile, no legacy nixpacks.toml)."""
+    import json
+    cfg = json.load(open(os.path.join(ROOT, 'railpack.json')))
+    cmd = cfg['deploy']['startCommand']
+    assert cfg['provider'] == 'python'
+    assert 'generate_previews.py &&' not in cmd and 'gunicorn app:app' in cmd and '$PORT' in cmd
+    for legacy in ('nixpacks.toml', 'Procfile'):
+        assert not os.path.exists(os.path.join(ROOT, legacy)), legacy
 
 
 def test_preview_script_exits_zero_when_it_fails(tmp_path):
