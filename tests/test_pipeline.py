@@ -5,6 +5,7 @@ import json
 import os
 
 import app as A
+import pipeline
 import runs
 
 
@@ -13,8 +14,8 @@ def _ok(fights, sport):
 
 
 def test_both_sources_down_carries_cache_forward_and_fails_health(seeded_cache, monkeypatch):
-    monkeypatch.setattr(A, 'scrape_ufc_events', lambda: {'fights': [], 'outcome': 'http_error', 'diagnostics': {'error': 'HTTP 403'}})
-    monkeypatch.setattr(A, 'scrape_boxing_events', lambda: {'fights': [], 'outcome': 'layout_unknown', 'layouts': {'rsd-event': 0, 'rs-card': 0, 'legacy': 0}})
+    monkeypatch.setattr(pipeline, 'scrape_ufc_events', lambda: {'fights': [], 'outcome': 'http_error', 'diagnostics': {'error': 'HTTP 403'}})
+    monkeypatch.setattr(pipeline, 'scrape_boxing_events', lambda: {'fights': [], 'outcome': 'layout_unknown', 'layouts': {'rsd-event': 0, 'rs-card': 0, 'legacy': 0}})
     out = A._scrape_all_sources()
     assert sum(1 for f in out if f['sport'] == 'UFC') > 20 and sum(1 for f in out if f['sport'] == 'Boxing') > 20
     assert runs.last_run('UFC')['status'] == 'failed' and 'fetched' in runs.last_run('UFC')['note']
@@ -24,8 +25,8 @@ def test_both_sources_down_carries_cache_forward_and_fails_health(seeded_cache, 
 
 
 def test_good_scrape_writes_ok_runs_and_health_200(seeded_cache, monkeypatch):
-    monkeypatch.setattr(A, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC'))
-    monkeypatch.setattr(A, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing'))
+    monkeypatch.setattr(pipeline, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC'))
+    monkeypatch.setattr(pipeline, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing'))
     A._scrape_all_sources()
     assert runs.last_run('UFC')['status'] == 'ok' and runs.last_run('Boxing')['status'] == 'ok'
     r = A.app.test_client().get('/health')
@@ -36,8 +37,8 @@ def test_good_scrape_writes_ok_runs_and_health_200(seeded_cache, monkeypatch):
 def test_partial_espn_is_used_but_flagged(seeded_cache, monkeypatch):
     ufc = _ok(seeded_cache, 'UFC')
     ufc.update(outcome='partial', months={'202610': {'fights': 30}, '202611': {'fights': 0, 'error': 'HTTP 403'}})
-    monkeypatch.setattr(A, 'scrape_ufc_events', lambda: ufc)
-    monkeypatch.setattr(A, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing'))
+    monkeypatch.setattr(pipeline, 'scrape_ufc_events', lambda: ufc)
+    monkeypatch.setattr(pipeline, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing'))
     out = A._scrape_all_sources()
     rec = runs.last_run('UFC')
     assert rec['status'] == 'partial'
@@ -46,16 +47,16 @@ def test_partial_espn_is_used_but_flagged(seeded_cache, monkeypatch):
 
 
 def test_below_floor_is_failed_and_carried_forward(seeded_cache, monkeypatch):
-    monkeypatch.setattr(A, 'scrape_ufc_events', lambda: {'fights': _ok(seeded_cache, 'UFC')['fights'][:3], 'outcome': 'parsed'})
-    monkeypatch.setattr(A, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing'))
+    monkeypatch.setattr(pipeline, 'scrape_ufc_events', lambda: {'fights': _ok(seeded_cache, 'UFC')['fights'][:3], 'outcome': 'parsed'})
+    monkeypatch.setattr(pipeline, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing'))
     out = A._scrape_all_sources()
     assert runs.last_run('UFC')['status'] == 'failed' and 'floor' in runs.last_run('UFC')['note']
     assert sum(1 for f in out if f['sport'] == 'UFC') > 20
 
 
 def test_plain_list_from_a_test_stub_is_accepted(seeded_cache, monkeypatch):
-    monkeypatch.setattr(A, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC')['fights'])
-    monkeypatch.setattr(A, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing')['fights'])
+    monkeypatch.setattr(pipeline, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC')['fights'])
+    monkeypatch.setattr(pipeline, 'scrape_boxing_events', lambda: _ok(seeded_cache, 'Boxing')['fights'])
     A._scrape_all_sources()
     assert runs.last_run('UFC')['status'] == 'ok'
 
@@ -63,8 +64,8 @@ def test_plain_list_from_a_test_stub_is_accepted(seeded_cache, monkeypatch):
 def test_merged_output_has_no_duplicates_even_if_sources_repeat(seeded_cache, monkeypatch):
     """2026-09-30: boxingschedule.co listed cards twice."""
     box = _ok(seeded_cache, 'Boxing'); box['fights'] = box['fights'] * 2
-    monkeypatch.setattr(A, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC'))
-    monkeypatch.setattr(A, 'scrape_boxing_events', lambda: box)
+    monkeypatch.setattr(pipeline, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC'))
+    monkeypatch.setattr(pipeline, 'scrape_boxing_events', lambda: box)
     out = A._scrape_all_sources()
     keys = [A._fight_key(f) for f in out]
     assert len(keys) == len(set(keys))
@@ -76,13 +77,13 @@ def test_completed_fights_are_kept_for_results(seeded_cache, monkeypatch):
     gone = [f for f in seeded_cache if f['sport'] == 'Boxing' and f['date'] == '2026-10-02']
     assert gone
     box = _ok(seeded_cache, 'Boxing'); box['fights'] = [f for f in box['fights'] if f['date'] != '2026-10-02']
-    monkeypatch.setattr(A, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC'))
-    monkeypatch.setattr(A, 'scrape_boxing_events', lambda: box)
+    monkeypatch.setattr(pipeline, 'scrape_ufc_events', lambda: _ok(seeded_cache, 'UFC'))
+    monkeypatch.setattr(pipeline, 'scrape_boxing_events', lambda: box)
     class Today(datetime.date):
         @classmethod
         def today(cls):
             return cls(2026, 10, 2)
-    monkeypatch.setattr(A, 'date', Today)
+    monkeypatch.setattr(pipeline, 'date', Today)
     out = A._scrape_all_sources()
     assert any(f['fighter1'] == gone[0]['fighter1'] and f['date'] == '2026-10-02' for f in out)
 

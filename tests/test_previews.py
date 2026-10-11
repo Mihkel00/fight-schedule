@@ -3,6 +3,8 @@ import json
 import time
 
 import app as A
+import preview_service
+import profile_store
 import previews as P
 
 
@@ -93,13 +95,13 @@ def test_parse_handles_code_fences_and_bad_json():
 def _setup(monkeypatch, replies):
     calls = []
     A._runs.write_json_atomic(A.data_path('fight_previews.json'), {})   # seeded at import; start empty
-    monkeypatch.setattr(A, 'load_profiles', lambda: PROFILES)
-    monkeypatch.setattr(A, 'ANTHROPIC_API_KEY', 'test-key')
+    monkeypatch.setattr(profile_store, 'load_profiles', lambda: PROFILES)
+    monkeypatch.setattr(preview_service, 'ANTHROPIC_API_KEY', 'test-key')
 
     def fake(prompt):
         calls.append(prompt)
         return replies.pop(0) if replies else None
-    monkeypatch.setattr(A, '_call_preview_model', fake)
+    monkeypatch.setattr(preview_service, '_call_preview_model', fake)
     return calls
 
 
@@ -144,7 +146,7 @@ def test_new_facts_regenerate(data_dir, monkeypatch):
     _get()
     changed = json.loads(json.dumps(PROFILES))
     changed['daniel dubois']['profile']['age'] = 30          # e.g. a birthday, or a new fight result
-    monkeypatch.setattr(A, 'load_profiles', lambda: changed)
+    monkeypatch.setattr(profile_store, 'load_profiles', lambda: changed)
     _get()
     assert len(calls) == 2 and '"age": 30' in calls[1]
 

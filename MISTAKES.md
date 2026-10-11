@@ -6,6 +6,40 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-11 — Search descriptions name the UTC day, not the fight's local day
+
+**What happened:** The fight-page descriptions I wrote in PR #79 use the
+fight's UTC date ("Saturday 24 October 2026"). For US evening cards that is
+the next day: UFC 332, a Saturday-night card, reads "Sunday 4 October" in
+search snippets. Found by the code assessment on 2026-10-11.
+
+**Root cause:** I formatted the stored date (UTC) as if it were the event's
+local date, and checked the wording and lengths but not the date against
+when and where the event actually happens.
+
+**Rule:** Any date shown as text without a time zone (titles, descriptions,
+headings) is the event's local date at the venue, or says "UTC". Test it
+with a US evening card that crosses UTC midnight.
+
+## 2026-10-09 — A script's watch-link clicks counted as "real"
+
+**What happened:** The click stats showed 14 "real" watch clicks on
+7 October, against about 6 in the previous ten days. None of them had a
+matching watch tap, and only 5 pages were seen (5+ visible seconds) that
+whole day. In a real browser, one tap on a watch link records both a tap
+and a redirect click, so these came from something requesting the /go/
+links directly with a browser user agent, a language and a Referer header.
+
+**Root cause:** "Real" was defined by request headers (no bot user agent,
+Accept-Language, Referer from our site). All three are free to fake, so the
+definition held only until a script sent them. I set it after one bad day of
+data and did not cross-check it against a signal a script can't easily fake.
+
+**Rule:** A "real person" metric needs evidence from the page itself (the
+page's script ran, or the page was on screen), not just headers. When two
+counters disagree (redirect clicks vs taps), trust neither until the gap is
+explained.
+
 ## 2026-10-06 — The preview check let a wrong number through on day one
 
 **What happened:** The first live grounded previews included "Four-inch reach

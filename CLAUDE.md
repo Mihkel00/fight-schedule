@@ -26,6 +26,13 @@ When the owner points out a mistake, or one is discovered, add an entry to
   start settings live only in `railpack.json`, with no Procfile or `nixpacks.toml`. Check a
   change with a local `railpack prepare .` (build from github.com/railwayapp/railpack).
   A merge is not a deploy: confirm the GitHub deployment status or the live site.
+- Code layout (since 2026-10): app.py is only the entry point (`gunicorn app:app`);
+  the code lives in core, formatting, fight_store, profile_store, pipeline,
+  photos, preview_service, seo, site_pages, calendar_feeds, ops, tracking (the
+  list and what each holds is at the top of app.py). Modules call each other
+  as `module.name`, so a test patches the module that owns a function
+  (`monkeypatch.setattr(pipeline, 'scrape_ufc_events', …)`); setting a name
+  on `app` raises on purpose. tests/test_structure.py pins every page address.
 - Data sources: ESPN (UFC schedule), boxingschedule.co (boxing schedule —
   has redesigned twice; parsers for all three layouts are kept), Wikipedia
   (fighter profiles, results, images), Wikidata and UFC.com (images).
