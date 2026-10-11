@@ -4,19 +4,21 @@ Flask app object, data directory, start-up seeding, logging, admin wiring.
 Moved out of app.py unchanged (2026-10); app.py imports every module so
 the routes register on the one Flask app.
 """
-import logging
-import os
-import shutil
-from admin_setup_simple import setup_admin
-from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, redirect, request, session
-from flask_compress import Compress
-from functools import wraps
-from logging.handlers import RotatingFileHandler
 
-
+# Before every other import: admin_setup_simple reads ADMIN_PASSWORD and
+# ADMIN_PASSWORD_HASH from the environment when it is imported.
 load_dotenv()  # Load environment variables from .env file
+
+import logging  # noqa: E402
+import os  # noqa: E402
+import shutil  # noqa: E402
+from admin_setup_simple import setup_admin  # noqa: E402
+from datetime import datetime  # noqa: E402
+from flask import Flask, redirect, request, session  # noqa: E402
+from flask_compress import Compress  # noqa: E402
+from functools import wraps  # noqa: E402
+from logging.handlers import RotatingFileHandler  # noqa: E402
 
 
 # ============================================================================

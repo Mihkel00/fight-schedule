@@ -6,6 +6,28 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-11 — The app.py split moved load_dotenv() below an import that reads env vars
+
+**What happened:** The split tool regenerated each module's imports at the top
+of the file. In core.py that put `from admin_setup_simple import setup_admin`
+above the `load_dotenv()` call, but admin_setup_simple reads ADMIN_PASSWORD
+and ADMIN_PASSWORD_HASH when it is imported. With a local .env file the
+password in it would be ignored and the built-in default used. Production
+was not affected (Railway sets real environment variables and .env is not
+deployed). Found by the static safety check after the merge; the byte-for-byte
+page comparison could not see it because it set the variables directly.
+
+**Root cause:** I treated imports as side-effect free and hoisted them above
+a statement whose position mattered. My parity test fed configuration the
+same way in both versions, so it could not catch a difference in *how*
+configuration is loaded.
+
+**Rule:** When moving code, statements that change process state
+(load_dotenv, env reads, sys.path, monkey patches) keep their position
+relative to every import after them. Configuration paths get their own test
+(here: tests/test_structure.py checks load_dotenv runs before any project
+import).
+
 ## 2026-10-11 — Search descriptions name the UTC day, not the fight's local day
 
 **What happened:** The fight-page descriptions I wrote in PR #79 use the
