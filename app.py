@@ -118,8 +118,13 @@ class _AppModule(types.ModuleType):
         raise AttributeError(f"module 'app' has no attribute {name!r}")
 
     def __setattr__(self, name, value):
-        if name in _OWNERS:
-            raise AttributeError(f'{name} lives in {_OWNERS[name]}.py; set it there')
+        # Refuse anything that reads through to a module (owned names and the
+        # helpers modules import, e.g. pipeline.scrape_ufc_events): a value set
+        # here would shadow it on app only and silently not apply.
+        if not name.startswith('__'):
+            owner = _OWNERS.get(name) or next((m for m, mod in _MODULES.items() if hasattr(mod, name)), None)
+            if owner:
+                raise AttributeError(f'{name} lives in {owner}.py; set it there')
         super().__setattr__(name, value)
 
 

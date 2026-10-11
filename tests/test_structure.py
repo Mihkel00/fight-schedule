@@ -48,3 +48,18 @@ def test_app_names_read_through_to_their_module():
 def test_patching_through_app_is_refused():
     with pytest.raises(AttributeError, match='lives in pipeline.py'):
         A._refresh_cache = lambda wait=False: None
+    with pytest.raises(AttributeError, match='lives in pipeline.py'):   # imported helper, not owned
+        A.scrape_ufc_events = lambda: None
+
+
+def test_env_file_is_loaded_before_anything_reads_it():
+    """admin_setup_simple reads ADMIN_PASSWORD at import; load_dotenv() must
+    run before any import in core.py (2026-10-11, MISTAKES.md)."""
+    import ast
+    import os
+    src = open(os.path.join(os.path.dirname(A.__file__), 'core.py')).read()
+    body = ast.parse(src).body
+    call = next(i for i, n in enumerate(body) if isinstance(n, ast.Expr) and 'load_dotenv()' in ast.unparse(n))
+    first_other_import = next(i for i, n in enumerate(body) if isinstance(n, (ast.Import, ast.ImportFrom))
+                              and 'dotenv' not in ast.unparse(n))
+    assert call < first_other_import
