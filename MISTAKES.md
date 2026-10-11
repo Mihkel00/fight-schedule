@@ -6,6 +6,21 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-11 — Search descriptions name the UTC day, not the fight's local day
+
+**What happened:** The fight-page descriptions I wrote in PR #79 use the
+fight's UTC date ("Saturday 24 October 2026"). For US evening cards that is
+the next day: UFC 332, a Saturday-night card, reads "Sunday 4 October" in
+search snippets. Found by the code assessment on 2026-10-11.
+
+**Root cause:** I formatted the stored date (UTC) as if it were the event's
+local date, and checked the wording and lengths but not the date against
+when and where the event actually happens.
+
+**Rule:** Any date shown as text without a time zone (titles, descriptions,
+headings) is the event's local date at the venue, or says "UTC". Test it
+with a US evening card that crosses UTC midnight.
+
 ## 2026-10-09 — A script's watch-link clicks counted as "real"
 
 **What happened:** The click stats showed 14 "real" watch clicks on
