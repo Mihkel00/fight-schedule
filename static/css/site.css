@@ -1235,6 +1235,53 @@ time.big .ap, .ld-time time .ap, .ev .live + time .ap { margin-left: .1em; font-
 .skip { display: inline-flex; align-items: center; min-height: 44px; }
 
 
+/* =========================================================
+   PHONE (< 700): THE TWO POSTER CARDS AS A STORY-STYLE CAROUSEL (owner, 2026-10-14; site.js step 8 adds .car-w,
+   .car and the controls; without JavaScript both cards stay stacked). Both cards take card 1's full-bleed anatomy;
+   two bars over the photos fill as the timer runs; a round arrow at the photos' edge goes to the other fight.
+   ========================================================= */
+.car-bars, .car-go { display: none; }
+@media (max-width: 699.98px) {
+  .car-w { position: relative; }
+  .duo.car { display: flex; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; align-items: flex-start; }
+  .duo.car::-webkit-scrollbar { display: none; }
+  .duo.car > .hero { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+  /* card 2 = card 1 (undo its smaller boxed variant) */
+  .duo.car > .hero.c2 { --Mt: clamp(28px, min(10vw, 4.8svh), 44px); --tsz: clamp(48px, 7svh, 58px); --surf: var(--bg); --cbg: var(--bg);
+    margin: 0; border-radius: 0; overflow: visible; background: none; }
+  .duo.car > .hero.c2 .stage { height: calc(4.5 * var(--Mt) + 30px); }
+  .duo.car > .hero.c2 .stage::after { background: linear-gradient(to bottom, transparent 0, transparent 48%, rgba(11,11,12,.22) 58%, rgba(11,11,12,.55) 70%, rgba(11,11,12,.84) 82%, rgba(11,11,12,.96) 91%, var(--bg) 100%); }
+  .duo.car > .hero.c2 .hero-in { padding-bottom: 0; }
+  .duo.car > .hero.c2 .lockup { --max: min(104px, 10svh); display: grid; grid-template-columns: none; justify-content: normal;
+    font-size: min(var(--max), calc(100cqi / var(--em-stack, 4) / 1.03)); line-height: .86; padding-top: 0; }
+  .duo.car > .hero.c2 .lockup .n1 { grid-column: auto; justify-self: start; margin: 0 0 0 calc(var(--lsb, 0) * -1em); }
+  .duo.car > .hero.c2 .lockup .vs { grid-column: auto; justify-self: center; margin: .07em 0 .11em; font-size: clamp(14px, .22em, 19px); }
+  .duo.car > .hero.c2 .lockup .n2 { grid-column: auto; justify-self: end; text-align: right; margin: 0 calc(var(--rsb, 0) * -1em) 0 0; }
+  .duo.car > .hero.c2 .lockup .hy > .ln { display: block; }
+  .duo.car > .hero.c2 .info { margin-top: 18px; }
+  .duo.car > .hero.c2 .ld-date { margin-top: 10px; }
+  .duo.car > .hero.c2 .acts .rc-watch, .duo.car > .hero.c2 .acts .fc.pri { height: 52px; margin-top: 18px; }
+  .duo.car > .hero.c2 .fc::after { top: calc(-3.95 * var(--Mt) - 30px); }
+  /* the bars: two thin segments across the top of the photos */
+  .car-on .car-bars { position: absolute; z-index: 8; top: 0; left: 0; right: 0; display: flex; gap: 6px; padding: 10px var(--gut) 0; pointer-events: none; }
+  .car-seg { position: relative; flex: 1; height: 22px; margin: -10px 0 0; padding: 10px 0 9px; pointer-events: auto; cursor: pointer; }
+  .car-seg::before { content: ""; position: absolute; left: 0; right: 0; top: 10px; height: 3px; border-radius: 2px; background: rgba(243, 242, 238, .28); }
+  .car-seg i { position: absolute; left: 0; right: 0; top: 10px; height: 3px; border-radius: 2px; background: var(--t1); transform: scaleX(0); transform-origin: left center; }
+  .car-seg.done i, .manual .car-seg.on i { transform: scaleX(1) !important; transition: none !important; }
+  .car-seg:focus-visible { outline-offset: -4px; }
+  /* the arrow: a round button on the photos' edge, pointing to the other fight */
+  .car-on .car-go { position: absolute; z-index: 8; top: calc(var(--stage-h, 220px) / 2 - 22px); right: max(10px, env(safe-area-inset-right, 0px)); display: grid; place-items: center;
+    width: 44px; height: 44px; border-radius: 50%; color: var(--t1); background: rgba(11, 11, 12, .55); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); transition: transform 160ms var(--ease); }
+  .car-go svg { width: 20px; height: 20px; transition: transform 200ms var(--ease); }
+  .car-go.back { right: auto; left: max(10px, env(safe-area-inset-left, 0px)); }
+  .car-go.back svg { transform: rotate(180deg); }
+  .car-go:active { transform: scale(.94); }
+}
+@media (max-width: 699.98px) and (prefers-reduced-motion: reduce) {
+  .car-seg.on i { transform: scaleX(1) !important; transition: none !important; }
+}
+
 /* ---------- owner, 2026-10-14: no "UFC & boxing schedule" line under the nav ----------
    The h1 stays in the page for search engines and screen readers, visually hidden; the card labels lose their dash. */
 .duo-h1, .eyebrow .eb-h { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }

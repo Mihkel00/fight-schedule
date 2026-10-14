@@ -12,6 +12,8 @@
      4. day counts and the hours countdown on the poster cards
      5. results: one name size per row of box scores
      6. undercard labels, the search drawer
+     8. phone (< 700 px): the two poster cards as a story-style carousel (bars that fill, then the next fight; an
+        arrow to the other fight; swipe). Without JavaScript the two cards stay stacked.
      7. photos: .ok on every photo that has arrived (_base.html's inline listener does it as each one loads; this
         catches any it missed, so a photo is never left at opacity 0)
    This one script replaces list.js (2026-10-14). The file has a new name on purpose: static files are cached for a
@@ -497,6 +499,119 @@
             if (!input.value.trim()) searched = false;
             render(input.value);
         });
+    });
+
+    /* ---------- 8. phone: the two poster cards as a story-style carousel (owner, 2026-10-14) ----------
+       Two bars over the photos: the current one fills over SLIDE ms, then the next fight slides in (and back again).
+       An arrow at the photos' edge goes to the other fight; swiping works too. The timer pauses while a finger is on
+       the cards, while they are scrolled off screen or the tab is hidden, and stops for good once the visitor moves
+       the carousel themselves. With reduce-motion on there is no timer (the bars mark the current fight). */
+    safe(function () {
+        var duo = doc.querySelector('.duo-sec .duo');
+        if (!duo) return;
+        var cards = [].slice.call(duo.querySelectorAll(':scope > .hero'));
+        if (cards.length !== 2) return;
+        var phone = window.matchMedia('(max-width: 699.98px)');
+        var SLIDE = 6000;
+        var names = cards.map(function (c) {
+            var n = c.querySelectorAll('.lockup .n1, .lockup .n2');
+            return n.length === 2 ? n[0].textContent.trim() + ' vs ' + n[1].textContent.trim() : 'the other fight';
+        });
+        var wrap = el('div', 'car-w');
+        wrap.setAttribute('role', 'region'); wrap.setAttribute('aria-roledescription', 'carousel'); wrap.setAttribute('aria-label', 'Next big fights');
+        duo.parentNode.insertBefore(wrap, duo); wrap.appendChild(duo);
+        var bars = el('div', 'car-bars');
+        var segs = cards.map(function (c, i) {
+            var b = el('button', 'car-seg'); b.type = 'button';
+            b.setAttribute('aria-label', 'Show fight ' + (i + 1) + ' of 2: ' + names[i]);
+            b.appendChild(el('i'));
+            b.addEventListener('click', function () { stop(); go(i); });
+            bars.appendChild(b);
+            return b;
+        });
+        var arrow = el('button', 'car-go'); arrow.type = 'button';
+        arrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+        arrow.addEventListener('click', function () { stop(); go(1 - cur); });
+        wrap.append(bars, arrow);
+        var cur = 0, auto = true, timer = null, started = 0, left = SLIDE, seen = true, held = false, programmatic = 0;
+        var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+        function on() { return phone.matches; }
+        function paint() {
+            segs.forEach(function (b, i) {
+                b.classList.toggle('done', i < cur);
+                b.classList.toggle('on', i === cur);
+                b.setAttribute('aria-current', i === cur ? 'true' : 'false');
+            });
+            cards.forEach(function (c, i) {
+                c.setAttribute('aria-roledescription', 'slide');
+                c.setAttribute('aria-label', (i + 1) + ' of 2');
+            });
+            arrow.classList.toggle('back', cur === 1);
+            arrow.setAttribute('aria-label', (cur === 1 ? 'Previous fight: ' : 'Next fight: ') + names[1 - cur]);
+            var st = cards[cur].querySelector('.stage');
+            if (st) wrap.style.setProperty('--stage-h', st.offsetHeight + 'px');
+        }
+        function go(i, smooth) {
+            cur = i;
+            programmatic = Date.now();
+            duo.scrollTo({ left: i * duo.clientWidth, behavior: (smooth === false || (reduce && reduce.matches)) ? 'auto' : 'smooth' });
+            paint(); restart();
+        }
+        function fill() { var b = segs[cur].querySelector('i'); return b; }
+        function restart() {
+            clearTimeout(timer); timer = null;
+            var b = fill();
+            segs.forEach(function (s) { var x = s.querySelector('i'); x.style.transition = 'none'; x.style.transform = ''; });
+            left = SLIDE;
+            if (auto) run();
+        }
+        function run() {
+            if (!on() || !auto || !seen || held || doc.hidden || (reduce && reduce.matches) || timer) return;
+            var b = fill();
+            void b.offsetWidth;
+            b.style.transition = 'transform ' + left + 'ms linear';
+            b.style.transform = 'scaleX(1)';
+            started = Date.now();
+            timer = setTimeout(function () { timer = null; go(1 - cur); }, left);
+        }
+        function pause() {
+            if (!timer) return;
+            clearTimeout(timer); timer = null;
+            left = Math.max(0, left - (Date.now() - started));
+            var b = fill(), w = b.getBoundingClientRect().width, W = b.parentNode.getBoundingClientRect().width;
+            b.style.transition = 'none'; b.style.transform = 'scaleX(' + (W ? w / W : 0) + ')';
+        }
+        function stop() { auto = false; pause(); clearTimeout(timer); timer = null; wrap.classList.add('manual'); }
+        function setup() {
+            if (on()) {
+                duo.classList.add('car'); wrap.classList.add('car-on');
+                duo.scrollLeft = cur * duo.clientWidth; paint(); restart();
+            } else {
+                pause(); duo.classList.remove('car'); wrap.classList.remove('car-on');
+            }
+        }
+        // the visitor's own swipe: follow it, and the timer stops for good
+        var settle = null;
+        duo.addEventListener('scroll', function () {
+            if (!on()) return;
+            clearTimeout(settle);
+            settle = setTimeout(function () {
+                var i = Math.round(duo.scrollLeft / Math.max(1, duo.clientWidth));
+                if (Date.now() - programmatic > 900 && i !== cur) { stop(); cur = i; paint(); }
+            }, 120);
+        }, { passive: true });
+        duo.addEventListener('touchstart', function () { held = true; pause(); }, { passive: true });
+        duo.addEventListener('touchend', function () { held = false; run(); }, { passive: true });
+        duo.addEventListener('touchcancel', function () { held = false; run(); }, { passive: true });
+        wrap.addEventListener('focusin', function () { held = true; pause(); });
+        wrap.addEventListener('focusout', function () { held = false; run(); });
+        doc.addEventListener('visibilitychange', function () { if (doc.hidden) pause(); else run(); });
+        if (window.IntersectionObserver) new IntersectionObserver(function (es) {
+            seen = es[0].isIntersecting; if (seen) run(); else pause();
+        }, { threshold: 0.5 }).observe(wrap);
+        if (phone.addEventListener) phone.addEventListener('change', setup);
+        window.addEventListener('resize', function () { if (on()) { duo.scrollLeft = cur * duo.clientWidth; paint(); } });
+        setup();
     });
 
     /* ---------- 7. photos that have arrived ---------- */
