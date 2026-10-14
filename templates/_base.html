@@ -1,0 +1,45 @@
+{#- The redesign's page frame (approved 2026-10-14). A page extends it and keeps its own SEO head exactly.
+    In the page template:
+      extends '_base.html'
+      set nav_active = 'UFC'        the current nav item: '' (default), 'Schedule', 'UFC', 'Boxing' or 'Results'
+      set nav_current = 'true'      on a page inside a section (fight pages); default 'page'
+      set search_here = true        the page embeds #search-data and opens the search drawer (the homepage)
+      block head                    title, description, keywords, robots, canonical, Open Graph, Twitter, JSON-LD
+      block styles                  page CSS (static/css/site-<page>.css)
+      block body_class              e.g. home
+      block skip                    the skip link (default: to #main)
+      block main                    the page
+      block scripts                 page scripts and data (#search-data)
+    Kept on every page: the analytics loader (_analytics.html: GA only after consent), the consent bar, the usage
+    counts (site.js: the "seen" beacon and taps to /api/t). Fonts are self-hosted (static/fonts, OFL). -#}
+{%- from '_ui.html' import site_header, site_footer, svg_defs -%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{% include '_analytics.html' %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+{% block head %}{% endblock %}
+<meta name="theme-color" content="#0B0B0C">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+<link rel="preload" href="/static/fonts/bs-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/is-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/site.css">
+{% block styles %}{% endblock %}
+<script>(function(d){d.classList.add('js');document.addEventListener('load',function(e){var t=e.target;if(t.tagName==='IMG')t.classList.add('ok')},true)})(document.documentElement);</script>
+<script src="/static/js/site.js" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{{ svg_defs() }}
+{% block skip %}<a class="skip" href="#main">Skip to the content</a>{% endblock %}
+{% block header %}{{ site_header(nav_active|default(''), search_here=search_here|default(false), current=nav_current|default('page')) }}{% endblock %}
+<main id="main">
+{% block main %}{% endblock %}
+</main>
+{% block footer %}{{ site_footer() }}{% endblock %}
+{% block scripts %}{% endblock %}
+{% include '_consent_bar.html' %}
+</body>
+</html>

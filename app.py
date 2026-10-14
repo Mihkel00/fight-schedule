@@ -16,6 +16,7 @@ Flask app created in core.py:
   calendar_feeds  .ics feeds
   ops             /health, admin tools, debug API
   tracking        usage counts and /go/ redirects
+  design          the redesign's presenter (names, photo geometry, schedule, results)
 
 `app.<name>` still reads any of those names (scripts and tests use it).
 Setting one here is refused: patch the owning module instead, otherwise the
@@ -37,6 +38,7 @@ import site_pages
 import calendar_feeds
 import ops
 import tracking
+import design
 
 from core import app, logger  # noqa: F401  (gunicorn app:app)
 
@@ -101,10 +103,20 @@ _OWNED = {
         'CLICKS_FILE', '_clicks_lock', '_BOT_UA', '_is_bot', '_from_this_site', '_count_page_view',
         'usage_beacon', 'go_provider', 'click_stats',
     ),
+    'design': (
+        'is_tba', 'name_split', 'given_name', 'name_em', 'line_em', 'stacked_em', 'one_line_em',
+        'bearing', 'name_view', 'card_names', 'pair_fit', 'list_em', 'box_em', 'full_em', 'title_order',
+        'poster_half', 'face_crop', 'poster_photos', 'zone', 'utc_start', 'start_of', 'local_start',
+        'local_day', 'today_in', 'night_hint', 'night_day', 'rel_day', 'countdown', 'tz_label', 'prelim_start',
+        'time_notes', 'fight_state', 'place', 'city', 'place_line', 'weight_label', 'event_label', 'kick_text',
+        'fights_n', 'card_size', 'event_key', 'hero_fights', 'hero_view', 'schedule', 'clock_change',
+        'row_view', 'undercard_groups', 'method_parts', 'result_sides', 'pack', 'results_rows',
+        'results_split',
+    ),   # design.surname / design.photo_meta stay off this list: app.surname is formatting's, photo_meta photos'
 }
 _OWNERS = {name: mod for mod, names in _OWNED.items() for name in names}
 _MODULES = {m.__name__: m for m in (core, formatting, fight_store, profile_store, pipeline, photos, preview_service,
-                                    seo, site_pages, calendar_feeds, ops, tracking)}
+                                    seo, site_pages, calendar_feeds, ops, tracking, design)}
 
 
 class _AppModule(types.ModuleType):
