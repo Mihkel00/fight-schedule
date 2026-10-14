@@ -473,8 +473,10 @@ def event_detail(event_slug):
         'UFC', matched_event_name, event_data.get('date') or main_event_fight['date'], main_event_fight.get('venue'),
         main_event_fight.get('location'), bool(main_event_fight.get('is_past')))
     event_data['canonical_url'] = f"https://fightschedule.live/event/{event_slug}"
-    
-    return render_template('event_detail.html', event=event_data)
+
+    fv = fight_view('UFC', main_event_fight, [('Main card', main_card_fights), ('Prelims', prelim_fights)],
+                    event_data, event_slug)
+    return render_template('event_detail.html', event=event_data, fv=fv)
 
 
 @app.route('/boxing-event/<event_slug>')
@@ -491,7 +493,7 @@ def boxing_event_detail(event_slug):
         date_str = f"{parts[-3]}-{parts[-2]}-{parts[-1]}"
         fighter_slug = '-'.join(parts[:-3])
     else:
-        return "Invalid event URL", 404
+        abort(404)      # the site's "Not on the card" page, as an unknown UFC fight gets
     
     # Find any fight matching this slug (not restricted to main event)
     target_fight = None
@@ -506,7 +508,7 @@ def boxing_event_detail(event_slug):
 
     if not target_fight:
         logger.warning(f"No boxing fight found for {event_slug}")
-        return "Event not found", 404
+        abort(404)
 
     # Get all fights from same venue/date
     event_fights = [f for f in boxing_fights
@@ -574,8 +576,267 @@ def boxing_event_detail(event_slug):
         kind=seo._boxing_kind(main_event_fight.get('weight_class')),
         streaming=_aff.clean_broadcaster(main_event_fight.get('streaming')) if main_event_fight.get('streaming') else None)
     event_data['canonical_url'] = f"https://fightschedule.live/boxing-event/{event_slug}"
-    
-    return render_template('boxing_event.html', event=event_data)
+
+    # the card in the view: the main event, then every other bout of the night once
+    card = [main_event_fight] + [f for f in event_fights if f is not main_event_fight]
+    fv = fight_view('Boxing', main_event_fight, [('', card)], event_data, event_slug)
+    return render_template('boxing_event.html', event=event_data, fv=fv)
+
+
+# ---------------------------------------------------------------------------
+# Fight pages: what templates/_fight.html renders (the approved redesign,
+# 2026-10-14; mock: landing/pages/fight). The routes above keep building
+# `event` unchanged for the SEO head and the JSON-LD; this is the view.
+# ---------------------------------------------------------------------------
+# Where UFC cards are shown (the services and the countries each covers).
+UFC_WATCH = (('Paramount+', 'US, Latin America and Australia'), ('UFC Fight Pass', 'Most other countries'))
+# Event labels that fit dozens of events: the breadcrumb shows the matchup instead.
+_GENERIC_UFC = ('ufc fight night', 'ufc on espn', 'ufc on abc', 'ufc')
+
+
+def _face_sized(p):
+    """A close-up portrait (a 3:4 file whose face would be ~2x every other
+    poster's if it covered its half): sized by its face on the fight page
+    (site-fight.css .fh .ph.fs), no blurred copies, contrast capped at 1.15
+    (a light backdrop at 1.4 engraves a beard). Cut-outs and squares keep the
+    standard treatment: they cover the card's height either way."""
+    if not p:
+        return p
+    v = design._meta_view(p['src'])
+    if not (v['known'] and v['face']) or v['cut']:
+        return p
+    ar = v['w'] / v['h']
+    # eye-to-mouth when covering a half of the reference desktop card (520 x 458 px)
+    if ar >= .9 or v['em'] * max(458 / ar, 520) < 1.8 * .092 * 520:
+        return p
+    style = p['style'] + ';--fk:1.25'
+    if v['c'] is not None and v['c'] > 1.15:
+        style = re.sub(r'--c:[\d.]+', '--c:1.15', style)
+    cls = ' '.join([c for c in p['cls'].split() if c != 'sh'] + ['fs'])
+    return dict(p, cls=cls, style=style, copies=[])
+
+
+def _tape_view(sport, e):
+    """Tale of the tape: {'names', 'rows': [(left, label, right)], 'sources'} or None
+    (the rows and source links of production's _tape_result.html)."""
+    t1, t2 = e.get('fighter1_tape') or {}, e.get('fighter2_tape') or {}
+    if not (t1 or t2):
+        return None
+    rows = []
+
+    def add(label, a, b):
+        if a is not None or b is not None:
+            rows.append(('—' if a is None else a, label, '—' if b is None else b))
+
+    add('Record', t1.get('record'), t2.get('record'))
+    if sport == 'UFC':
+        def kd(t):
+            if t.get('ko_wins') is None:
+                return None
+            return f"{t['ko_wins']} / {t.get('sub_wins') or 0} / {t.get('dec_wins') or 0}"
+        add('KO / Sub / Dec', kd(t1), kd(t2))
+    else:
+        add('KO wins', t1.get('ko_wins'), t2.get('ko_wins'))
+    add('Age', t1.get('age'), t2.get('age'))
+    add('Height', t1.get('height_display'), t2.get('height_display'))
+    add('Reach', t1.get('reach_display'), t2.get('reach_display'))
+    add('Stance', t1.get('stance'), t2.get('stance'))
+    def place_of(t):     # a stray ")" left by the Wikipedia birthplace parse ("Russia)")
+        v = t.get('nationality')
+        return v[:-1].rstrip() if isinstance(v, str) and v.endswith(')') and '(' not in v else v
+    add('From', place_of(t1), place_of(t2))
+    sources = [(f"Wikipedia ({e[k]})", t['url']) for k, t in (('fighter1', t1), ('fighter2', t2)) if t.get('url')]
+    return {'names': (e['fighter1'], e['fighter2']), 'rows': rows, 'sources': sources}
+
+
+def _gcal(sport, e, event):
+    """Google Calendar link for one fight (production's), or None without a time."""
+    t = e.get('time')
+    if e.get('is_past') or not e.get('date') or not t or ':' not in str(t):
+        return None
+    start = e['date'].replace('-', '') + 'T' + str(t).replace(':', '') + '00Z'
+    if sport == 'UFC':
+        text, where = event.get('event_name') or '', e.get('venue') or ''
+    else:
+        text = f"{e['fighter1']} vs {e['fighter2']}"
+        v, loc = e.get('venue') or '', e.get('location') or ''
+        where = v if (not loc or loc == v) else (v if loc in v else f'{v}, {loc}')
+    from urllib.parse import quote
+
+    def q(s):        # Jinja's urlencode, as the old template wrote it
+        return quote(s, safe='/')
+    return ('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + q(text) + f'&dates={start}/{start}'
+            + '&details=' + q(f"Full card and times: {event['canonical_url']}") + '&location=' + q(where))
+
+
+def _h1_label(sport, e):
+    """The label inside the h1, worded as the h1 has always been ("UFC 333", "Junior Welterweight title"): the
+    page's main heading keeps its words for search; the column beside the poster shows the design's label
+    ("Jr welterweight title")."""
+    if sport == 'UFC':
+        return (e.get('event_name') or '').split(':')[0].strip() or 'UFC'
+    wc = (e.get('weight_class') or '').strip()
+    if wc.lower() == 'title':
+        return 'Title fight'
+    return (wc.replace('Title ', '') + ' title') if wc.startswith('Title') else (wc or 'Boxing')
+
+
+def fight_view(sport, main, groups, event, slug):
+    """Everything a fight page shows, from production's data.
+    main: the main event's fight; groups: [(label, [fights])] in card order
+    (UFC: Main card / Prelims; boxing: one unlabelled group); event: the
+    route's event dict (SEO fields, preview); slug: the URL's last part (the
+    /go/ links' event= value). Pure: never raises on odd data."""
+    now = design.now_utc()
+    e = dict(main, sport=sport, event_name=event.get('event_name') or main.get('event_name') or '')
+    for k in ('fighter1_image', 'fighter2_image'):
+        e[k] = e.get(k) or photos.get_fighter_image(e[k.replace('_image', '')])
+    # the pair in the order the event title names it (as the home page's poster), with each tape on its side
+    t = design.title_order(e)
+    swapped = t is not e and t.get('fighter1') != e.get('fighter1')
+    if swapped:
+        e = dict(t, fighter1_tape=e.get('fighter2_tape'), fighter2_tape=e.get('fighter1_tape'))
+    bouts_all = [b for _, bs in groups for b in bs]
+    if main not in bouts_all:
+        groups = [(groups[0][0], [main] + list(groups[0][1]))] + list(groups[1:])
+    e['undercard'] = [b for _, bs in groups for b in bs if b is not main]
+    past = bool(e.get('is_past'))
+    state = design.fight_state(e, now)
+    if past:
+        state = 'done'
+    sc = design.sport_class(e)
+    r = e.get('result') if past else None
+    win = bool(r and r.get('outcome') == 'win')
+    ws = (1 if r.get('winner') == e['fighter1'] else 2 if r.get('winner') == e['fighter2'] else 0) if win else 0
+
+    # the poster
+    p1, p2, n_ph = design.poster_photos(e)
+    p1, p2 = _face_sized(p1), _face_sized(p2)
+    if ws and (p1, p2)[2 - ws]:          # the loser's half dimmed (site-fight.css .ph.lost)
+        lost = (p1, p2)[2 - ws]
+        lost = dict(lost, cls=(lost['cls'] + ' lost').strip())
+        p1, p2 = (lost, p2) if ws == 2 else (p1, lost)
+    names = design.pair_fit(e)
+    hero_cls = ['hero', 'fh', sc, f'n{n_ph}', 'past' if past else '', 'tba2' if names['tba2'] else '',
+                'l-ph' if p1 else 'l-none', 'r-ph' if p2 else 'r-none']
+    # the winner's W (site-fight.css .lockup .won::after: about .33 of the name's size with its gap) beside a long
+    # name (wider than its half of the card) is counted in that name's width, so it stays inside the card's padding;
+    # beside a shorter name it sits in the space the half leaves, as on the approved page
+    e1, e2 = names['e1'], names['e2']
+    if ws and (e1, e2)[ws - 1] / (e1 + e2 + .55) > .45:
+        e1, e2 = e1 + (.33 if ws == 1 else 0), e2 + (.33 if ws == 2 else 0)
+    em_stack = names['em_stack']
+    if ws:      # the phone's stacked names: the winner's line is wider by the W (in unscaled letter widths)
+        lines = (design.line_em(names['s1'])[0] + (.35 if ws == 1 else 0),
+                 (0 if names['tba2'] else design.line_em(names['s2'])[0]) + (.35 if ws == 2 else 0))
+        em_stack = round(max(em_stack, *lines), 2)
+    hero_style = f"--e1:{round(e1, 3)};--e2:{round(e2, 3)};--em-stack:{em_stack}"
+    if n_ph == 0:
+        hero_style += f";--est:{names['est']};--nl:{names['nl']}"
+
+    # the column beside it
+    start = design.start_of(e)
+    notes = []
+    if start and state in ('', 'done'):
+        if e.get('time_estimated'):
+            notes.append(('est', 'Estimated'))
+        pre = design.prelim_start(e)
+        if pre:
+            notes.append(('lead', 'Main card'))
+        nh = design.night_hint(start)
+        if nh:
+            notes.append(('night', nh))
+        if pre:
+            notes.append(('prelims', pre))
+    result = None
+    if past and r:
+        mp = design.method_parts(r)
+        if mp:
+            code, detail, words = mp
+            m_ = re.match(r'R(\d+) ([\d:]+)', detail or '')
+            dl = f'Round {m_.group(1)}, {m_.group(2)}' if m_ else (detail or '').replace(' rds', ' rounds')
+            who = design.surname(r.get('winner')) if ws else ''
+            sr = (f"{r.get('winner')} won, " if ws else '') + (words or code) + (f', {dl}' if dl else '') + '.'
+            result = {'code': code or ('WIN' if ws else '—'), 'who': who, 'words': words, 'detail': dl, 'sr': sr}
+    # a missing result: still due inside the results grace window (fight_store.RESULT_GRACE_DAYS, as the
+    # result_pending flag), on record as missing after it (the list pages' "no result on record")
+    grace_iso = (design.today_in(None, now) - timedelta(days=fight_store.RESULT_GRACE_DAYS)).isoformat()
+    in_grace = past and str(e.get('date') or '') >= grace_iso
+    pending_label = 'Result pending' if in_grace else 'No result on record'
+
+    services = list(UFC_WATCH) if sport == 'UFC' else ([(e['streaming'], '')] if e.get('streaming') else [])
+    watch, plain = [], []
+    for name, note in services:
+        key = _aff.resolve_provider(name)
+        if key:
+            watch.append({'key': key, 'name': _aff.provider_name(key), 'note': note})
+        elif _aff.clean_broadcaster(name):
+            plain.append(_aff.clean_broadcaster(name))
+
+    # the card: each group's bouts, the main event flagged (its slot is a pointer to the poster)
+    view_groups, total, any_res = [], 0, False
+    for label, bs in groups:
+        if not bs:
+            continue
+        rows = []
+        for b in bs:
+            is_main = b is main
+            row = dict(b, main=is_main, kick=design.weight_label(b.get('weight_class')))
+            if is_main:
+                row.update(fighter1=e['fighter1'], fighter2=e['fighter2'])
+            for k in ('fighter1_image', 'fighter2_image'):
+                row[k] = row.get(k) or photos.get_fighter_image(row[k.replace('_image', '')])
+            if not past:
+                row['result'] = None
+            any_res = any_res or bool(row.get('result'))
+            rows.append(row)
+        if sport == 'UFC' and label == 'Prelims':
+            gstart = design.prelim_start(e)
+        elif sport == 'UFC':
+            gstart = start
+        else:
+            gstart = None
+        view_groups.append({'label': label, 'start': gstart, 'bouts': rows})
+        total += len(rows)
+
+    # the AI summary: each fighter's edge under his half
+    pv = event.get('preview')
+    pv_event = None
+    if pv and pv.get('parsed'):
+        parsed = dict(pv['parsed'])
+        if swapped:
+            parsed['fighter1_edge'], parsed['fighter2_edge'] = parsed.get('fighter2_edge'), parsed.get('fighter1_edge')
+        pv_event = {'main_event': {'fighter1': e['fighter1'], 'fighter2': e['fighter2']}, 'preview': dict(pv, parsed=parsed)}
+
+    # where the page sits: the nav item, the breadcrumb's middle step and its last word
+    if past:
+        section = ('Results', '/results', 'Results')
+    elif sport == 'UFC':
+        section = ('UFC', '/ufc', 'UFC schedule')
+    else:
+        section = ('Boxing', '/boxing', 'Boxing schedule')
+    if sport == 'UFC':
+        crumb = (e['event_name'].split(':')[0].strip() or 'UFC')
+        if crumb.lower() in _GENERIC_UFC:
+            crumb = f"{design.surname(e['fighter1'])} vs {design.surname(e['fighter2'])}"
+    else:
+        crumb = f"{e['fighter1']} vs {e['fighter2']}"
+
+    return {
+        'sport': sport, 'sc': sc, 'e': e, 'past': past, 'state': state, 'live': state in ('live', 'prelims'),
+        'ws': ws, 'kick': design.kick_text(e) or ('UFC' if sport == 'UFC' else 'Boxing'), 'h1_kick': _h1_label(sport, e),
+        'place': design.place_line(e), 'names': names, 'p1': p1, 'p2': p2, 'n_photos': n_ph,
+        'hero_cls': ' '.join(c for c in hero_cls if c), 'hero_style': hero_style,
+        'day': design.local_day(e), 'rel': design.rel_day(design.local_day(e), design.today_in(None, now)),
+        'countdown': design.countdown(start, now) if (start and not past and state == '') else '',
+        'has_time': bool(start), 'notes': notes, 'result': result, 'pending_label': pending_label, 'in_grace': in_grace,
+        'watch': watch, 'watch_plain': plain, 'slug': slug, 'gcal': _gcal(sport, e, event),
+        'tape': _tape_view(sport, e), 'groups': view_groups, 'total': total, 'one_bout': total <= 1,
+        'any_res': past and any_res, 'pv_event': pv_event, 'section': section, 'crumb': crumb,
+        # every decided bout gets a weight line when any has one, so the box scores' names align
+        'box_kick': any(b['kick'] for g in view_groups for b in g['bouts'] if b.get('result') and not b['main']),
+        'credit_m': {k: e.get(k) for k in ('fighter1', 'fighter2', 'fighter1_image', 'fighter2_image')},
+    }
 
 
 # Globals (not context processors) so imported macros in _watch.html can use them

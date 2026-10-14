@@ -1,5 +1,6 @@
 {# Streaming / affiliate links. Every provider link goes through /go/<key> so clicks are
    logged server-side and the destination can be swapped for an affiliate URL via env. #}
+{%- import '_ui.html' as ui -%}
 
 {% macro watch_link(streaming, event_slug, sport, placement, css='') -%}
 {% set key = provider_key(streaming) %}
@@ -12,23 +13,23 @@
 {% endif %}
 {%- endmacro %}
 
-{% macro watch_box(streaming, event_slug, sport, accent) -%}
-{% set key = provider_key(streaming) %}
-{% if streaming %}
-<div class="bg-dark-card rounded-xl p-6 border border-dark-border mb-12">
-    <div class="flex flex-wrap items-center justify-center gap-3">
-        <svg class="w-5 h-5 text-{{ accent }} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-        </svg>
-        <span class="font-work text-text-primary">Watch on:</span>
-        {% if key %}
-        {{ watch_link(streaming, event_slug, sport, 'event',
-            'inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-' ~ accent ~ ' text-dark-bg font-work font-semibold hover:opacity-90 transition-opacity') }}
-        {% else %}
-        <span class="font-work font-semibold text-{{ accent }}">{{ clean_broadcaster(streaming) }}</span>
-        {% endif %}
-    </div>
-    {% if key %}<p class="text-center text-[11px] text-text-tertiary font-work mt-3">We may earn a commission if you subscribe through this link. <a href="/privacy#affiliate" class="underline">Details</a></p>{% endif %}
+{#- The fight page's "Where to watch" (the approved redesign, 2026-10-14): one tracked /go/ row per service with the
+    countries it covers (the first a light button, the others quiet), the affiliate disclosure under them. A
+    broadcaster the site has no link for is named without a link; none announced says so. fv: site_pages.fight_view().
+    site.js counts a row tap as 'watch' (with the provider) and sends GA's affiliate_click (placement=event). -#}
+{%- macro watch_panel(fv) -%}
+<section class="watch-panel{{ ' none' if not fv.watch }}" aria-labelledby="fight-watch"><h2 id="fight-watch">Where to watch</h2>
+{%- if fv.watch %}
+<div class="rows n{{ fv.watch|length }}">
+{%- for w in fv.watch -%}
+<a class="wrow btn {{ 'pri' if loop.first else 'sec' }}" href="/go/{{ w.key }}?event={{ fv.slug|urlencode }}&amp;sport={{ fv.sport|lower }}&amp;p=event" target="_blank" rel="sponsored nofollow noopener"><span class="wtext"><b>{{ 'Watch live on' if fv.live else 'Watch on' }} {{ w.name }}</b>{% if w.note %}<small>{{ w.note }}</small>{% endif %}</span>{{ ui.icon('ext') }}</a>
+{%- endfor -%}
 </div>
-{% endif %}
+<p class="aff-note">We may earn a commission if you subscribe. <a href="/privacy#affiliate">Details</a></p>
+{%- elif fv.watch_plain %}
+<p class="bc">{{ 'Live on' if fv.live else 'On' }} <b>{{ fv.watch_plain|join(', ') }}</b></p>
+{%- else %}
+<p class="bc">Broadcast not announced</p>
+{%- endif -%}
+</section>
 {%- endmacro %}

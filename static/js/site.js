@@ -187,7 +187,8 @@
         if (!box) { box = el('span', 'sub'); host.appendChild(box); }
         if (poster) box.hidden = false;
         var n = el('span', 'nt night', text);
-        var est = box.querySelector('.nt.est');
+        // after "Estimated" (and the fight page's "Main card"), before the rest
+        var leads = box.querySelectorAll('.nt.est, .nt.lead'), est = leads.length ? leads[leads.length - 1] : null;
         var sep = function () { var s = el('span', 'ns'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = sepHtml; return s; };
         if (est) { est.after(sep(), n); }
         else if (box.querySelector('.nt')) { box.prepend(n, sep()); }
@@ -349,6 +350,10 @@
             var hero = n.closest('.hero');
             if (hero.classList.contains('is-live')) return;
             safe(function () { setNight(n, ' ·&#160;', elStart(hero.querySelector('.ld-time time'))); });
+        });
+        // the fight page's column beside the poster: the note under its time (templates/_fight.html)
+        doc.querySelectorAll('.when .ld-note[data-night]').forEach(function (n) {
+            safe(function () { setNight(n, ' ·&#160;', elStart(n.parentNode.querySelector('.ld-time time'))); });
         });
         if (doc.querySelector('[data-countdown], [data-rel]')) {
             (function tick() { setTimeout(function () { safe(function () { renderCounts(true); }); tick(); }, 60000 - (Date.now() % 60000) + 40); })();

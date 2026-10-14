@@ -364,6 +364,9 @@ def face_crop(path):
     if z_need > DISC_Z_MAX or hd * h < DISC_MIN_PX:
         return None
     z = min(DISC_Z_MAX, max(1.1, z_need))
+    # the zoomed photo must still cover the disc: a face near the file's edge (a close-up's chin at the bottom) is
+    # shown off-centre rather than leaving a grey band in the disc (site.css .face img: translate + scale(z))
+    px, py = (min(max(v, .5 / z), 1 - .5 / z) for v in (px, py))
     return {'src': path, 'style': f'--px:{_r(px, 3)};--py:{_r(py, 3)};--z:{_r(z, 2)}', 'tone': tone}
 
 

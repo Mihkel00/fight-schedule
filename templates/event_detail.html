@@ -1,99 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% include '_analytics.html' %}
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ event.page_title }}</title>
-    <meta name="description" content="{{ event.meta_description }}">
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <meta name="theme-color" content="#0a0a0a">
-    <link rel="canonical" href="{{ event.canonical_url }}">
+{#- The UFC fight page (approved redesign, 2026-10-14): templates/_fight.html on the page frame (_base.html).
+    The view is site_pages.fight_view() (`fv`); `event` keeps the SEO head and the JSON-LD exactly as before. -#}
+{% extends '_base.html' %}
+{% from '_fight.html' import fight_page %}
+{% set nav_active = fv.section[0] %}
+{% set nav_current = 'true' %}
+{% block head %}
+<title>{{ event.page_title }}</title>
+<meta name="description" content="{{ event.meta_description }}">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+<link rel="canonical" href="{{ event.canonical_url }}">
 
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ event.canonical_url }}">
-    <meta property="og:title" content="{{ event.page_title }}">
-    <meta property="og:description" content="{{ event.meta_description }}">
-    <meta property="og:image" content="https://fightschedule.live/static/og-image.png">
-    <meta property="og:site_name" content="FightSchedule">
-    <meta property="og:locale" content="en_US">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ event.canonical_url }}">
+<meta property="og:title" content="{{ event.page_title }}">
+<meta property="og:description" content="{{ event.meta_description }}">
+<meta property="og:image" content="https://fightschedule.live/static/og-image.png">
+<meta property="og:site_name" content="FightSchedule">
+<meta property="og:locale" content="en_US">
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ event.page_title }}">
-    <meta name="twitter:description" content="{{ event.meta_description }}">
-    <meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ event.page_title }}">
+<meta name="twitter:description" content="{{ event.meta_description }}">
+<meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
 
-    <!-- BreadcrumbList -->
-    <script type="application/ld+json">{{ ld.breadcrumbs(('Home', '/'), ('UFC Schedule', '/ufc'), (event.event_name, None))|tojson }}</script>
+<!-- BreadcrumbList -->
+<script type="application/ld+json">{{ ld.breadcrumbs(('Home', '/'), ('UFC Schedule', '/ufc'), (event.event_name, None))|tojson }}</script>
 
-    <!-- Structured Data: SportsEvent (JSON-LD) -->
-    <script type="application/ld+json">{{ ld.ufc_event(event)|tojson }}</script>
-
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <link rel="stylesheet" href="/static/css/list.css">
-</head>
-<body class="bg-dark-bg text-text-primary">
-    {% from '_site_header.html' import site_header %}
-    {% from '_list.html' import start_time %}
-    {% from '_fight.html' import hero, bout, preview_panel, watch_panel, calendar_links %}
-    {% from '_watch.html' import watch_link %}
-    {% import '_tape_result.html' as tr %}
-    {% set m = event.main_event %}
-    {% set ufc_slug = event.canonical_url.rsplit('/', 1)[-1] %}
-    {{ site_header('') }}
-
-    <main class="home">
-        <div class="wrap">
-            <div class="crumbs">{% if m.is_past %}<a href="/results">Results</a>{% else %}<a href="/ufc">UFC schedule</a>{% endif %} › {{ event.event_name.split(':')[0] }}</div>
-
-            {{ hero('UFC', event.event_name.split(':')[0], m, {'date': event.date, 'time': m.time}, event.venue, 'main card' if event.prelims else '') }}
-
-            {% if not m.is_past %}
-            {% set gcal = none %}
-            {% if event.date and m.time and m.time != 'TBA' %}
-            {% set cal_start = event.date | replace('-', '') ~ 'T' ~ m.time | replace(':', '') ~ '00Z' %}
-            {% set gcal = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' ~ (event.event_name|urlencode) ~ '&dates=' ~ cal_start ~ '/' ~ cal_start ~ '&details=' ~ (('Full card and times: ' ~ event.canonical_url)|urlencode) ~ '&location=' ~ (event.venue|urlencode) %}
-            {% endif %}
-            {{ watch_panel([('Paramount+', 'US, Latin America and Australia'), ('UFC Fight Pass', 'Most other countries')], ufc_slug, 'UFC') }}
-            {{ calendar_links(gcal, '/calendar/ufc.ics', 'All UFC events to calendar') }}
-            {% elif m.result_pending and not m.result %}
-            <p class="aff-note" style="margin-top:12px">This event has taken place. Results are added as they are published.</p>
-            {% endif %}
-
-            {% if m.fighter1_tape or m.fighter2_tape %}<div class="tape-wrap">{{ tr.tale_of_the_tape(m, 'accent-red-custom') }}</div>{% endif %}
-
-            <div class="fp-grid {{ 'solo' if not (event.preview and event.preview.parsed) }}">
-                <div>
-                    <h2 class="sec-h">{{ 'Results' if m.is_past else 'Fight card' }} · {{ event.main_card|length + event.prelims|length }} fights</h2>
-                    <div class="card-list">
-                        <div class="card-sub">Main card{% if not m.is_past and event.main_card_time and event.main_card_time != 'TBA' %} · {{ start_time({'date': event.date, 'time': event.main_card_time}, 'plain') }}{% endif %}</div>
-                        {% for f in event.main_card %}{{ bout(f, 'UFC', loop.first, m.is_past) }}{% endfor %}
-                        {% if event.prelims %}
-                        <div class="card-sub">Prelims{% if not m.is_past and event.prelim_time and event.prelim_time != 'TBA' %} · {{ start_time({'date': event.date, 'time': event.prelim_time}, 'plain') }}{% endif %}</div>
-                        {% for f in event.prelims %}{{ bout(f, 'UFC', false, m.is_past) }}{% endfor %}
-                        {% endif %}
-                    </div>
-                </div>
-                {% if event.preview and event.preview.parsed %}<div>{{ preview_panel(event) }}</div>{% endif %}
-            </div>
-        </div>
-
-        <div class="mt-24 mb-8 text-center">
-            <p class="font-work text-xs text-text-tertiary"><a href="/privacy" class="hover:text-text-secondary transition-colors">Privacy & Cookie Policy</a></p>
-            <p class="font-work text-xs text-text-tertiary mt-2">Fighter photos: UFC, Wikimedia Commons and others.</p>
-        </div>
-    </main>
-
-    <script src="/static/js/list.js"></script>
-    {% include '_consent.html' %}
-</body>
-</html>
+<!-- Structured Data: SportsEvent (JSON-LD) -->
+<script type="application/ld+json">{{ ld.ufc_event(event)|tojson }}</script>
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/site-fight.css">{% endblock %}
+{% block body_class %}fight{% endblock %}
+{% block skip %}<a class="skip" href="#main">Skip to the fight</a>{% endblock %}
+{% block main %}{{ fight_page(fv) }}{% endblock %}
