@@ -544,7 +544,7 @@ def test_watch_links(client):
     assert a.startswith('<a class="watch" href="/go/dazn?event=daniel-dubois-vs-fabio-wardley-2026-10-17&amp;sport=boxing&amp;p=home_list"')
     assert 'rel="sponsored nofollow noopener"' in a and '<b>DAZN</b>' in a
     assert b.startswith('<span class="watch nolink">') and '<b>ProBoxTV</b>' in b and '<a' not in b
-    assert c == '<span class="bc">Broadcast not announced</span>'
+    assert c == '', 'nothing shown when no broadcaster is announced (owner, 2026-10-14)'
 
 
 def test_faces_and_result_markup(client, meta):
@@ -577,7 +577,7 @@ def test_poster_cards(client, meta):
     assert '<span class="n1" style="--lsb:0.05;--rsb:0.031">Dubois</span><span class="vs">vs</span>' in h
     assert '<span class="nt prelims">Prelims <time class="fight-time short" datetime="2026-10-24T16:00Z"' in h
     solo = render(UI + "{{ ui.big_band(bigs, 'x') }}", bigs=[ev(streaming='')])
-    assert 'hero solo' in solo and '<span class="bc">Broadcast not announced</span><a class="btn pri rc-link lead-link fc"' in solo
+    assert 'hero solo' in solo and 'Broadcast not announced' not in solo and '<a class="btn pri rc-link lead-link fc"' in solo
 
 
 def test_schedule_macro(client, meta):

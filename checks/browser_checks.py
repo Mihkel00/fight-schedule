@@ -12,7 +12,7 @@ They test behaviour, not looks, and read what a visitor sees (MISTAKES.md 2026-0
      case the rules exist for: a fight at 02:00 on a Sunday in Tallinn is Saturday evening in New York
   3. what a click or tap does, on a phone (touch) and a desktop: the poster cards' hit areas (elementFromPoint at the
      photo, the names and the time: MISTAKES.md 2026-10-14), undercards open and close and their label changes,
-     search opens, finds and closes with Escape, "Featured above" jumps to its card, /ufc#results lands on the
+     search opens, finds and closes with Escape, poster fights have ordinary rows, /ufc#results lands on the
      results, the folded "no result on record" line opens
   4. usage counts: each tap sends the right name (and detail) to /api/t, one the server keeps (usage.valid_tap),
      and the "seen" beacon goes once after 5 visible seconds
@@ -652,14 +652,14 @@ with sync_playwright() as p:
             press(pg.locator('#searchToggle')); pg.wait_for_timeout(150)          # closing is not an "open"
             if any(b.get('name') == 'search_open' for b in got[n0:]):
                 fail(f'search {tag}: closing the drawer counted as search_open')
-            # "Featured above" jumps to its poster card
-            go = pg.locator('.tt.sched a.ptr-go').first
-            if go.count():
-                hid = go.get_attribute('href')[1:]
-                press(go); pg.wait_for_timeout(700)
-                top = pg.evaluate("hid => document.getElementById(hid).getBoundingClientRect().top", hid)
-                if not (-5 <= top <= pg.viewport_size['height'] * 0.5):
-                    fail(f'"Featured above" {tag}: #{hid} is at {top:.0f}px after the click')
+            # the poster fights keep ordinary rows in the table (owner, 2026-10-14: no "Featured above" pointer)
+            if pg.locator('.tt.sched .ev.ptr, .tt.sched a.ptr-go').count():
+                fail(f'{tag}: a "Featured above" pointer row in the schedule')
+            for k in pg.eval_on_selector_all('.hero[data-key]', 'hs => hs.map(h => h.dataset.key)'):
+                if not pg.locator(f'.tt.sched article.ev[data-key="{k}"] a.ev-main').count():
+                    fail(f'{tag}: poster fight {k} has no ordinary row in the schedule')
+            if pg.get_by_text('Broadcast not announced').count():
+                fail(f'{tag}: "Broadcast not announced" is shown')
             # the header and the footer
             expect_tap(pg, got, pg.locator('.nav-pill', has_text='Results').first if size_name == 'desktop' else
                        pg.locator('.nav-pill').nth(1), 'nav', what=f'nav {tag}')

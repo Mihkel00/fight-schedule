@@ -26,9 +26,9 @@ def test_home_frame_hero_and_one_table(client):
     assert h.count('class="tt sched"') == 1, 'one schedule table'
     assert 'id="search-data"' in h and 'id="searchBar"' in h and '/static/js/list.js' not in h
     assert 'aria-current="page">Schedule</a>' in h
-    # each poster fight's table slot is a pointer line to its card
-    heroes = re.findall(r'<article class="rc lead hero[^"]*" id="(lead2?)"', h)
-    assert heroes and sorted(PTR.findall(h)) == sorted(heroes)
+    # changed 2026-10-14 (owner): a poster fight keeps an ordinary row in the table, no "Featured above" pointer
+    heroes = re.findall(r'<article class="rc lead hero[^"]*" data-sport="[^"]*" data-key="([^"]*)"', h) or re.findall(r'id="lead2?"', h)
+    assert heroes and not PTR.findall(h) and 'Featured above' not in h and 'class="ev ptr' not in h
     assert 'p=home_big' in h and 'p=home_list' in h, 'Watch placements keep their usage names'
     assert 'class="chipf' not in h, 'the nav is the only sport control'
 

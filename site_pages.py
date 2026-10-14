@@ -49,10 +49,10 @@ def _big_fights(events, today, limit=6, horizon_days=90):
 
 def _hero_and_schedule(events, limit=2, ids=('lead', 'lead2')):
     """The next big fights for a page's poster cards (design.hero_fights) and
-    ONE schedule table of `events`, with the poster fights' rows as pointer
-    lines ("Featured above"). Server-rendered in UTC; site.js regroups it."""
+    ONE schedule table of `events`; the poster fights keep ordinary rows (owner,
+    2026-10-14: no "Featured above" pointer). Server-rendered in UTC; site.js regroups it."""
     bigs = design.hero_fights(events, limit=limit)
-    sch = design.schedule(events, lead_keys={design.event_key(b): hid for b, hid in zip(bigs, ids)})
+    sch = design.schedule(events)
     return bigs, sch
 
 
@@ -884,7 +884,7 @@ def _not_found_parts():
         fights = fight_store.upcoming_only(pipeline.fetch_fights())
         events = _group_events_for_landing(fights, 'UFC')[0] + _group_events_for_landing(fights, 'Boxing')[0]
         bigs = design.hero_fights(events, limit=1)
-        sch = design.schedule(events, lead_keys={design.event_key(b): 'lead' for b in bigs}, only=('week',))
+        sch = design.schedule(events, only=('week',))
         return bigs, sch
     except Exception as exc:
         logger.warning(f"404 page: no schedule ({exc})")

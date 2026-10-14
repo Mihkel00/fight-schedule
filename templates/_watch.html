@@ -15,10 +15,11 @@
 
 {#- The fight page's "Where to watch" (the approved redesign, 2026-10-14): one tracked /go/ row per service with the
     countries it covers (the first a light button, the others quiet), the affiliate disclosure under them. A
-    broadcaster the site has no link for is named without a link; none announced says so. fv: site_pages.fight_view().
+    broadcaster the site has no link for is named without a link; with none announced the section is left out (owner, 2026-10-14). fv: site_pages.fight_view().
     site.js counts a row tap as 'watch' (with the provider) and sends GA's affiliate_click (placement=event). -#}
 {%- macro watch_panel(fv) -%}
-<section class="watch-panel{{ ' none' if not fv.watch }}" aria-labelledby="fight-watch"><h2 id="fight-watch">Where to watch</h2>
+{%- if fv.watch or fv.watch_plain -%}
+<section class="watch-panel" aria-labelledby="fight-watch"><h2 id="fight-watch">Where to watch</h2>
 {%- if fv.watch %}
 <div class="rows n{{ fv.watch|length }}">
 {%- for w in fv.watch -%}
@@ -28,8 +29,7 @@
 <p class="aff-note">We may earn a commission if you subscribe. <a href="/privacy#affiliate">Details</a></p>
 {%- elif fv.watch_plain %}
 <p class="bc">{{ 'Live on' if fv.live else 'On' }} <b>{{ fv.watch_plain|join(', ') }}</b></p>
-{%- else %}
-<p class="bc">Broadcast not announced</p>
 {%- endif -%}
 </section>
+{%- endif -%}
 {%- endmacro %}
