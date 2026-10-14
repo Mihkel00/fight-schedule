@@ -6,6 +6,25 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — The landing mock's "whole card is the Fight card link" never worked on desktop
+
+**What happened:** In the hybrid landing mock, the hero cards were meant to be one
+link to the fight page (the Fight card button's `::after` covering the card). On
+desktop and tablet a click on the photos, names or time did nothing: the button's
+`backdrop-filter` made the button itself the containing block of its `::after`,
+so the hit area was only the button. Found in round 9 while checking the new
+single-fight layout.
+
+**Root cause:** The check measured the `::after` against the containing block I
+assumed (the element's offsetParent) instead of asking the browser what a click
+reaches. `filter`, `backdrop-filter`, `transform` and containment all change the
+containing block, and a size computed from my assumption cannot see that.
+
+**Rule:** Hit areas are tested with `document.elementFromPoint` at real points
+(photo, name, time, button), never with computed box sizes. Any card-wide link
+built from a pseudo-element gets that check after every CSS change to its
+ancestors or to the button.
+
 ## 2026-10-14 — Sent a hero with oval "cameo" photo masks and called it sharp
 
 **What happened:** In the two-fight hero each photo was cut out with an oval
