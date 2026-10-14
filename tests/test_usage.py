@@ -27,7 +27,7 @@ def test_page_views_are_counted_without_cookies(client):
 
 
 def test_non_page_requests_are_not_views(client):
-    for p in ('/health', '/robots.txt', '/sitemap.xml', '/llms.txt', '/static/js/list.js', '/api/debug/state?token=t&part=health'):
+    for p in ('/health', '/robots.txt', '/sitemap.xml', '/llms.txt', '/static/js/site.js', '/api/debug/state?token=t&part=health'):
         client.get(p, headers=BROWSER)
     assert not [x for x in _records() if x['kind'] == 'view']
 
@@ -126,5 +126,6 @@ def test_seen_needs_a_real_page_load_from_the_site(client):
 
 
 def test_page_script_reports_seen_after_five_visible_seconds():
-    js = open('static/js/list.js').read()
+    # static/js/site.js replaced list.js with the redesign (2026-10-14); checks/browser_checks.py times it in a browser
+    js = open('static/js/site.js').read()
     assert "tap('seen')" in js and 'need = 5000' in js and 'visibilitychange' in js

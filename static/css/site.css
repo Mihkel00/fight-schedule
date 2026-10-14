@@ -291,8 +291,10 @@ html.js .ph img:not(.ok), html.js .face img:not(.ok), html.js .won-ring img:not(
 .acts .bc { font: 500 15px var(--f-t); color: var(--t2); white-space: nowrap; }
 /* one link to the fight page ("Fight card"); its hit area covers the whole poster, Watch sits above it */
 /* (no backdrop-filter on it: a backdrop-filter makes the button the containing block of its ::after, and the hit area
-   shrank to the button; the button sits on the solid card or page surface, so the blur did nothing anyway) */
-.hero .fc { position: static; -webkit-backdrop-filter: none; backdrop-filter: none; }
+   shrank to the button; the button sits on the solid card or page surface, so the blur did nothing anyway. No press
+   scale either: .btn:active's transform does the same between mousedown and mouseup, so the mouseup landed outside
+   the link and a click on the photo, names or time went nowhere; checks/browser_checks.py clicks them for real) */
+.hero .fc, .hero .fc:active { position: static; -webkit-backdrop-filter: none; backdrop-filter: none; transform: none; }
 .hero .fc::after { content: ""; position: absolute; inset: 0; z-index: 1; }
 .hero .rc-watch { z-index: 2; }
 .hero .fc:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }

@@ -33,12 +33,13 @@ _DETAIL = re.compile(r'^[\w .+:/-]{0,60}$')
 PAGE_TYPES = (('/results', 'results'), ('/ufc', 'ufc page'), ('/boxing-event/', 'boxing fight page'),
               ('/boxing', 'boxing page'), ('/event/', 'ufc fight page'), ('/privacy', 'privacy'))
 
-# Taps the page reports (see static/js/list.js). Anything else is dropped.
+# Taps the page reports (see static/js/site.js; 'filter', 'tab', 'full_card' and 'rail_scroll' came from controls
+# the redesign of 2026-10-14 removed, and are still accepted from pages opened before it). Anything else is dropped.
 TAP_NAMES = {'card', 'big_card', 'filter', 'undercard_open', 'undercard_close', 'full_card', 'watch',
              'calendar_add', 'calendar_feed', 'nav', 'search_open', 'search', 'tab', 'crumb', 'foot_link',
              'rail_scroll', 'seen'}
 
-# Sent by list.js once a page has been visible for 5 seconds: the people count.
+# Sent by site.js once a page has been visible for 5 seconds: the people count.
 SEEN = 'seen'
 
 
