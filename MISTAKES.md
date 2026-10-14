@@ -6,6 +6,24 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — Sent a hero with oval "cameo" photo masks and called it sharp
+
+**What happened:** In the two-fight hero each photo was cut out with an oval
+or blob vignette on a grey slab, heads floated with shoulders chopped off,
+and the names had a dark halo box. I sent the screenshot as "photos fill the
+cards and look sharp". The owner asked what was up with the masking. Oval
+vignettes had already been rejected by the reviewers two rounds earlier.
+
+**Root cause:** I judged the screenshot at a glance, at normal size, on a dark
+image where soft mask edges barely show. And the list of rejected patterns
+(oval vignettes, clip-art silhouettes, ring-rope art, kickers on photos) was
+not carried into the new brief, so the builder solved "hide each photo's
+background" the same rejected way.
+
+**Rule:** Before sending any photo treatment, inspect a 2x crop brightened 2-3x,
+where mask edges, halos and seams show. Every design brief repeats the full
+list of patterns the owner or reviewers have already rejected.
+
 ## 2026-10-14 — Removed most fighter photos while cleaning up duplicates
 
 **What happened:** In the "one coherent page" rebuild I deleted the big-fight
