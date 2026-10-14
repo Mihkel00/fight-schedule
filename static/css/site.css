@@ -750,7 +750,8 @@ html.js .ph img:not(.ok), html.js .face img:not(.ok), html.js .won-ring img:not(
 
 .ev { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "top top" "fx t" "ch foot" "uc uc";
   margin-top: 8px; background: var(--s1); border-radius: var(--r2); isolation: isolate; transition: background-color 160ms var(--ease); }
-.day > .ev:nth-child(2 of .ev) { margin-top: 0; }
+/* the first card under a day heading sits on the heading's own 10px; every later card keeps its 8px gap */
+.day > .ev:nth-child(1 of .ev) { margin-top: 0; }
 .ev .top { grid-area: top; display: flex; justify-content: space-between; align-items: baseline; column-gap: 12px; padding: 14px 16px 0; min-width: 0; }
 .ev.nokick .top { justify-content: flex-end; }
 .ev .top .where { font-size: 12px; line-height: 1.25; color: var(--t2); white-space: nowrap; overflow-x: clip; text-overflow: ellipsis; min-width: 0; }
