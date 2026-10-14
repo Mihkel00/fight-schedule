@@ -56,6 +56,16 @@ def test_markup_has_the_hooks_the_script_reads(client):
     assert re.search(r'data-format="big">~?\d{2}:\d{2} UTC</time>', h)
 
 
+def test_footer_cookie_settings_reopens_the_consent_bar(client):
+    """The footer's "Cookie settings" does what it says: the script reopens the consent bar (Accept / Decline); without
+    the script it is a link to the privacy page's cookie section (checks/browser_checks.py clicks it for real)."""
+    for path in ('/', '/privacy', '/event/ufc-332-silva-vs.-wang-2026-10-04'):
+        _, h = _page(client, path)
+        assert '<a href="/privacy#cookies" data-consent-open>Cookie settings</a>' in h, path
+        assert 'id="fs-consent"' in h and 'window.fsShowConsent = function' in h, path
+    assert "closest('[data-consent-open]')" in JS and 'window.fsShowConsent();' in JS
+
+
 def test_the_poster_link_keeps_its_hit_area_while_pressed():
     """.btn:active scales the button; a transform makes the Fight card button the containing block of its ::after,
     so between press and release the card-wide hit area shrank to the button and a click on the photo went nowhere

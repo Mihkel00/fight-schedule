@@ -104,6 +104,16 @@
             window.gtag('event', 'affiliate_click', { provider: p, event_slug: q.get('event'), placement: q.get('p') });
         }
     }, true);
+    // the footer's "Cookie settings" reopens the consent bar (Accept / Decline) and moves focus to it; without the
+    // script it stays a link to the privacy page's cookie section
+    doc.addEventListener('click', function (ev) {
+        var a = ev.target.closest('[data-consent-open]');
+        if (!a || !window.fsShowConsent) return;
+        ev.preventDefault();
+        window.fsShowConsent();
+        var b = doc.querySelector('#fs-consent [data-consent]');
+        if (b) b.focus();
+    });
 
     /* ---------- time helpers ---------- */
     function startOf(date, utc) {
@@ -355,8 +365,9 @@
 
     /* ---------- 4. poster cards: day count, countdown, night hint ---------- */
     function cdText(target) {
+        // design.countdown(): 'starting now' only until 15 min after the start (design.STARTING_NOW_MIN), then ''
         var mins = Math.floor((target - Date.now()) / 60000);
-        if (mins <= 0) return 'starting now';
+        if (mins <= 0) return mins > -15 ? 'starting now' : '';
         if (mins >= 1440) return '';
         var h = Math.floor(mins / 60), m = mins % 60;
         return h ? 'in ' + h + ' h ' + m + ' min' : 'in ' + m + ' min';

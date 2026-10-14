@@ -246,6 +246,10 @@ def test_countdown_only_in_the_last_day():
     assert D.countdown(s, NOW) == 'in 9 h 12 min'
     assert D.countdown(datetime(2026, 10, 2, 12, 42, tzinfo=UTC), NOW) == 'in 42 min'
     assert D.countdown(NOW, NOW) == 'starting now'
+    # a page left open: 'starting now' until 15 min after the start, then nothing (never next to "Yesterday")
+    assert D.countdown(datetime(2026, 10, 2, 11, 46, tzinfo=UTC), NOW) == 'starting now'
+    assert D.countdown(datetime(2026, 10, 2, 11, 45, tzinfo=UTC), NOW) == ''
+    assert D.countdown(datetime(2026, 10, 1, 21, 0, tzinfo=UTC), NOW) == ''
     assert D.countdown(datetime(2026, 10, 3, 12, 0, tzinfo=UTC), NOW) == ''
     assert D.countdown(None, NOW) == ''
 
@@ -641,7 +645,12 @@ def test_site_css_and_fonts_are_complete():
     assert css.rstrip().endswith('@media (max-width: 1023.98px) { .duo-top { padding: 0; } }')
     assert 'filter: grayscale(1) brightness(var(--b, .95)) contrast(var(--c, 1.05))' in css
     assert '--win: #22C55E;' in css and '0 0 0 4px var(--win)' in css
+    # a file too short for its half always covers the half's width (no framed box on the wide fight poster, QA
+    # 2026-10-14); checked in a browser by checks/browser_checks.py
+    assert '.ph.sh { --F: 36px; --Wi: max(min(var(--sw) * 1.25px, max(var(--Wc), var(--Wf))), var(--HW) / (var(--x1) - var(--x0))); }' in css
     js = open(os.path.join(root, 'static', 'js', 'site.js')).read()
+    # the countdown says 'starting now' only until 15 min after the start, as design.countdown()
+    assert "if (mins <= 0) return mins > -15 ? 'starting now' : '';" in js and D.STARTING_NOW_MIN == 15
     assert "tap('seen')" in js and 'need = 5000' in js and 'visibilitychange' in js and "'/api/t'" in js
 
 

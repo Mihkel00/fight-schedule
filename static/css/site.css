@@ -156,7 +156,8 @@ svg.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
      placed with its face near the middle of its half and the face's centre at --fyt of the height, clamped so it
      covers the half wherever it is large enough. Where it still cannot cover, its edges inside the half fade
      (straight, --F) into a darkened, blurred copy of the same file (.bf) filling the half; a file too short for
-     its half (sh) carries on with its own top and bottom rows stretched out instead (.bt, .bb: no enlarged face).
+     its half (sh) carries on with its own top and bottom rows stretched out instead (.bt, .bb: no enlarged face),
+     and always covers its half's width, past the 1.25x cap if it must (no framed box on a wide poster).
    A cut-out (no surroundings) stands on the surface, sized by its face (--Mtc), its cut lower edge faded.
    A missing photo: the half is the plain surface; the other photo fades into it over 40 % of its half.
    ========================================================= */
@@ -241,7 +242,11 @@ svg.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
    photo's own top and bottom rows (the outer 4 %) stretched out from its edges to the half's top and bottom (.bt,
    .bb, across the half's width): the backdrop above the head carries on as shadow, and no enlarged copy of the face
    shows above or below the head. The face-anchored copy (.bf) stays underneath only for a sliver at the sides. */
-.ph.sh { --F: 36px; }
+/* It always covers its half's WIDTH (within x0..x1), past the 1.25x cap when it must (Puello's 299 px file on the fight
+   page's 477 px half: 1.6x): the stretched rows run across the half's width, so where the photo stopped short of
+   the half's sides their straight top and bottom edges cut across the blurred copy and the photo sat in a framed box
+   (QA 2026-10-14). A softer photo is the lesser cost; such files are on the image review page's replace list. */
+.ph.sh { --F: 36px; --Wi: max(min(var(--sw) * 1.25px, max(var(--Wc), var(--Wf))), var(--HW) / (var(--x1) - var(--x0))); }
 .card .ph.sh, .solo .ph.sh { --fyt: .3; }
 .ph.sh img.bt, .ph.sh img.bb { --f: .04; --pad: 24px;
   --bl: calc(min(var(--L), 0px) - 10px); left: var(--bl); width: calc(max(var(--L) + var(--Wi), var(--HW)) + 10px - var(--bl)); height: var(--Hb);

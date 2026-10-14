@@ -4,6 +4,8 @@ site_pages.fight_view() and templates/_fight.html. The SEO head and the JSON-LD 
 import json
 import re
 
+import time_machine
+
 import app as A
 import design as D
 import photos
@@ -149,6 +151,48 @@ def test_live_card_says_so():
     h = _render(_view(_fight(date='2026-10-02', time='11:00')))
     assert 'Under way' in h and 'Watch live on DAZN' in h and '<span class="live">' in h
     assert 'since <time class="fight-time short" datetime="2026-10-02T11:00Z"' in h
+
+
+def test_time_states_at_every_boundary():
+    """Before, at, during and just after the live window, after midnight UTC and with a result: the page never says
+    "starting now" next to "Yesterday" or keeps the upcoming layout once the card is over (QA 2026-10-14)."""
+    card = dict(date='2026-10-17', time='18:00')           # boxing: live for design.LIVE_HOURS['Boxing'] = 5 h
+    r = {'outcome': 'win', 'winner': 'Daniel Dubois', 'loser': 'Fabio Wardley', 'method': 'KO', 'round': '4', 'time': '1:10'}
+    cases = [
+        ('2026-10-16T19:00:00Z', {}, 'up', 'in 23 h 0 min'),
+        ('2026-10-17T17:59:30Z', {}, 'up', 'starting now'),
+        ('2026-10-17T18:10:00Z', {}, 'live', None),
+        ('2026-10-17T22:59:00Z', {}, 'live', None),
+        ('2026-10-17T23:00:00Z', {}, 'pending', None),       # the live window is over; the day is not (UTC)
+        ('2026-10-17T23:59:00Z', {}, 'pending', None),
+        ('2026-10-18T09:00:00Z', {'is_past': True}, 'pending', None),
+        ('2026-10-17T23:30:00Z', {'result': r}, 'result', None),
+    ]
+    for at, kw, want, cd in cases:
+        with time_machine.travel(at, tick=False):
+            fv = _view(_fight(**card, **kw))
+            h = _render(fv)
+        where = f'{at} {kw}'
+        assert 'starting now' not in h or want == 'up', where
+        if want == 'up':
+            assert not fv['past'] and fv['countdown'] == cd and 'Watch on DAZN' in h, where
+            assert f'data-countdown="2026-10-17T18:00Z">{cd}</span>' in h, where
+        elif want == 'live':
+            assert fv['state'] == 'live' and 'Under way' in h and 'Watch live on DAZN' in h, where
+            assert 'data-countdown' not in h, where
+        else:
+            assert fv['past'] and fv['state'] == 'done' and 'data-countdown' not in h, where
+            assert 'Watch on' not in h and 'Add to calendar' not in h and 'class="wrap fp boxing past' in h, where
+            if want == 'pending':
+                assert '<b class="code pend">Result pending</b>' in h, where
+            else:
+                assert '<b class="code">KO</b>' in h and '<b>Dubois</b> won' in h, where
+    # a UFC card: 3.5 h from the main card's start; its prelims the evening before (UTC)
+    with time_machine.travel('2026-10-18T09:00:00Z', tick=False):
+        fv = _view(_fight(sport='UFC', fighter1='Brendan Allen', fighter2='Christian Leroy Duncan', date='2026-10-18',
+                          time='02:00', streaming=None), sport='UFC', event_name='UFC Fight Night', label='Main card')
+        h = _render(fv)
+    assert fv['past'] and 'starting now' not in h and 'Result pending' in h and 'Where to watch' not in h
 
 
 def test_h1_keeps_its_words_and_the_column_shows_the_design_label():

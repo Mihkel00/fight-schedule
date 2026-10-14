@@ -700,8 +700,11 @@ def fight_view(sport, main, groups, event, slug):
     if main not in bouts_all:
         groups = [(groups[0][0], [main] + list(groups[0][1]))] + list(groups[1:])
     e['undercard'] = [b for _, bs in groups for b in bs if b is not main]
-    past = bool(e.get('is_past'))
+    # past: the store's flag (set once the day is over in UTC), or the card's live window is over
+    # (design.LIVE_HOURS after the listed start) or it has a result. From then on the page shows the result, or
+    # "Result pending", never the upcoming layout with its start time, countdown and Watch button.
     state = design.fight_state(e, now)
+    past = bool(e.get('is_past')) or state == 'done'
     if past:
         state = 'done'
     sc = design.sport_class(e)

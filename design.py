@@ -482,14 +482,20 @@ def rel_day(day, today):
     return f'{-n} days ago'
 
 
+# 'starting now' is said from the start until this many minutes after it, then nothing (a page left open; a
+# fresh page says "Under way" by then). Mirrored in static/js/site.js cdText().
+STARTING_NOW_MIN = 15
+
+
 def countdown(start, now=None):
     """The hours countdown, only inside the last 24 hours: 'in 9 h 12 min',
-    'in 42 min', 'starting now'; '' further out or without a time."""
+    'in 42 min', 'starting now' (until STARTING_NOW_MIN after the start); ''
+    further out, once the card is on, or without a time."""
     if not start:
         return ''
     mins = int((start - (now or now_utc())).total_seconds() // 60)
     if mins <= 0:
-        return 'starting now'
+        return 'starting now' if mins > -STARTING_NOW_MIN else ''
     if mins >= 1440:
         return ''
     h, m = divmod(mins, 60)

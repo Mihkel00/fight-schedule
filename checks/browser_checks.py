@@ -4,7 +4,8 @@ or JS").
 
 They test behaviour, not looks, and read what a visitor sees (MISTAKES.md 2026-09-30: never the flag the code set):
   1. every page at phone, tablet and desktop widths: no script errors, no sideways scroll, one <h1>, no link inside
-     a link, no photo left invisible, the 404 page answers 404
+     a link, no photo left invisible, the 404 page answers 404, no small photo short of its half's width, no
+     countdown after the start and none on a card that is over
   2. time zones, New York (12-hour clock) against Tallinn (24-hour): every time, date, day heading, day count, group
      ("This week" / "Next week" / "Later"), night hint ("Sat–Sun night") and clock-change row is checked against the
      visitor's own zone (MISTAKES.md 2026-09-29: two non-UTC zones, the full visible date + time), including the
@@ -22,6 +23,7 @@ Usage (start a server on a copy of live data first; CLAUDE.md "Test with a copy 
   DATA_DIR=<copy> python app.py                       # or any local server
   python checks/browser_checks.py --base http://127.0.0.1:5000 --clock 2026-10-13T21:00:00Z
       [--empty http://127.0.0.1:5001]                  a server whose boxing schedule is empty
+      [--path /boxing-event/...]                       another page for section 1 (repeatable)
       [--alt http://127.0.0.1:5002@2026-10-17T21:30:00Z]  a server frozen at another moment (repeatable): the
                                                        time-zone checks again (e.g. a fight under way after the
                                                        visitor's midnight, or a night fight a week ahead)
@@ -50,6 +52,8 @@ ap.add_argument('--empty', default=None, help='a server whose boxing schedule is
 ap.add_argument('--alt', action='append', default=[], metavar='URL@CLOCK',
                 help='a server frozen at another moment, and that moment (repeatable): the time-zone checks again')
 ap.add_argument('--only', default='pages,tz,clicks,misc', help='sections to run (default: all): pages,tz,clicks,misc')
+ap.add_argument('--path', action='append', default=[], help='another page for section 1 (repeatable), e.g. a fight '
+                'page whose card ended a moment ago (with --clock at that moment) or a poster with a small photo')
 args = ap.parse_args()
 ONLY = set(args.only.split(','))
 CHROMIUM = os.environ.get('CHROMIUM', '/opt/pw-browsers/chromium')
@@ -379,7 +383,8 @@ def tz_suite(br, base, clock, label):
         cands = []
         for r in home_t['flat']:
             s = utc_start(r.get('date'), r.get('utc'))
-            if r['kind'] == 'ev' and s and s.astimezone(tl).hour < 6 and s.astimezone(ny).hour >= 17:
+            # (not a fight under way: its row says LIVE, with no night hint)
+            if r['kind'] == 'ev' and not r['live'] and s and s.astimezone(tl).hour < 6 and s.astimezone(ny).hour >= 17:
                 lt = s.astimezone(tl)
                 cands.append(((lt.weekday() != 6, abs(lt.hour - 2)), r, s))
         if not cands:
@@ -477,7 +482,7 @@ with sync_playwright() as p:
         fail('the home page lists no fights (a.ev-main)')
     pick = [next((l for l in up if l.startswith(pre)), None) for pre in ('/event/', '/boxing-event/')]
     pick += [next((l for l in past if l.startswith(pre)), None) for pre in ('/event/', '/boxing-event/')]
-    pages = ['/', '/ufc', '/boxing', '/results', '/privacy', '/no-such-fight-page'] + [x for x in pick if x]
+    pages = ['/', '/ufc', '/boxing', '/results', '/privacy', '/no-such-fight-page'] + [x for x in pick if x] + args.path
     if 'pages' in ONLY:
         for size_name, size in (('phone', PHONE), ('tablet', TABLET), ('desktop', DESKTOP)):
             ctx = new_ctx(br, size)
@@ -507,6 +512,23 @@ with sync_playwright() as p:
                     fail(f'{tag}: {len(hidden)} photos arrived but stay invisible {hidden[:2]}')
                 if 'UTC' in ''.join(pg.eval_on_selector_all('time.fight-time', 'ts => ts.map(t => t.textContent)')):
                     fail(f'{tag}: a time still reads UTC after the script ran')
+                # a file too short for its half covers the half's width (else its stretched rows framed it in a box)
+                short = pg.evaluate("""[...document.querySelectorAll('.ph.sh:not(.vacant)')].map(ph => {
+                    const h = ph.getBoundingClientRect(), i = ph.querySelector('img.pi');
+                    if (!i || !h.width) return null;
+                    const r = i.getBoundingClientRect();
+                    return (r.left > h.left + 1 || r.right < h.right - 1) ? i.getAttribute('src') + ' ' + Math.round(r.left - h.left) + 'px/' + Math.round(h.right - r.right) + 'px' : null;
+                }).filter(Boolean)""")
+                if short:
+                    fail(f'{tag}: a small photo stops short of its half (left/right gap) {short[:2]}')
+                # the countdown: a freshly loaded page has none for a card that started (the server renders it only
+                # before the start; give --clock the server's moment), and none on a card that is over
+                stale = pg.evaluate("""[...document.querySelectorAll('[data-countdown]')].filter(c =>
+                    Date.parse(c.dataset.countdown) < Date.now() - 15 * 60000).map(c => c.dataset.countdown + ' "' + c.textContent + '"')""")
+                if stale:
+                    fail(f'{tag}: a countdown for a card that started {stale[:2]}')
+                if pg.locator('.fp.past [data-countdown], .fp.past .watch-panel').count():
+                    fail(f'{tag}: a card that is over still shows its countdown or Where to watch')
                 pg.close()
             ctx.close()
         print('1. pages: done')
@@ -710,6 +732,17 @@ with sync_playwright() as p:
                 fail('consent bar still shown after Decline')
             if pg.evaluate('!!window.gtag'):
                 fail('Google Analytics loaded after Decline')
+            # the footer's "Cookie settings" brings the bar back (Accept / Decline), focus on it, the page stays
+            got = beacons_of(pg)
+            pg.locator('.page-foot [data-consent-open]').click(); pg.wait_for_timeout(300)
+            if not pg.locator('#fs-consent').is_visible() or pg.url.rstrip('/') != B.rstrip('/'):
+                fail(f'footer Cookie settings: bar shown {pg.locator("#fs-consent").is_visible()}, now on {pg.url}')
+            elif not pg.evaluate("!!document.activeElement.closest('#fs-consent')"):
+                fail('footer Cookie settings: focus is not on the consent bar')
+            else:
+                ok('footer Cookie settings reopens the consent bar')
+            if not any(b.get('name') == 'foot_link' and b.get('detail') == 'Cookie settings' for b in got):
+                fail(f'footer Cookie settings: no foot_link tap ({got[-2:]})')
         ctx.close()
 
         ctx = new_ctx(br, PHONE, reduced_motion='reduce')

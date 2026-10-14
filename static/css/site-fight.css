@@ -29,6 +29,9 @@
 .fh { --hr: 12px; }
 .fh .ph:not(.vacant) { --T: clamp(min(0px, 100cqh - var(--Hi)), max(var(--Tt), var(--hr) - var(--cy, 0) * var(--Hi)), var(--sh) * max(0px, 100cqh - var(--Hi))); }
 .fh .ph.cut { --T: max(var(--Tt), var(--hr) - var(--cy, 0) * var(--Hi)); }
+/* a file too short for the poster (sh; site.css): the gap under it is taller here than on the home card, so its lower
+   edge falls off over up to 96 px into its own stretched bottom rows, not in a 36 px band */
+.fh .ph.sh:not(.vacant) { --Fb: clamp(0px, (100cqh - var(--T) - var(--Hi)) * 8, 96px); }
 /* a close-up sized by its face (build.py FACE_SIZED): no wider than covering the card's height, so its face is not
    blown up to cover the half's width (Prat: 89 px eye-to-mouth at 520, as on the approved home page, against 123 px
    in round 1); never shorter than the card (no floating patch with soft edges all round), flush with the card's outer
