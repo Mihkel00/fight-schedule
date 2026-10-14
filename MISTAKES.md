@@ -6,6 +6,24 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — Removed most fighter photos while cleaning up duplicates
+
+**What happened:** In the "one coherent page" rebuild I deleted the big-fight
+photo tiles (they repeated table rows) and limited faces to a handful of big
+fights, on desktop and phone. The page lost most of its photos. The owner,
+who chose the photo poster look, asked "what happened to the images?". My
+report mentioned the removals only as tidy-ups, not as "most photos are gone".
+
+**Root cause:** I applied a design rule (no repeats, one consistent emphasis)
+without weighing it against what the owner had said he values most, the
+fighter photos. I also described the change by its mechanism ("tiles section
+is gone") instead of by what a visitor sees ("the page has almost no
+photos").
+
+**Rule:** Before removing or shrinking something the owner has said he likes,
+state the trade-off in visitor terms and ask, or keep it in another form.
+Describe every change by what the visitor sees, not by the component removed.
+
 ## 2026-10-14 — Fixed the duplicate table but left a duplicate control (nav + sport toggle)
 
 **What happened:** After the owner pointed out the two schedule tables, I
