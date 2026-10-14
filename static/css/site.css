@@ -1,7 +1,7 @@
 /* fightschedule.live — the site's design system (approved 2026-10-14; ported from the redesign mocks:
    landing/hybrid4/hybrid.css with its generated card block frozen in place, plus the shared parts of the list and
    fight pages' CSS). Markup: templates/_ui.html macros. Logic: design.py. Behaviour: static/js/site.js.
-   Page-only rules live in site-<page>.css files. Admin pages keep Tailwind (styles.css) and never load this file.
+   Page-only rules live in site-<page>.css files. Admin pages use Flask-Admin's Bootstrap and never load this file.
 
    ONE composition on ONE grid: 12 columns, 1360px max content, 40px outer margins at 1440, 24px column gaps.
    Desktop >= 1024px: header (one 64px row) -> the next big fights (two poster cards, or one) -> ONE schedule table

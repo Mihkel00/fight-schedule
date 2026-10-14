@@ -120,21 +120,30 @@ def test_robots_disallows_private_paths(client):
         assert f'Disallow: {p}' in rb
 
 
-def test_sport_label_is_coloured_text_without_dot(client):
+def test_sport_is_a_coloured_tick_without_dot(client):
+    # the redesign marks the sport with a coloured tick before each time (site.css .tm::before), never a dot
+    # (retargeted 2026-10-14 from the retired list.css, which no page loads any more)
     h = client.get('/').get_data(as_text=True)
     assert 'class="dot"' not in h
-    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'list.css')).read()
-    assert '.ev.ufc .tag { color: var(--ufc); }' in css and '.ev.boxing .tag { color: var(--box); }' in css
+    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'site.css')).read()
+    assert '.ufc { --sport: var(--ufc); }' in css and '.boxing { --sport: var(--box); }' in css
+    assert 'background: var(--sport, var(--t3)); }' in css
 
 
 def test_photos_are_black_and_white_with_green_winner_ring():
-    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'list.css')).read()
-    assert '.av:not(.ph), .rc img, .hero img:not(.ph) { filter: grayscale(1)' in css
+    # retargeted 2026-10-14 from list.css and _list.html (retired) to site.css and _ui.html's res_face
+    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'site.css')).read()
+    assert 'filter: grayscale(1) brightness(var(--b, .95)) contrast(var(--c, 1.05))' in css, 'poster photos'
+    assert 'filter: grayscale(1) brightness(1.18) contrast(1.18)' in css, 'round faces'
+    assert '.won-ring { box-shadow: 0 0 0 2px var(--rg, var(--bg)), 0 0 0 4px var(--win); }' in css
+    assert '--win: #22C55E;' in css
     with A.app.app_context():
-        t = A.app.jinja_env.from_string("{% from '_list.html' import face %}"
-                                        "{{ face('A', '/a.png', 'UFC', 'av won') }}|{{ face('B', '/b.png', 'UFC', 'av b won') }}"
-                                        "|{{ face('C', '/c.png', 'UFC', 'av lost') }}")
+        t = A.app.jinja_env.from_string(
+            "{% import '_ui.html' as ui %}"
+            "{{ ui.res_face({'name': 'A', 'img': '/a.png', 'won': true, 'lost': false, 'second': false}) }}"
+            "|{{ ui.res_face({'name': 'B', 'img': '/b.png', 'won': true, 'lost': false, 'second': true}) }}"
+            "|{{ ui.res_face({'name': 'C', 'img': '/c.png', 'won': false, 'lost': true, 'second': true}) }}")
         a, b, c = [x.strip() for x in t.render().split('|')]
     assert a.startswith('<span class="won-ring"><img class="av won"') and a.endswith('</span>')
     assert b.startswith('<span class="won-ring b"><img class="av b won"')
-    assert c.startswith('<img class="av lost"')
+    assert '<img class="av b lost"' in c and 'lostf' in c
