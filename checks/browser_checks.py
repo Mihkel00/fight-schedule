@@ -521,6 +521,19 @@ with sync_playwright() as p:
                 }).filter(Boolean)""")
                 if short:
                     fail(f'{tag}: a small photo stops short of its half (left/right gap) {short[:2]}')
+                # repeated cards keep one rhythm: within a day, every gap between neighbouring cards is the same, and
+                # on phones and tablets (separate cards) it is a visible gap (MISTAKES 2026-10-14: the 1st and 2nd
+                # card of a day touched)
+                gaps = pg.evaluate("""[...document.querySelectorAll('.day')].map(d => {
+                    const ev = [...d.querySelectorAll(':scope > .ev')].filter(e => e.getClientRects().length);
+                    const g = [];
+                    for (let i = 1; i < ev.length; i++)
+                        if (ev[i - 1].nextElementSibling === ev[i])
+                            g.push(Math.round(ev[i].getBoundingClientRect().top - ev[i - 1].getBoundingClientRect().bottom));
+                    return g; }).filter(g => g.length)""")
+                uneven = [g for g in gaps if len(set(g)) > 1 or (size_name != 'desktop' and min(g) < 4)]
+                if uneven:
+                    fail(f'{tag}: uneven or missing gaps between cards of one day {uneven[:3]}')
                 # the countdown: a freshly loaded page has none for a card that started (the server renders it only
                 # before the start; give --clock the server's moment), and none on a card that is over
                 stale = pg.evaluate("""[...document.querySelectorAll('[data-countdown]')].filter(c =>

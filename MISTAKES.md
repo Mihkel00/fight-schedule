@@ -6,6 +6,23 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — No gap between the first two fights of the same day (phone)
+
+**What happened:** On phones, the first and second fight cards of a day
+touched with no gap. Later cards had their 8px gap. The owner spotted it after
+the build was pushed. It was already in the approved mock and in every review
+screenshot.
+
+**Root cause:** `.day > .ev:nth-child(2 of .ev) { margin-top: 0 }` was meant to
+remove the margin of the first card under the day heading, but "2 of .ev"
+counts only cards, so it hit the second card. Nobody inspected a day with
+several cards closely, and the automated checks measured overflow and
+contrast, never the spacing between repeated items.
+
+**Rule:** Check repeated items in a group with at least three items: the gap
+between the 1st and 2nd item must equal the gap between the 2nd and 3rd. The
+browser checks measure it.
+
 ## 2026-10-14 — The poster's card-wide link still failed on phones, tablets and real clicks
 
 **What happened:** The fixed card-wide link (whole poster opens the fight page)
