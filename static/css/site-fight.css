@@ -436,3 +436,23 @@
   .tape.side col.cl { width: 32%; }
   .tape.side tbody th { white-space: nowrap; letter-spacing: .03em; }
 }
+
+/* =========================================================
+   THE FIGHT CARD WITHOUT FACES (owner, 2026-10-14: undercard fighters need no pictures; the main event has the
+   poster). The rows, box scores and Result pending rows drop the face slots; names start on the column edge.
+   ========================================================= */
+.bout .bn .f { grid-template-columns: minmax(0, 1fr); }
+.bout .bn .vs { margin-left: 0; }
+.bout .bn .sn { font-size: max(17px, min(22px, calc(100cqi / var(--em-s) / 1.03))); }
+.bout .bk { margin-left: 0; }
+.fcard .pl-row { grid-template-columns: minmax(0, 1fr); grid-template-areas: "n" "k"; }
+.fcard .bx .bx-n { gap: 6px; }
+@media (min-width: 700px) {
+  .bout:not(.bx):not(.ptr):not(.pl-row) { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n rt" "k rt"; }
+  .bout.ptr .ptr-n { padding-left: 0; }
+}
+@media (min-width: 1024px) {
+  .bout:not(.bx):not(.ptr):not(.pl-row) { grid-template-columns: subgrid; grid-template-areas: none; }
+  .bout:not(.bx) .bn, .bout:not(.bx) .bk, .bout.ptr .ptr-n { padding-left: 0; }
+  .fcard .pl-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n k"; }
+}

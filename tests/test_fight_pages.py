@@ -131,7 +131,9 @@ def test_decided_bouts_are_box_scores_in_card_order():
     h = _render(_view(main, [bout]))
     box = h.split('<li class="bout bx')[1].split('</li>')[0]
     assert box.index('Souza') < box.index('Godínez'), 'fighter1 first, as the approved fight page'
-    assert '<span class="won-ring b"><img class="av b won"' in box and '<span class="wtag" aria-hidden="true">W</span>' in box
+    # changed 2026-10-14 (owner): undercard bouts carry no faces; the winner is marked by the W tag
+    assert '<span class="wtag" aria-hidden="true">W</span>' in box
+    assert 'class="face' not in box and 'won-ring' not in box and '<img' not in box, 'no faces on undercard bouts'
     assert '<b class="code">UD</b>' in box and '<a ' not in box, 'a bout is not a link'
     assert '<h2 id="fight-card">Results</h2>' in h
 

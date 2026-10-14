@@ -112,10 +112,11 @@
 {#- ---------------------------------------------------------------- the fight card -#}
 {%- macro _em(b) -%}{{ [ds.full_em(b.fighter1), ds.full_em(b.fighter2)]|max }}{%- endmacro %}
 
-{#- Upcoming: the home page's table row anatomy (the pair of faces, the names, the weight under them); phone: a face
-    beside each stacked name, a small vs between them. -#}
+{#- Upcoming: the home page's table row anatomy without faces (the owner, 2026-10-14: undercard fighters need no
+    pictures; the main event has the poster): the names, the weight under them; phone: the names stacked, a small vs
+    between them. -#}
 {%- macro bout_row(b, fv) -%}
-<li class="bout {{ fv.sc }}" style="--em-s:{{ _em(b) }}">{{ ui.pair(b) }}<p class="bn"><span class="f a">{{ ui.face(b.fighter1, b.fighter1_image, ' pm') }}{{ full_nm(b.fighter1) }}</span> <i class="vs">vs</i> <span class="f b">{{ ui.face(b.fighter2, b.fighter2_image, ' pm') }}{{ full_nm(b.fighter2) }}</span></p>
+<li class="bout {{ fv.sc }}" style="--em-s:{{ _em(b) }}"><p class="bn"><span class="f a">{{ full_nm(b.fighter1) }}</span> <i class="vs">vs</i> <span class="f b">{{ full_nm(b.fighter2) }}</span></p>
 {%- if b.kick %}<p class="bk"><span class="kick">{{ b.kick }}</span></p>{% endif %}</li>
 {%- endmacro %}
 
@@ -124,8 +125,9 @@
 <li class="bout ptr {{ fv.sc }}"><p class="ptr-n"><span class="vh">{{ b.fighter1 }} vs {{ b.fighter2 }}{% if b.kick %}, {{ b.kick }}{% endif %}</span><span aria-hidden="true">{{ ds.surname(b.fighter1) }} <i>vs</i> {{ ds.surname(b.fighter2) }}</span></p><a class="ptr-go" href="#fight-h">{{ 'Main event · result above' if (fv.past and b.result) else 'Main event · above' }} {{ ui.icon('up') }}</a></li>
 {%- endmacro %}
 
-{#- A decided bout: the home page's box score in the card's order (the winner's face in the green ring and the W
-    tag, the loser greyed; the method code, round and time, the words). Not a link: a bout has no page of its own. -#}
+{#- A decided bout: the home page's box score in the card's order, without faces (undercard fighters need no
+    pictures): the W tag on the winner, the loser greyed; the method code, round and time, the words. Not a link: a
+    bout has no page of its own. -#}
 {%- macro bout_box(b, fv, span=none) -%}
 {%- set r = b.result -%}
 {%- set mp = ds.method_parts(r) or ('', '', '') -%}
@@ -134,14 +136,14 @@
 {%- if b.kick or fv.box_kick %}<p class="bx-k"><span class="kick">{{ b.kick or ('&#160;'|safe) }}</span></p>{% endif -%}
 <div class="bx-main"><span class="vh">{{ b.fighter1 }} vs {{ b.fighter2 }}. {{ ds.result_text(b) }}</span><span class="bx-n" aria-hidden="true">
 {%- for s in ds.result_sides(b)|sort(attribute='second') -%}
-<span class="bl{{ ' w' if s.won }}{{ ' l' if s.lost }}">{{ ui.res_face(s) }}{{ full_nm(s.name) }}{% if s.won %}<span class="wtag" aria-hidden="true">W</span>{% endif %}</span>
+<span class="bl{{ ' w' if s.won }}{{ ' l' if s.lost }}">{{ full_nm(s.name) }}{% if s.won %}<span class="wtag" aria-hidden="true">W</span>{% endif %}</span>
 {%- endfor -%}
 </span></div><p class="bx-r" aria-hidden="true"><b class="code">{{ mp[0] or '—' }}</b><span class="dt">{{ mp[1] }}</span></p><p class="bx-w" aria-hidden="true">{{ mp[2] }}</p></li>
 {%- endmacro %}
 
-{#- A past bout with no result yet: the home page's Result pending row (the pair, the names, the weight). -#}
+{#- A past bout with no result yet: the home page's Result pending row without faces (the names, the weight). -#}
 {%- macro bout_pend(b, fv) -%}
-<li class="bout pl-row {{ fv.sc }}" style="--em-s:{{ _em(b) }}">{{ ui.pair(b) }}<p class="pl-n"><span class="vh">{{ b.fighter1 }} vs {{ b.fighter2 }}. {{ fv.pending_label }}.</span><span aria-hidden="true">{{ full_nm(b.fighter1) }} <i>vs</i> {{ full_nm(b.fighter2) }}</span></p>{% if b.kick %}<span class="pl-k">{{ b.kick }}</span>{% endif %}</li>
+<li class="bout pl-row {{ fv.sc }}" style="--em-s:{{ _em(b) }}"><p class="pl-n"><span class="vh">{{ b.fighter1 }} vs {{ b.fighter2 }}. {{ fv.pending_label }}.</span><span aria-hidden="true">{{ full_nm(b.fighter1) }} <i>vs</i> {{ full_nm(b.fighter2) }}</span></p>{% if b.kick %}<span class="pl-k">{{ b.kick }}</span>{% endif %}</li>
 {%- endmacro %}
 
 {#- Upcoming: groups of rows (Main card 21:00 / Prelims 19:00), the main event as the pointer. Past: in each group
