@@ -6,6 +6,92 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — The poster's card-wide link still failed on phones, tablets and real clicks
+
+**What happened:** The fixed card-wide link (whole poster opens the fight page)
+still missed the photos on phone and tablet, where the photos sit above the
+link's containing block. On desktop a real mouse click or tap also failed:
+`.btn:active { transform: scale(.97) }` made the button the containing block of
+its `::after` between mouse-down and mouse-up. Both were found while building
+the redesign into the site, after the earlier check had reported "works".
+
+**Root cause:** The hit area was checked with `elementFromPoint` at rest and at
+the breakpoint that had just been fixed. Each breakpoint has its own containing
+block, and states that exist only during interaction (`:active`, `:hover`,
+`:focus`) can change it too.
+
+**Rule:** Card-wide links are tested with real input (mouse click and touch tap
+on the photo, names and time) at phone, tablet and desktop widths, asserting
+that the link is followed and the tap counted. The anchor gets no transform or
+filter in any state (tests/test_site_behaviour.py; checks/browser_checks.py).
+
+## 2026-10-14 — Taps whose text contained "&" or brackets were never counted
+
+**What happened:** Footer taps such as "Privacy & cookies" (and in the
+redesign "UFC events (.ics)") were sent with their raw link text. /api/t drops
+a tap whose detail fails `usage._DETAIL`, so those clicks were silently lost,
+before the redesign too.
+
+**Root cause:** The page's tap code and the server's validation were each
+tested only against themselves, never together.
+
+**Rule:** Every tap the page can send is checked against `usage.valid_tap` in
+the browser checks, and a test checks every tap name in site.js is in
+`usage.TAP_NAMES`.
+
+## 2026-10-14 — A fight page said "starting now" next to "Yesterday" after the card ended
+
+**What happened:** From the end of the live window until midnight UTC, the
+redesigned fight page kept its upcoming layout, countdown and Watch button, and
+showed "starting now". Found by the QA review before anything shipped.
+
+**Root cause:** Time states were checked before the start and during the
+fight, never in the gap between the live window and the store's `is_past` flag,
+which is only set after the UTC day ends.
+
+**Rule:** Every time-dependent state is checked at each boundary: before the
+start, at it, live, just after the live window, either side of midnight UTC,
+and with a result (tests/test_fight_pages.py
+`test_time_states_at_every_boundary`).
+
+## 2026-10-14 — The approved photo treatment broke on production photos and wider layouts
+
+**What happened:** On the wider fight-page poster, small files (Puello,
+Rahman, Zaren) sat in a framed box, Shea's blurred fill read as a grey slab (a
+rejected pattern), and some round face crops showed a grey band. The mocks had
+only been checked on their own sample photos at their own widths.
+
+**Root cause:** A treatment approved on a handful of photos at one width was
+reused at other widths and on every production photo without looking again.
+The 1.25x size cap, a quality guard, silently broke the approved rule that
+each photo fills its half.
+
+**Rule:** Before shipping a photo treatment, or moving it to a new width,
+render every live photo at every layout width as a brightened contact sheet
+and look at each tile. Crop and zoom formulas get unit tests at their
+extremes (faces at a file's edge, maximum zoom).
+
+## 2026-10-14 — Redesign build: three near-misses caught before commit
+
+**What happened:**
+- Adding design.py to app.py's `_OWNED` registry made `app.surname` silently
+  switch to design's version (the last module wins).
+- An ad-hoc script imported the app against the shared live-data copy without
+  the frozen clock. The app tried to scrape boxingschedule.co and wrote a
+  stray file into the copy.
+- `photo_meta()` can start background measuring, and the new tests raced with
+  a job they had not started.
+
+**Root cause:** Each time, something treated as a pure read or a plain list
+had a side effect or silent override.
+
+**Rule:**
+- Names owned in app.py are unique across modules (a test enforces it).
+- Any script that imports the app against live data freezes the clock and
+  patches `pipeline._refresh_cache` (as serve_design.py does).
+- A read path that can start background work has a switch that tests turn
+  off by default.
+
 ## 2026-10-14 — The landing mock's "whole card is the Fight card link" never worked on desktop
 
 **What happened:** In the hybrid landing mock, the hero cards were meant to be one
