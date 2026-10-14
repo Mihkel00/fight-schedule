@@ -1,91 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% include '_analytics.html' %}
+{#- /ufc and /boxing (approved redesign, 2026-10-14: landing/pages/lists): the sport's next big fights as poster cards,
+    ONE schedule table of that sport, then its results (box scores, Result pending, the older cards with no result
+    folded into one line) at #results. The nav item is the page's (current); no Upcoming / Results tabs: /ufc#results
+    lands on the results section.
+    Nothing listed: the "nothing here" message beside the other sport's next big fight (or the message alone).
+    SEO head unchanged from before the redesign. -#}
+{% extends '_base.html' %}
+{% import '_ui.html' as ui %}
+{% set nav_active = page.sport %}
+{% set sp = page.sport|lower %}
+{#- without JavaScript the dates are the UTC day (MISTAKES 2026-10-11: a date without a zone says UTC) -#}
+{% set nojs_utc = '<noscript> · dates in UTC</noscript>'|safe %}
+{% block head %}
+<title>{{ page.title }}</title>
+<meta name="description" content="{{ page.meta_description }}">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="{{ page.canonical_url }}">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ page.title }}</title>
-    <meta name="description" content="{{ page.meta_description }}">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="{{ page.canonical_url }}">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ page.canonical_url }}">
+<meta property="og:title" content="{{ page.title }}">
+<meta property="og:description" content="{{ page.meta_description }}">
+<meta property="og:image" content="https://fightschedule.live/static/og-image.png">
+<meta property="og:site_name" content="Fight Schedule">
 
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ page.canonical_url }}">
-    <meta property="og:title" content="{{ page.title }}">
-    <meta property="og:description" content="{{ page.meta_description }}">
-    <meta property="og:image" content="https://fightschedule.live/static/og-image.png">
-    <meta property="og:site_name" content="Fight Schedule">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ page.title }}">
+<meta name="twitter:description" content="{{ page.meta_description }}">
+<meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ page.title }}">
-    <meta name="twitter:description" content="{{ page.meta_description }}">
-    <meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
+<!-- Structured data: BreadcrumbList + ItemList of events -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://fightschedule.live/"},
+        {"@type": "ListItem", "position": 2, "name": "{{ page.breadcrumb|e }}"}
+    ]
+}
+</script>
+<script type="application/ld+json">{{ ld.item_list(page.title, all_events|map(attribute='url')|list)|tojson }}</script>
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/site-lists.css">{% endblock %}
+{% block body_class %}list sport-page {{ sp }}-page{% endblock %}
+{% block skip %}<a class="skip" href="#sched">Skip to the schedule</a>{% endblock %}
+{% block main %}
+{%- if all_events %}
+{{ ui.big_band(bigs, page.heading, placement=sp ~ '_lead', sport_said=(page.sport == 'Boxing')) }}
+<div class="wrap">
+{{ ui.schedule(sch, placement=sp ~ '_list') }}
+{{ results_section() }}
+</div>
+{%- else %}
+{#- nothing listed for this sport: the h1 alone (visually hidden), then the message and the other sport's next big
+    fight on one label line -#}
+{{ ui.big_band([], page.heading) }}
+{%- set word = 'boxing' if page.sport == 'Boxing' else 'UFC' %}
+{%- set msg %}<h2 class="mc-h" id="sched-t">No fights listed right now</h2><p class="mc-p">New {{ word }} cards appear here as soon as they are announced. The schedule is updated every {{ {6: 'six', 12: 'twelve', 24: '24'}.get(refresh_hours, refresh_hours) }} hours.</p><p class="mc-p">The {{ word }} calendar feed adds each new card to your calendar by itself, with start times in your time zone.</p><p class="mc-acts"><a class="btn sec" href="{{ page.ics_path }}">{{ ui.icon('cal') }}Add {{ word }} to your calendar</a></p>{% endset %}
+{%- if other %}
+{%- set lbl = 'Meanwhile in the UFC' if other[0].sport == 'UFC' else 'Meanwhile in boxing' %}
+<section class="mc em" id="sched" aria-labelledby="sched-t">
+  <p class="mc-k">Upcoming</p>
+  <p class="mc-lb" aria-hidden="true">{{ lbl }}</p>
+  <div class="mc-msg">{{ msg }}</div>
+  {{ ui.hero(other[0], 'c1', lbl, sp ~ '_empty_lead', 'lead', true) }}
+</section>
+{%- else %}
+<section class="mc em solo-msg" id="sched" aria-labelledby="sched-t"><p class="mc-k">Upcoming</p><div class="mc-msg">{{ msg }}</div></section>
+{%- endif %}
+<div class="wrap">
+{{ results_section() }}
+</div>
+{%- endif %}
+{% endblock %}
 
-    <!-- Structured data: BreadcrumbList + ItemList of events -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-            {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://fightschedule.live/"},
-            {"@type": "ListItem", "position": 2, "name": "{{ page.breadcrumb|e }}"}
-        ]
-    }
-    </script>
-    <script type="application/ld+json">{{ ld.item_list(page.title, all_events|map(attribute='url')|list)|tojson }}</script>
-
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <link rel="stylesheet" href="/static/css/list.css">
-</head>
-<body class="bg-dark-bg text-text-primary">
-    {% from '_site_header.html' import site_header %}
-    {% from '_list.html' import days_list %}
-    {{ site_header('') }}
-
-    <main class="home">
-        <div class="wrap">
-            <div class="page-title"><h1>{{ page.heading }}</h1> · <span id="timezone-display">times in your time zone</span></div>
-
-            <div class="seg" role="tablist" aria-label="Upcoming or results">
-                <button type="button" role="tab" data-tab="upcoming" aria-selected="true" aria-controls="tab-upcoming">Upcoming</button>
-                <button type="button" role="tab" data-tab="results" aria-selected="false" aria-controls="tab-results">Results</button>
-            </div>
-
-            <section id="tab-upcoming" role="tabpanel">
-                {{ days_list(days, 'upcoming', page.sport|lower ~ '_list', 'asc', 'No upcoming events right now — check back soon.', 'u', show_sport=false) }}
-            </section>
-            <section id="tab-results" role="tabpanel" hidden>
-                {{ days_list(recent_days, 'results', page.sport|lower ~ '_results', 'desc', 'No results in the last 30 days yet.', 'r', show_sport=false) }}
-            </section>
-
-            <p class="page-foot"><a href="{{ page.other_path }}">{{ page.other_label|capitalize }}</a> · <a href="/results">Results</a> · <a href="{{ page.ics_path }}">{{ page.sport }} calendar feed</a> · <a href="/privacy">Privacy &amp; cookies</a></p>
-            <p class="page-foot photo-note">Fighter photos: UFC, Wikimedia Commons and others. Credits on each fight page.</p>
-        </div>
-    </main>
-
-    <script src="/static/js/list.js"></script>
-    <script>
-        (function () {
-            var btns = document.querySelectorAll('.seg [data-tab]');
-            function show(tab) {
-                document.getElementById('tab-upcoming').hidden = tab !== 'upcoming';
-                document.getElementById('tab-results').hidden = tab !== 'results';
-                btns.forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-tab') === tab ? 'true' : 'false'); });
-                if (history.replaceState) history.replaceState(null, '', tab === 'results' ? '#results' : location.pathname);
-            }
-            btns.forEach(function (b) { b.addEventListener('click', function () { show(b.getAttribute('data-tab')); }); });
-            if (location.hash === '#results') show('results');
-        })();
-    </script>
-    {% include '_consent.html' %}
-</body>
-</html>
+{%- macro results_section() -%}
+<section class="rs rt" aria-labelledby="results-t" id="results">
+  {{ ui.sec_head('Results', 'results-t', 'Last 30 days' ~ nojs_utc) }}
+  {%- if recent_events %}
+  {{ ui.results_block(recent_events, uid='r') }}
+  {%- else %}
+  <p class="grp-none">No {{ 'boxing' if page.sport == 'Boxing' else 'UFC' }} results in the last 30 days yet.</p>
+  {%- endif %}
+</section>
+{%- endmacro %}

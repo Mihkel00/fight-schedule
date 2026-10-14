@@ -689,9 +689,11 @@ def hero_fights(events, today=None, tz=None, now=None, sport=None, limit=2):
     return big[:limit]
 
 
-def hero_view(e, kind='c1', tz=None, now=None):
+def hero_view(e, kind='c1', tz=None, now=None, sport_said=False):
     """Everything a poster card shows, from one event. kind: 'c1' / 'c2' (the
-    two cards) or 'solo' (the one big fight)."""
+    two cards) or 'solo' (the one big fight). sport_said: the page already
+    names the sport (/boxing), so a boxing card's small line does not start
+    with "Boxing" ("Heavyweight title · London"; the mock's drop_sport_word)."""
     now = now or now_utc()
     e = title_order(e)
     names = pair_fit(e)
@@ -711,6 +713,8 @@ def hero_view(e, kind='c1', tz=None, now=None):
         first, rest = kt or 'UFC', ([c] if c else [])
     else:
         first, rest = 'Boxing', ([kt] if kt else []) + ([c] if c else [])
+    if sport_said and sc == 'boxing' and first == 'Boxing' and rest:
+        first, rest = rest[0], rest[1:]
     sd = 1 if (kind != 'solo' and n_ph == 0) else names['sd']
     cls = ['rc', 'lead', 'hero', 'card' if kind != 'solo' else 'solo', kind if kind != 'solo' else '', sc, f'n{n_ph}',
            'is-live' if live else '', 'tba2' if names['tba2'] else '', 'sd' if (kind != 'solo' and sd) else '',

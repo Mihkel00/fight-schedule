@@ -19,8 +19,9 @@
       ph_half(p, side[, eager])                  one half of the split poster (p = ds.poster_half(path) or none)
       stage(e[, eager])                          both halves
       lockup(names[, tag, cls, id])              the fitted surnames ("DUBOIS vs WARDLEY")
-      hero(e[, kind, label, placement, hid, eager, h1, tag, tz])  one poster card: kind c1 / c2 / solo
-      big_band(bigs, h1[, tag, placement, labels, ids, eager, tz])  0, 1 or 2 big fights with the page's h1
+      hero(e[, kind, label, placement, hid, eager, h1, tag, tz, sport_said])  one poster card: kind c1 / c2 / solo
+      big_band(bigs, h1[, tag, placement, labels, ids, eager, tz, sport_said])  0, 1 or 2 big fights with the page's h1;
+                                                 sport_said: the page names the sport (/boxing: no "Boxing" first)
       ev_row(e, placement, uid[, tz])            a schedule row (desktop table row / phone card)
       ptr_row(e, hid)                            a hero fight's one-line pointer ("Featured above")
       dst_row(c)                                 a clock-change row (ds.clock_change)
@@ -179,8 +180,8 @@
 {#- One poster card. kind: 'c1' / 'c2' (two big fights) or 'solo' (one). The label ("Next big fight", "Then") is
     read by screen readers on the card and shown above it by big_band() at >= 1024 px. The whole card is one link to
     the fight page (the Fight card button's ::after); Watch sits above it. -#}
-{%- macro hero(e, kind='c1', label='Next big fight', placement='home_lead', hid='lead', eager=true, h1=none, tag='h1', tz=none) -%}
-{%- set v = ds.hero_view(e, kind, tz) -%}
+{%- macro hero(e, kind='c1', label='Next big fight', placement='home_lead', hid='lead', eager=true, h1=none, tag='h1', tz=none, sport_said=false) -%}
+{%- set v = ds.hero_view(e, kind, tz, sport_said=sport_said) -%}
 {%- set e = v.e -%}
 {%- set started = v.state in ('live', 'prelims') -%}
 <article class="{{ v.cls }}" id="{{ hid }}" data-sport="{{ e.sport }}" data-key="{{ ds.event_key(e) }}" style="{{ v.style }}">
@@ -219,16 +220,16 @@
 {#- The page's big-fight band: two or more big fights -> two poster cards (desktop 6 + 6 columns; phone: card 1
     the stacked poster, card 2 a smaller card); one -> the single poster (columns 1-8, its type beside it); none -> the
     h1 alone. The h1 is visually hidden (owner, 2026-10-14) and stays the page's one <h1>. -#}
-{%- macro big_band(bigs, h1, tag='h1', placement='home_lead', labels=('Next big fight', 'Then'), ids=('lead', 'lead2'), eager=true, tz=none) -%}
+{%- macro big_band(bigs, h1, tag='h1', placement='home_lead', labels=('Next big fight', 'Then'), ids=('lead', 'lead2'), eager=true, tz=none, sport_said=false) -%}
 {%- if bigs|length >= 2 -%}
 <section class="big-section duo-sec" aria-label="Next big fights">
 <div class="wrap duo-top"><div class="dt1"><{{ tag }} class="duo-h1">{{ h1 }}</{{ tag }}><span class="duo-lb" aria-hidden="true"><span class="dash">—</span>{{ _band_label(bigs[0], labels[0]) }}</span></div><div class="dt2 duo-lb" aria-hidden="true">{{ _band_label(bigs[1], labels[1]) }}</div></div>
-<div class="duo">{{ hero(bigs[0], 'c1', labels[0], placement, ids[0], eager, tz=tz) }}{{ hero(bigs[1], 'c2', labels[1], placement, ids[1], eager, tz=tz) }}</div>
+<div class="duo">{{ hero(bigs[0], 'c1', labels[0], placement, ids[0], eager, tz=tz, sport_said=sport_said) }}{{ hero(bigs[1], 'c2', labels[1], placement, ids[1], eager, tz=tz, sport_said=sport_said) }}</div>
 </section>
 {%- elif bigs -%}
 <section class="big-section solo-sec" aria-label="Next big fight">
 <div class="wrap duo-top"><div class="dt1"><{{ tag }} class="duo-h1">{{ h1 }}</{{ tag }}><span class="duo-lb" aria-hidden="true"><span class="dash">—</span>{{ _band_label(bigs[0], labels[0]) }}</span></div></div>
-{{ hero(bigs[0], 'solo', labels[0], placement, ids[0], eager, tz=tz) }}
+{{ hero(bigs[0], 'solo', labels[0], placement, ids[0], eager, tz=tz, sport_said=sport_said) }}
 </section>
 {%- else -%}
 <section class="big-section none" aria-label="Schedule"><div class="wrap duo-top"><{{ tag }} class="duo-h1">{{ h1 }}</{{ tag }}></div></section>

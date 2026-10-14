@@ -8,8 +8,9 @@ import affiliates as _aff
 import os
 import re
 from datetime import date, datetime, timedelta
-from flask import abort, redirect, render_template
+from flask import abort, redirect, render_template, request
 from core import app, logger
+import design
 import fight_store
 import formatting
 import photos
@@ -46,10 +47,24 @@ def _big_fights(events, today, limit=6, horizon_days=90):
     return big
 
 
+def _hero_and_schedule(events, limit=2, ids=('lead', 'lead2')):
+    """The next big fights for a page's poster cards (design.hero_fights) and
+    ONE schedule table of `events`, with the poster fights' rows as pointer
+    lines ("Featured above"). Server-rendered in UTC; site.js regroups it."""
+    bigs = design.hero_fights(events, limit=limit)
+    sch = design.schedule(events, lead_keys={design.event_key(b): hid for b, hid in zip(bigs, ids)})
+    return bigs, sch
+
+
+# The home's "Latest results" covers the last 10 days (the full 30 are on /results).
+HOME_RESULTS_DAYS = 10
+
+
 @app.route('/')
 def home():
     logger.info("--> Home page accessed")
-    fights = fight_store.upcoming_only(pipeline.fetch_fights())
+    all_fights = pipeline.fetch_fights()
+    fights = fight_store.upcoming_only(all_fights)
     logger.info(f"  Rendering {len(fights)} upcoming fights")
 
     events = (_group_events_for_landing(fights, 'UFC')[0] +
@@ -58,17 +73,15 @@ def home():
                                e['time'] if e['time'] and ':' in str(e['time']) else '99:99'))
     for e in events:
         e['slug'] = e['path'].rsplit('/', 1)[-1]
-    big = _big_fights(events, date.today())
+    big = _big_fights(events, date.today())     # the ItemList's order, as before the redesign
     for e in big:
         logger.info(f"  Big fight: {e['fighter1']} vs {e['fighter2']} ({e['date']})")
+    bigs, sch = _hero_and_schedule(events)
 
-    # Day sections as the server sees them (UTC). The browser regroups them by
-    # the visitor's local day; crawlers and no-JS visitors get this grouping.
-    days = []
-    for e in events:
-        if not days or days[-1]['date'] != e['date']:
-            days.append({'date': e['date'], 'events': []})
-        days[-1]['events'].append(e)
+    past = fight_store.recent_results(all_fights)
+    cutoff = (date.today() - timedelta(days=HOME_RESULTS_DAYS)).isoformat()
+    recent = [e for e in (_group_events_for_landing(past, 'UFC')[0] + _group_events_for_landing(past, 'Boxing')[0])
+              if (e['date'] or '') >= cutoff]
 
     # Every upcoming bout, for the search box
     search_fights = []
@@ -91,8 +104,8 @@ def home():
             'path': path,
         })
 
-    return render_template('index.html', events=events, big=big, days=days,
-                           search_fights=search_fights)
+    return render_template('index.html', events=events, big=big, bigs=bigs, sch=sch, recent=recent,
+                           recent_days=HOME_RESULTS_DAYS, search_fights=search_fights)
 
 
 _MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -224,17 +237,25 @@ def _day_sections(events, newest_first=False):
     return days
 
 
+def _sport_page_parts(fights, sport, all_events):
+    """The redesign's parts of a sport page: the poster cards and the schedule
+    table; with nothing listed, the other sport's next big fight for the
+    "nothing here" message (none -> the message alone)."""
+    bigs, sch = _hero_and_schedule(all_events)
+    other = []
+    if not all_events:
+        other_sport = 'Boxing' if sport == 'UFC' else 'UFC'
+        other = design.hero_fights(_group_events_for_landing(fight_store.upcoming_only(fights), other_sport)[0], limit=1)
+    return {'bigs': bigs, 'sch': sch, 'other': other,
+            'refresh_hours': int(fight_store.CACHE_DURATION.total_seconds() // 3600)}
+
+
 @app.route('/ufc')
 def ufc_schedule():
     """UFC schedule landing page."""
     fights = pipeline.fetch_fights()
-    all_events, months = _group_events_for_landing(fight_store.upcoming_only(fights), 'UFC')
-    recent_events, recent_months = _group_events_for_landing(fight_store.recent_results(fights), 'UFC')
-    recent_months = [{'label': m['label'],
-                      'events': sorted([e for e in m['events'] if e.get('result') or e.get('result_pending')],
-                                       key=lambda e: e['date'], reverse=True)}
-                     for m in reversed(recent_months)]
-    recent_months = [m for m in recent_months if m['events']]
+    all_events = _group_events_for_landing(fight_store.upcoming_only(fights), 'UFC')[0]
+    recent_events = _group_events_for_landing(fight_store.recent_results(fights), 'UFC')[0]
     now = datetime.now()
     page = {
         'sport': 'UFC',
@@ -251,23 +272,16 @@ def ufc_schedule():
         'other_path': '/boxing',
         'other_label': 'boxing schedule',
     }
-    days = _day_sections(all_events)
-    recent_days = _day_sections([e for e in recent_events if e.get('result') or e.get('result_pending')], newest_first=True)
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events,
-                           recent_months=recent_months, days=days, recent_days=recent_days)
+    return render_template('sport_schedule.html', page=page, all_events=all_events, recent_events=recent_events,
+                           **_sport_page_parts(fights, 'UFC', all_events))
 
 
 @app.route('/boxing')
 def boxing_schedule():
     """Boxing schedule landing page."""
     fights = pipeline.fetch_fights()
-    all_events, months = _group_events_for_landing(fight_store.upcoming_only(fights), 'Boxing')
-    recent_events, recent_months = _group_events_for_landing(fight_store.recent_results(fights), 'Boxing')
-    recent_months = [{'label': m['label'],
-                      'events': sorted([e for e in m['events'] if e.get('result') or e.get('result_pending')],
-                                       key=lambda e: e['date'], reverse=True)}
-                     for m in reversed(recent_months)]
-    recent_months = [m for m in recent_months if m['events']]
+    all_events = _group_events_for_landing(fight_store.upcoming_only(fights), 'Boxing')[0]
+    recent_events = _group_events_for_landing(fight_store.recent_results(fights), 'Boxing')[0]
     now = datetime.now()
     page = {
         'sport': 'Boxing',
@@ -284,10 +298,8 @@ def boxing_schedule():
         'other_path': '/ufc',
         'other_label': 'UFC schedule',
     }
-    days = _day_sections(all_events)
-    recent_days = _day_sections([e for e in recent_events if e.get('result') or e.get('result_pending')], newest_first=True)
-    return render_template('sport_schedule.html', page=page, months=months, all_events=all_events, recent_events=recent_events,
-                           recent_months=recent_months, days=days, recent_days=recent_days)
+    return render_template('sport_schedule.html', page=page, all_events=all_events, recent_events=recent_events,
+                           **_sport_page_parts(fights, 'Boxing', all_events))
 
 
 @app.route('/results')
@@ -594,3 +606,37 @@ PRIVACY_UPDATED = date(2026, 10, 6)
 def privacy():
     """Privacy and cookie policy page"""
     return render_template('privacy.html', updated=f"{PRIVACY_UPDATED.day} {PRIVACY_UPDATED:%B %Y}")
+
+
+# Addresses whose 404 stays the plain one: files, feeds, redirects, the API and admin (a missing photo or a bad
+# token needs no page).
+_PLAIN_404 = ('/static/', '/persisted-fighters/', '/api/', '/go/', '/admin', '/calendar', '/health',
+              '/indexnow-key.txt')
+
+
+def _not_found_parts():
+    """The next big fight and this week's schedule for the 404 page; ([], None) if anything goes wrong."""
+    try:
+        fights = fight_store.upcoming_only(pipeline.fetch_fights())
+        events = _group_events_for_landing(fights, 'UFC')[0] + _group_events_for_landing(fights, 'Boxing')[0]
+        bigs = design.hero_fights(events, limit=1)
+        sch = design.schedule(events, lead_keys={design.event_key(b): 'lead' for b in bigs}, only=('week',))
+        return bigs, sch
+    except Exception as exc:
+        logger.warning(f"404 page: no schedule ({exc})")
+        return [], None
+
+
+@app.errorhandler(404)
+def not_found(e):
+    """A page address that does not exist: the site's own "Not on the card" page (status 404, noindex) with the
+    next big fight and this week's fights. Files, feeds, the API and admin keep the plain 404."""
+    if request.method not in ('GET', 'HEAD') or request.path.startswith(_PLAIN_404):
+        return e
+    try:
+        bigs, sch = _not_found_parts()
+        path = request.path if len(request.path) <= 120 else request.path[:119] + '…'
+        return render_template('404.html', path=path, bigs=bigs, sch=sch), 404
+    except Exception as exc:          # the error page itself must never fail
+        logger.error(f"404 page failed: {exc}", exc_info=True)
+        return e

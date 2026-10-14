@@ -1,0 +1,31 @@
+{#- The 404 page (approved redesign, 2026-10-14: landing/pages/lists notfound): "Not on the card" with the address
+    that was asked for, beside the next big fight as the home's poster card (the empty sport page's composition), then
+    this week's fights. Status 404, noindex; rendered by site_pages.not_found. Without schedule data (bigs = [],
+    sch = none) the message stands alone. -#}
+{% extends '_base.html' %}
+{% import '_ui.html' as ui %}
+{% block head %}
+<title>Page not found | Fight Schedule</title>
+<meta name="robots" content="noindex">
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/site-lists.css">{% endblock %}
+{% block body_class %}list nf-page{% endblock %}
+{% block skip %}<a class="skip" href="#nf-h">Skip to the message</a>{% endblock %}
+{% block main %}
+{%- set msg %}<h1 class="mc-h nf-h" id="nf-h" tabindex="-1">Not on the card</h1><p class="mc-p">There is no page at <span class="nf-path">{{ path }}</span>.</p><p class="mc-p">The link may be mistyped or out of date: a fight page’s address changes when a card is renamed or moves to another date. Every upcoming fight is in the schedule, and Search finds any fighter or event.</p>{% endset %}
+{%- if bigs %}
+<section class="mc nf" aria-labelledby="nf-h">
+  <p class="mc-k">404<span class="sep" aria-hidden="true"> · </span>Page not found</p>
+  <p class="mc-lb" aria-hidden="true">Next big fight</p>
+  <div class="mc-msg">{{ msg }}</div>
+  {{ ui.hero(bigs[0], 'c1', 'Next big fight', 'notfound_lead', 'lead', true) }}
+</section>
+{%- else %}
+<section class="mc nf solo-msg" aria-labelledby="nf-h"><p class="mc-k">404<span class="sep" aria-hidden="true"> · </span>Page not found</p><div class="mc-msg">{{ msg }}</div></section>
+{%- endif %}
+{%- if sch %}
+<div class="wrap">
+{{ ui.schedule(sch, placement='notfound_list') }}
+</div>
+{%- endif %}
+{% endblock %}

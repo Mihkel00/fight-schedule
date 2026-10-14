@@ -25,7 +25,9 @@
     /* ---------- 0. usage counts ---------- */
     function tap(name, detail) {
         try {
-            var body = JSON.stringify({ name: name, detail: detail || null, page: location.pathname });
+            // the 404 page counts as '/404' (usage.page_type: 'other'), not as the page its mistyped address names
+            var page = doc.body && doc.body.classList.contains('nf-page') ? '/404' : location.pathname;
+            var body = JSON.stringify({ name: name, detail: detail || null, page: page });
             if (navigator.sendBeacon) navigator.sendBeacon('/api/t', new Blob([body], { type: 'application/json' }));
             else fetch('/api/t', { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' }, keepalive: true });
         } catch (e) {}

@@ -8,6 +8,7 @@ import app as A
 
 EV_LINK = re.compile(r'<a href="(/(?:event|boxing-event)/[^"]+)" class="ev-main"')
 TIME = re.compile(r'<time class="fight-time[^"]*" datetime="([^"]*)"[^>]*>([^<]*)</time>')
+DATE = re.compile(r'<time class="fdate[^"]*" datetime="([^"]*)"[^>]*>([^<]*)</time>')
 
 
 def _events(fights):
@@ -58,17 +59,26 @@ def test_pages_render_without_nested_links(client):
 
 
 def test_crawlers_see_utc_times_and_valid_datetimes(client):
-    for p in ('/', '/ufc', '/boxing', '/results'):
+    for p in ('/', '/ufc', '/boxing'):
         ts = TIME.findall(client.get(p).get_data(as_text=True))
         assert ts, p
         for d, t in ts:
             assert re.fullmatch(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?', d), (p, d)
             assert t.strip().endswith(' UTC') or t.strip().endswith('TBA'), (p, t)
+    # Results show the day each fight was (the redesign's box scores carry a date, not a start time): a <time> with
+    # a valid datetime, its text the server's (UTC) day, which the page's script shows in the visitor's zone.
+    for p in ('/', '/ufc', '/boxing', '/results'):
+        ds = DATE.findall(client.get(p).get_data(as_text=True))
+        assert ds or p != '/results', p
+        for d, t in ds:
+            assert re.fullmatch(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?', d), (p, d)
+            assert re.fullmatch(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2} [A-Z][a-z]{2}', t), (p, t)
 
 
 def test_ufc_event_page_leads_with_main_event_and_full_card(client, seeded_cache):
     h = client.get('/').get_data(as_text=True)
-    href = next(x for x in EV_LINK.findall(h) if 'ufc-332' in x)
+    # UFC 332 is the fixture day's next big fight: its link is the poster card's (its table slot is a pointer line)
+    href = next(x for x in re.findall(r'href="(/event/[^"#?]+)"', h) if 'ufc-332' in x)
     assert href.endswith('2026-10-04')
     r = client.get(href)
     assert r.status_code == 200

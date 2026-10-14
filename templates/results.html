@@ -1,53 +1,40 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% include '_analytics.html' %}
+{#- /results (approved redesign, 2026-10-14: landing/pages/lists): the last 30 days of both sports in ONE results
+    block, newest first: box scores (winner first in the green ring + W, the loser greyed, the method; "N fights" opens
+    the card's other results), then "Result pending", then the older cards with no result on record folded into one
+    line. The h1 is visually hidden (the nav's current item names the page); "Last 30 days" sits on the label line.
+    SEO head unchanged from before the redesign. -#}
+{% extends '_base.html' %}
+{% import '_ui.html' as ui %}
+{% set nav_active = 'Results' %}
+{% block head %}
+<title>Fight Results — UFC &amp; Boxing, Last 30 Days | Fight Schedule</title>
+<meta name="description" content="UFC and boxing results from the last 30 days: winners, methods and rounds for every main event and undercard fight, newest first.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fightschedule.live/results">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fight Results — UFC &amp; Boxing, Last 30 Days | Fight Schedule</title>
-    <meta name="description" content="UFC and boxing results from the last 30 days: winners, methods and rounds for every main event and undercard fight, newest first.">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#0a0a0a">
-    <link rel="canonical" href="https://fightschedule.live/results">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fightschedule.live/results">
+<meta property="og:title" content="Fight Results — UFC &amp; Boxing, Last 30 Days">
+<meta property="og:description" content="Winners, methods and rounds for every UFC and boxing fight in the last 30 days.">
+<meta property="og:image" content="https://fightschedule.live/static/og-image.png">
+<meta property="og:site_name" content="Fight Schedule">
+<meta name="twitter:card" content="summary_large_image">
 
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://fightschedule.live/results">
-    <meta property="og:title" content="Fight Results — UFC &amp; Boxing, Last 30 Days">
-    <meta property="og:description" content="Winners, methods and rounds for every UFC and boxing fight in the last 30 days.">
-    <meta property="og:image" content="https://fightschedule.live/static/og-image.png">
-    <meta property="og:site_name" content="Fight Schedule">
-    <meta name="twitter:card" content="summary_large_image">
-
-    <script type="application/ld+json">{{ ld.breadcrumbs(('Home', '/'), ('Results', None))|tojson }}</script>
-    <script type="application/ld+json">{{ ld.item_list('Fight results', events|map(attribute='path')|list)|tojson }}</script>
-
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <link rel="stylesheet" href="/static/css/list.css">
-</head>
-<body class="bg-dark-bg text-text-primary">
-    {% from '_site_header.html' import site_header %}
-    {% from '_list.html' import sport_chips, days_list %}
-    {{ site_header('Results') }}
-
-    <main class="home">
-        <div class="wrap">
-            <div class="page-title"><h1>Results</h1> · last 30 days</div>
-            {{ sport_chips() }}
-            {{ days_list(days, 'results', 'results', 'desc', 'No results in the last 30 days yet.') }}
-            <p class="empty-note" id="filterEmpty" hidden>No results for this sport in the last 30 days.</p>
-            <p class="page-foot"><a href="/">Upcoming fights</a> · <a href="/privacy">Privacy &amp; cookies</a></p>
-            <p class="page-foot photo-note">Fighter photos: UFC, Wikimedia Commons and others. Credits on each fight page.</p>
-        </div>
-    </main>
-
-    <script src="/static/js/list.js"></script>
-    {% include '_consent.html' %}
-</body>
-</html>
+<script type="application/ld+json">{{ ld.breadcrumbs(('Home', '/'), ('Results', None))|tojson }}</script>
+<script type="application/ld+json">{{ ld.item_list('Fight results', events|map(attribute='path')|list)|tojson }}</script>
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/site-lists.css">{% endblock %}
+{% block body_class %}list results-page{% endblock %}
+{% block skip %}<a class="skip" href="#results">Skip to the results</a>{% endblock %}
+{% block main %}
+<div class="wrap">
+<section class="rs rt rpage" id="results" aria-labelledby="results-t">
+  <div class="rp-top"><h1 class="vh" id="results-t">Results</h1><p class="rp-lb">Last 30 days<noscript> · dates in UTC</noscript></p></div>
+  {%- if events %}
+  {{ ui.results_block(events, uid='r') }}
+  {%- else %}
+  <p class="grp-none">No results in the last 30 days yet.</p>
+  {%- endif %}
+</section>
+</div>
+{% endblock %}

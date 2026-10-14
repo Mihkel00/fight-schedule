@@ -1,232 +1,127 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% include '_analytics.html' %}
-    
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar & Event Times</title>
-    <meta name="description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Get live updates on fight dates, times, venues, and AI-powered previews for all major events.">
-    <meta name="keywords" content="UFC schedule, boxing schedule, MMA fights, fight calendar, upcoming fights, UFC events, boxing matches">
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <meta name="theme-color" content="#0a0a0a">
+{#- The homepage (approved redesign, 2026-10-14: landing/hybrid4 + the owner's final change).
+    The next big fights as two poster cards (or one), ONE schedule table of every upcoming event (the poster fights
+    as "Featured above" lines in their slots), the latest results, then the footer. The nav is the only sport control.
+    SEO head unchanged from before the redesign. -#}
+{% extends '_base.html' %}
+{% import '_ui.html' as ui %}
+{% set nav_active = 'Schedule' %}
+{% set search_here = true %}
+{% block head %}
+<title>UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar & Event Times</title>
+<meta name="description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Get live updates on fight dates, times, venues, and AI-powered previews for all major events.">
+<meta name="keywords" content="UFC schedule, boxing schedule, MMA fights, fight calendar, upcoming fights, UFC events, boxing matches">
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://fightschedule.live/">
-    <meta property="og:title" content="UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar">
-    <meta property="og:description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Fight dates, times, venues, and AI-powered previews.">
-    <meta property="og:image" content="https://fightschedule.live/static/og-image.png">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="FightSchedule — UFC and boxing fight calendar showing upcoming events">
-    <meta property="og:site_name" content="FightSchedule">
-    <meta property="og:locale" content="en_US">
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fightschedule.live/">
+<meta property="og:title" content="UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar">
+<meta property="og:description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Fight dates, times, venues, and AI-powered previews.">
+<meta property="og:image" content="https://fightschedule.live/static/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="FightSchedule — UFC and boxing fight calendar showing upcoming events">
+<meta property="og:site_name" content="FightSchedule">
+<meta property="og:locale" content="en_US">
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar">
-    <meta name="twitter:description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Fight dates, times, venues, and AI-powered previews.">
-    <meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="UFC & Boxing Schedule {{ current_month_year }} | Live Fight Calendar">
+<meta name="twitter:description" content="Complete UFC and Boxing fight schedule for {{ current_month_year }} with automatic timezone conversion. Fight dates, times, venues, and AI-powered previews.">
+<meta name="twitter:image" content="https://fightschedule.live/static/og-image.png">
 
-    <link rel="canonical" href="https://fightschedule.live/">
+<link rel="canonical" href="https://fightschedule.live/">
 
-    <!-- Structured Data (JSON-LD) -->
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "FightSchedule",
-        "url": "https://fightschedule.live",
-        "description": "Complete UFC and Boxing fight schedule with automatic timezone conversion, AI-powered previews, and live updates."
-    }
-    </script>
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "FightSchedule",
-        "url": "https://fightschedule.live",
-        "logo": "https://fightschedule.live/static/FS_icon.svg",
-        "description": "Live fight calendar for UFC, boxing, and MMA events with automatic timezone conversion and AI-powered previews."
-    }
-    </script>
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        "mainEntity": [
-            {
-                "@type": "Question",
-                "name": "What time is the UFC fight tonight?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "FightSchedule automatically converts all UFC event times to your local timezone. Visit fightschedule.live to see tonight's main card, prelims, and early prelims start times in your timezone."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "What boxing fights are on this weekend?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "FightSchedule lists all upcoming boxing events including main card bouts, undercard fights, venues, and broadcast information. Check fightschedule.live to see this weekend's schedule."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "How do I find upcoming UFC events?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Visit fightschedule.live for a complete calendar of all confirmed UFC events. Each event page shows the full fight card, venue, date and time in your timezone, and AI-powered fight previews."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "Does FightSchedule cover boxing and UFC?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Yes. FightSchedule covers UFC, boxing, and other major MMA promotions. All events include full fight cards, venues, dates, and timezone-adjusted start times."
-                }
-            },
-            {
-                "@type": "Question",
-                "name": "What timezone are the fight times shown in?",
-                "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "All fight times on FightSchedule are automatically converted to your local timezone using your browser settings. No manual conversion needed."
-                }
+<!-- Structured Data (JSON-LD) -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "FightSchedule",
+    "url": "https://fightschedule.live",
+    "description": "Complete UFC and Boxing fight schedule with automatic timezone conversion, AI-powered previews, and live updates."
+}
+</script>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "FightSchedule",
+    "url": "https://fightschedule.live",
+    "logo": "https://fightschedule.live/static/FS_icon.svg",
+    "description": "Live fight calendar for UFC, boxing, and MMA events with automatic timezone conversion and AI-powered previews."
+}
+</script>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+        {
+            "@type": "Question",
+            "name": "What time is the UFC fight tonight?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "FightSchedule automatically converts all UFC event times to your local timezone. Visit fightschedule.live to see tonight's main card, prelims, and early prelims start times in your timezone."
             }
-        ]
-    }
-    </script>
-    <script type="application/ld+json">{{ ld.item_list('Upcoming Fights', (big + events)|map(attribute='path')|list)|tojson }}</script>
-
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <link rel="stylesheet" href="/static/css/list.css">
-</head>
-<body class="bg-dark-bg text-text-primary">
-    {% from '_site_header.html' import site_header %}
-    {% from '_watch.html' import watch_link %}
-    {% from '_list.html' import start_time, sport_chips, days_list %}
-    {{ site_header('Schedule', search_here=true) }}
-
-    <main class="home">
-        <div id="searchResults" class="wrap" hidden></div>
-
-        {% if big %}
-        <section class="fight-section big-section" aria-labelledby="big-title">
-            <div class="wrap big-head">
-                <h2 id="big-title">Big fights coming up</h2>
-                <div class="arrows">
-                    <button type="button" aria-label="Scroll left" onclick="railScroll(-1)">‹</button>
-                    <button type="button" aria-label="Scroll right" onclick="railScroll(1)">›</button>
-                </div>
-            </div>
-            <div class="rail" id="bigRail">
-                {% for e in big %}
-                <article class="rc {{ e.sport|lower }} {{ 'lead' if loop.first }} {{ 'has-watch' if e.streaming }}" data-sport="{{ e.sport }}" data-rel-chip>
-                    <a href="{{ e.path }}" class="rc-link">
-                        <img class="hl" src="{{ e.fighter1_image }}" alt="{{ e.fighter1 }}" {% if not loop.first %}loading="lazy"{% endif %}>
-                        <img class="hr" src="{{ e.fighter2_image }}" alt="{{ e.fighter2 }}" {% if not loop.first %}loading="lazy"{% endif %}>
-                        <span class="shade"></span>
-                        <span class="rel">{{ e.date|format_date }}</span>
-                        <div class="hc">
-                            <span class="kicker">{% if e.sport == 'UFC' %}{{ (e.event_name or 'UFC').split(':')[0] }}{% else %}{{ e.weight_class or 'Boxing' }}{% endif %}</span>
-                            <h2>{{ e.fighter1|surname }} <i>vs</i> {{ e.fighter2|surname }}</h2>
-                            <span class="meta">{{ start_time(e, 'long') }}</span>
-                            <span class="meta2 block">{{ e.location or e.venue }}</span>
-                        </div>
-                    </a>
-                    {% if e.streaming %}{{ watch_link(e.streaming, e.slug, e.sport, 'home_big', 'chip rc-watch') }}{% endif %}
-                </article>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
-
-        <div class="wrap fight-section">
-            <div class="tzline"><h1 class="sr-only">UFC &amp; boxing schedule</h1><span id="timezone-display">Times in your time zone</span></div>
-            {{ sport_chips() }}
-            {{ days_list(days, 'upcoming', 'home_list', 'asc', 'No upcoming fights listed right now — check back soon.') }}
-            <p class="empty-note" id="filterEmpty" hidden>No upcoming fights for this sport right now.</p>
-            <p class="page-foot"><a href="/ufc">UFC schedule</a> · <a href="/boxing">Boxing schedule</a> · <a href="/privacy">Privacy &amp; cookies</a></p>
-            <p class="page-foot photo-note">Fighter photos: UFC, Wikimedia Commons and others. Credits on each fight page.</p>
-        </div>
-    </main>
-
-    <script src="/static/js/list.js"></script>
-    <script>
-    (function () {
-        // Big-fights arrows (hidden when every card already fits)
-        window.railScroll = function (dir) {
-            var rail = document.getElementById('bigRail');
-            if (rail) rail.scrollBy({ left: dir * 438, behavior: 'smooth' });
-        };
-        var rail = document.getElementById('bigRail'), arrows = document.querySelector('.arrows');
-        if (rail && arrows) {
-            var check = function () { arrows.style.visibility = rail.scrollWidth > rail.clientWidth + 4 ? '' : 'hidden'; };
-            check(); window.addEventListener('resize', check);
+        },
+        {
+            "@type": "Question",
+            "name": "What boxing fights are on this weekend?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "FightSchedule lists all upcoming boxing events including main card bouts, undercard fights, venues, and broadcast information. Check fightschedule.live to see this weekend's schedule."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "How do I find upcoming UFC events?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Visit fightschedule.live for a complete calendar of all confirmed UFC events. Each event page shows the full fight card, venue, date and time in your timezone, and AI-powered fight previews."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "Does FightSchedule cover boxing and UFC?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. FightSchedule covers UFC, boxing, and other major MMA promotions. All events include full fight cards, venues, dates, and timezone-adjusted start times."
+            }
+        },
+        {
+            "@type": "Question",
+            "name": "What timezone are the fight times shown in?",
+            "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "All fight times on FightSchedule are automatically converted to your local timezone using your browser settings. No manual conversion needed."
+            }
         }
-
-        // Search
-        var allFights = {{ search_fights|tojson }};
-        var toggle = document.getElementById('searchToggle');
-        var bar = document.getElementById('searchBar');
-        var input = document.getElementById('searchInput');
-        var results = document.getElementById('searchResults');
-        var sections = document.querySelectorAll('.fight-section');
-        function openSearch() {
-            bar.classList.remove('hidden'); toggle.setAttribute('aria-expanded', 'true'); input.focus();
-        }
-        toggle.addEventListener('click', function () {
-            if (bar.classList.contains('hidden')) { openSearch(); return; }
-            bar.classList.add('hidden'); toggle.setAttribute('aria-expanded', 'false');
-            input.value = ''; render('');
-        });
-        if (location.hash === '#search') openSearch();
-        function whenText(f) {
-            var d = FS.startOf(f.date, f.time);
-            if (!d) { var p = f.date.split('-'); return FS.MONTHS[+p[1] - 1] + ' ' + (+p[2]) + ' · Time TBA'; }
-            var c = FS.clock(d);
-            return FS.shortDate(d) + ' · ' + (f.time_estimated ? '~' : '') + c.hm + ' ' + c.ap;
-        }
-        function render(q) {
-            q = q.toLowerCase().trim();
-            if (!q) { results.hidden = true; results.replaceChildren(); sections.forEach(function (s) { s.style.display = ''; }); return; }
-            sections.forEach(function (s) { s.style.display = 'none'; });
-            var hits = allFights.filter(function (f) {
-                return [f.fighter1, f.fighter2, f.event_name, f.venue].some(function (v) { return v && v.toLowerCase().indexOf(q) !== -1; });
-            });
-            var h = document.createElement('p'); h.className = 'tzline';
-            h.textContent = hits.length ? hits.length + ' fight' + (hits.length === 1 ? '' : 's') + ' found' : 'No fights found for "' + q + '"';
-            var list = document.createElement('div'); list.className = 'sr-res';
-            list.style.cssText = 'background:var(--card);border:1px solid var(--bd);border-radius:16px;margin-top:10px;overflow:hidden';
-            hits.slice(0, 50).forEach(function (f) {
-                var a = document.createElement('a'); a.href = f.path;
-                var left = document.createElement('span'); left.textContent = f.fighter1 + ' vs ' + f.fighter2;
-                var sub = document.createElement('small'); sub.style.display = 'block'; sub.textContent = f.event_name || f.venue;
-                left.appendChild(sub);
-                var right = document.createElement('small'); right.style.whiteSpace = 'nowrap'; right.textContent = whenText(f);
-                a.appendChild(left); a.appendChild(right); list.appendChild(a);
-            });
-            results.replaceChildren(h);
-            if (hits.length) results.appendChild(list);
-            results.hidden = false;
-        }
-        var searched = false;
-        input.addEventListener('input', function () {
-            if (!searched && input.value.trim()) { searched = true; if (window.FS_tap) FS_tap('search'); }
-            if (!input.value.trim()) searched = false;
-            render(input.value);
-        });
-    })();
-    </script>
-    {% include '_consent.html' %}
-</body>
-</html>
+    ]
+}
+</script>
+<script type="application/ld+json">{{ ld.item_list('Upcoming Fights', (big + events)|map(attribute='path')|list)|tojson }}</script>
+{% endblock %}
+{% block body_class %}home{% endblock %}
+{% block skip %}<a class="skip" href="#sched">Skip to the schedule</a>{% endblock %}
+{% block main %}
+{{ ui.big_band(bigs, 'UFC & boxing schedule', placement='home_big') }}
+<div class="wrap">
+{%- if events %}
+{{ ui.schedule(sch, placement='home_list') }}
+{%- else %}
+<section class="tt sched" aria-labelledby="sched-t" id="sched">
+  <div class="sec-h"><h2 id="sched-t">Upcoming</h2></div>
+  <p class="grp-none">No upcoming fights listed right now. New cards appear here as soon as they are announced.</p>
+</section>
+{%- endif %}
+{%- set dec, pen, nores = ds.results_split(recent) %}
+{%- if dec or pen %}
+<section class="rs" aria-labelledby="results-t" id="results">
+  {{ ui.sec_head('Latest results', 'results-t', 'Last ' ~ recent_days ~ ' days' ~ '<noscript> · dates in UTC</noscript>'|safe) }}
+  {{ ui.results_block(recent, limit=4, undercards=false, fold=false) }}
+</section>
+{%- endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script type="application/json" id="search-data">{{ search_fights|tojson }}</script>{% endblock %}
