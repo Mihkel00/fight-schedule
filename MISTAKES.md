@@ -6,6 +6,24 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — Redesign mock put two different schedule tables on one page
+
+**What happened:** The combined landing I had built (from three judged
+concepts) showed upcoming fights twice over in two formats: a "This week"
+board with day columns, then a "Coming up" timetable with rows. The owner
+found it confusing. The board also contradicted itself ("Thu 15 · No fights"
+next to a fight labelled "Thu night").
+
+**Root cause:** I took the judges' "best section from each concept" verdict
+and stacked the winners without checking the result as one page. Scoring
+sections separately rewards each part on its own and says nothing about
+whether the parts belong together; one judge had even flagged "two list
+systems on one page", and my brief kept both anyway.
+
+**Rule:** After combining parts from different designs, review the whole
+page as a visitor would. One kind of information gets one format per page.
+A section-by-section score is never the final check.
+
 ## 2026-10-11 — The app.py split moved load_dotenv() below an import that reads env vars
 
 **What happened:** The split tool regenerated each module's imports at the top
