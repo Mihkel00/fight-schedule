@@ -6,6 +6,25 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — Fixed the duplicate table but left a duplicate control (nav + sport toggle)
+
+**What happened:** After the owner pointed out the two schedule tables, I
+merged them and sent the page back. It still had the top navigation (UFC,
+Boxing) and an All / UFC / Boxing toggle right under it doing the same job,
+and a hero with large empty areas around small centred photos. The owner had
+to point both out.
+
+**Root cause:** I fixed the one instance the owner named instead of the class
+of problem. "Two things doing the same job" should have triggered a sweep of
+the whole page for every duplicate (controls, labels, lists, meta lines), and
+I passed the agent's screenshots on without looking at the page as a whole
+myself.
+
+**Rule:** When the owner points out one flaw, search the whole page for every
+other instance of the same kind before replying. Before sending any design,
+look at the full page myself and list what repeats, what is empty and what is
+off the shared alignment.
+
 ## 2026-10-14 — Redesign mock put two different schedule tables on one page
 
 **What happened:** The combined landing I had built (from three judged
