@@ -812,6 +812,16 @@ time.big.tba { font-size: 17px; line-height: 1.1; color: var(--t2); text-transfo
    file that fails): a quiet tonal disc in the same slot, no outline, no silhouette */
 .face, .won-ring { position: relative; display: block; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex: none; background: #26262A; }
 .face.none, .face.tba { background: #1F1F22; }
+/* a fighter with no photo, or a TBA opponent: the site's own sport silhouette (gloves for boxing, hand wraps for MMA;
+   the shapes of static/placeholder-fighter-*.svg without their box) as a light figure on the dark disc, cropped
+   head-and-shoulders the way a face photo fills its disc (owner, 2026-10-14) */
+.face.none::after, .face.tba::after { content: ""; position: absolute; inset: 0; background: #46464C;
+  -webkit-mask: url(../silhouette-mma.svg) 50% 0% / 190% auto no-repeat; mask: url(../silhouette-mma.svg) 50% 0% / 190% auto no-repeat; }
+.boxing .face.none::after, .boxing .face.tba::after { -webkit-mask-image: url(../silhouette-boxing.svg); mask-image: url(../silhouette-boxing.svg); }
+/* the poster's half with no photo: the same figure, large and faint, standing on the half's bottom edge */
+.ph.vacant::before { content: ""; position: absolute; left: 0; right: 0; top: 12%; bottom: 0; background: linear-gradient(#36363C, #1B1B1E 80%);
+  -webkit-mask: url(../silhouette-mma.svg) 50% 100% / contain no-repeat; mask: url(../silhouette-mma.svg) 50% 100% / contain no-repeat; }
+.boxing .ph.vacant::before { -webkit-mask-image: url(../silhouette-boxing.svg); mask-image: url(../silhouette-boxing.svg); }
 .face img, .won-ring img { width: 100%; height: 100%; object-fit: cover; transform-origin: calc(var(--px, .5) * 100%) calc(var(--py, .35) * 100%); transform: translate(calc((.5 - var(--px, .5)) * 100%), calc((.5 - var(--py, .35)) * 100%)) scale(var(--z, 1.3)); filter: grayscale(1) brightness(1.18) contrast(1.18); transition: opacity 200ms var(--ease); }
 .face img.lt, .won-ring img.lt { filter: grayscale(1) brightness(.9) contrast(1.15); }
 /* results: the winner's face in the green ring, the loser's greyed */
