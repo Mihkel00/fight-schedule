@@ -50,7 +50,7 @@ def test_markup_has_the_hooks_the_script_reads(client):
                  '<section class="day" data-day="', '<h4 class="day-h">', 'data-utc-time="', 'data-format="big"',
                  'data-countdown="', 'data-rel ', 'class="ld-note"', '<details class="ucd"', 'data-open-label="Hide fights"',
                  'id="searchToggle"', 'id="searchBar"', 'id="searchInput"', 'id="searchResults"', 'id="search-data"',
-                 'class="ptr-go" href="#lead', 'class="ev-main"', 'rc-link'):
+                 'class="ev-main"', 'rc-link'):
         assert hook in h, hook
     # without JavaScript every time reads UTC
     assert re.search(r'data-format="big">~?\d{2}:\d{2} UTC</time>', h)

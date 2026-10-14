@@ -82,8 +82,6 @@
 </a>
 {%- elif name -%}
 {%- if look == 'btn' %}<span class="bc">{{ 'Live on' if live else 'On' }} <b>{{ name }}</b></span>{% else %}<span class="{{ cls }} nolink"><span class="via">{{ word }}</span><span class="wv"><b>{{ name }}</b></span></span>{% endif -%}
-{%- else -%}
-<span class="bc">Broadcast not announced</span>
 {%- endif -%}
 {%- endmacro %}
 

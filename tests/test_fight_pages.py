@@ -141,7 +141,7 @@ def test_decided_bouts_are_box_scores_in_card_order():
 def test_one_fight_card_and_broadcasters():
     solo = _render(_view(_fight(streaming=None)))
     assert 'id="fight-card"' not in solo and 'Only the main event has been announced so far.' in solo
-    assert '<p class="bc">Broadcast not announced</p>' in solo
+    assert 'Broadcast not announced' not in solo and 'id="fight-watch"' not in solo, 'no Where to watch when none is announced'
     plain = _render(_view(_fight(streaming='LIVE on ProBoxTV')))
     assert '<p class="bc">On <b>ProBoxTV</b></p>' in plain and '/go/' not in plain
     dazn = _render(_view(_fight()))
