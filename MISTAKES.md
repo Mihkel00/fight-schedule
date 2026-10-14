@@ -6,6 +6,184 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-14 — The poster's card-wide link still failed on phones, tablets and real clicks
+
+**What happened:** The fixed card-wide link (whole poster opens the fight page)
+still missed the photos on phone and tablet, where the photos sit above the
+link's containing block. On desktop a real mouse click or tap also failed:
+`.btn:active { transform: scale(.97) }` made the button the containing block of
+its `::after` between mouse-down and mouse-up. Both were found while building
+the redesign into the site, after the earlier check had reported "works".
+
+**Root cause:** The hit area was checked with `elementFromPoint` at rest and at
+the breakpoint that had just been fixed. Each breakpoint has its own containing
+block, and states that exist only during interaction (`:active`, `:hover`,
+`:focus`) can change it too.
+
+**Rule:** Card-wide links are tested with real input (mouse click and touch tap
+on the photo, names and time) at phone, tablet and desktop widths, asserting
+that the link is followed and the tap counted. The anchor gets no transform or
+filter in any state (tests/test_site_behaviour.py; checks/browser_checks.py).
+
+## 2026-10-14 — Taps whose text contained "&" or brackets were never counted
+
+**What happened:** Footer taps such as "Privacy & cookies" (and in the
+redesign "UFC events (.ics)") were sent with their raw link text. /api/t drops
+a tap whose detail fails `usage._DETAIL`, so those clicks were silently lost,
+before the redesign too.
+
+**Root cause:** The page's tap code and the server's validation were each
+tested only against themselves, never together.
+
+**Rule:** Every tap the page can send is checked against `usage.valid_tap` in
+the browser checks, and a test checks every tap name in site.js is in
+`usage.TAP_NAMES`.
+
+## 2026-10-14 — A fight page said "starting now" next to "Yesterday" after the card ended
+
+**What happened:** From the end of the live window until midnight UTC, the
+redesigned fight page kept its upcoming layout, countdown and Watch button, and
+showed "starting now". Found by the QA review before anything shipped.
+
+**Root cause:** Time states were checked before the start and during the
+fight, never in the gap between the live window and the store's `is_past` flag,
+which is only set after the UTC day ends.
+
+**Rule:** Every time-dependent state is checked at each boundary: before the
+start, at it, live, just after the live window, either side of midnight UTC,
+and with a result (tests/test_fight_pages.py
+`test_time_states_at_every_boundary`).
+
+## 2026-10-14 — The approved photo treatment broke on production photos and wider layouts
+
+**What happened:** On the wider fight-page poster, small files (Puello,
+Rahman, Zaren) sat in a framed box, Shea's blurred fill read as a grey slab (a
+rejected pattern), and some round face crops showed a grey band. The mocks had
+only been checked on their own sample photos at their own widths.
+
+**Root cause:** A treatment approved on a handful of photos at one width was
+reused at other widths and on every production photo without looking again.
+The 1.25x size cap, a quality guard, silently broke the approved rule that
+each photo fills its half.
+
+**Rule:** Before shipping a photo treatment, or moving it to a new width,
+render every live photo at every layout width as a brightened contact sheet
+and look at each tile. Crop and zoom formulas get unit tests at their
+extremes (faces at a file's edge, maximum zoom).
+
+## 2026-10-14 — Redesign build: three near-misses caught before commit
+
+**What happened:**
+- Adding design.py to app.py's `_OWNED` registry made `app.surname` silently
+  switch to design's version (the last module wins).
+- An ad-hoc script imported the app against the shared live-data copy without
+  the frozen clock. The app tried to scrape boxingschedule.co and wrote a
+  stray file into the copy.
+- `photo_meta()` can start background measuring, and the new tests raced with
+  a job they had not started.
+
+**Root cause:** Each time, something treated as a pure read or a plain list
+had a side effect or silent override.
+
+**Rule:**
+- Names owned in app.py are unique across modules (a test enforces it).
+- Any script that imports the app against live data freezes the clock and
+  patches `pipeline._refresh_cache` (as serve_design.py does).
+- A read path that can start background work has a switch that tests turn
+  off by default.
+
+## 2026-10-14 — The landing mock's "whole card is the Fight card link" never worked on desktop
+
+**What happened:** In the hybrid landing mock, the hero cards were meant to be one
+link to the fight page (the Fight card button's `::after` covering the card). On
+desktop and tablet a click on the photos, names or time did nothing: the button's
+`backdrop-filter` made the button itself the containing block of its `::after`,
+so the hit area was only the button. Found in round 9 while checking the new
+single-fight layout.
+
+**Root cause:** The check measured the `::after` against the containing block I
+assumed (the element's offsetParent) instead of asking the browser what a click
+reaches. `filter`, `backdrop-filter`, `transform` and containment all change the
+containing block, and a size computed from my assumption cannot see that.
+
+**Rule:** Hit areas are tested with `document.elementFromPoint` at real points
+(photo, name, time, button), never with computed box sizes. Any card-wide link
+built from a pseudo-element gets that check after every CSS change to its
+ancestors or to the button.
+
+## 2026-10-14 — Sent a hero with oval "cameo" photo masks and called it sharp
+
+**What happened:** In the two-fight hero each photo was cut out with an oval
+or blob vignette on a grey slab, heads floated with shoulders chopped off,
+and the names had a dark halo box. I sent the screenshot as "photos fill the
+cards and look sharp". The owner asked what was up with the masking. Oval
+vignettes had already been rejected by the reviewers two rounds earlier.
+
+**Root cause:** I judged the screenshot at a glance, at normal size, on a dark
+image where soft mask edges barely show. And the list of rejected patterns
+(oval vignettes, clip-art silhouettes, ring-rope art, kickers on photos) was
+not carried into the new brief, so the builder solved "hide each photo's
+background" the same rejected way.
+
+**Rule:** Before sending any photo treatment, inspect a 2x crop brightened 2-3x,
+where mask edges, halos and seams show. Every design brief repeats the full
+list of patterns the owner or reviewers have already rejected.
+
+## 2026-10-14 — Removed most fighter photos while cleaning up duplicates
+
+**What happened:** In the "one coherent page" rebuild I deleted the big-fight
+photo tiles (they repeated table rows) and limited faces to a handful of big
+fights, on desktop and phone. The page lost most of its photos. The owner,
+who chose the photo poster look, asked "what happened to the images?". My
+report mentioned the removals only as tidy-ups, not as "most photos are gone".
+
+**Root cause:** I applied a design rule (no repeats, one consistent emphasis)
+without weighing it against what the owner had said he values most, the
+fighter photos. I also described the change by its mechanism ("tiles section
+is gone") instead of by what a visitor sees ("the page has almost no
+photos").
+
+**Rule:** Before removing or shrinking something the owner has said he likes,
+state the trade-off in visitor terms and ask, or keep it in another form.
+Describe every change by what the visitor sees, not by the component removed.
+
+## 2026-10-14 — Fixed the duplicate table but left a duplicate control (nav + sport toggle)
+
+**What happened:** After the owner pointed out the two schedule tables, I
+merged them and sent the page back. It still had the top navigation (UFC,
+Boxing) and an All / UFC / Boxing toggle right under it doing the same job,
+and a hero with large empty areas around small centred photos. The owner had
+to point both out.
+
+**Root cause:** I fixed the one instance the owner named instead of the class
+of problem. "Two things doing the same job" should have triggered a sweep of
+the whole page for every duplicate (controls, labels, lists, meta lines), and
+I passed the agent's screenshots on without looking at the page as a whole
+myself.
+
+**Rule:** When the owner points out one flaw, search the whole page for every
+other instance of the same kind before replying. Before sending any design,
+look at the full page myself and list what repeats, what is empty and what is
+off the shared alignment.
+
+## 2026-10-14 — Redesign mock put two different schedule tables on one page
+
+**What happened:** The combined landing I had built (from three judged
+concepts) showed upcoming fights twice over in two formats: a "This week"
+board with day columns, then a "Coming up" timetable with rows. The owner
+found it confusing. The board also contradicted itself ("Thu 15 · No fights"
+next to a fight labelled "Thu night").
+
+**Root cause:** I took the judges' "best section from each concept" verdict
+and stacked the winners without checking the result as one page. Scoring
+sections separately rewards each part on its own and says nothing about
+whether the parts belong together; one judge had even flagged "two list
+systems on one page", and my brief kept both anyway.
+
+**Rule:** After combining parts from different designs, review the whole
+page as a visitor would. One kind of information gets one format per page.
+A section-by-section score is never the final check.
+
 ## 2026-10-11 — The app.py split moved load_dotenv() below an import that reads env vars
 
 **What happened:** The split tool regenerated each module's imports at the top

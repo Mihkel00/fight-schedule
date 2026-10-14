@@ -10,3 +10,7 @@ flask-compress==1.15
 flask-limiter==3.5.0
 flask-wtf==1.2.1
 Pillow>=10.4
+# photo metadata (photo_analysis.py): YuNet face detection. Optional at runtime:
+# without them photos.photo_meta() returns None for unmeasured photos.
+opencv-python-headless==4.14.0.94
+numpy==2.2.6

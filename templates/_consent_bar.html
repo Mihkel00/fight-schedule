@@ -1,0 +1,14 @@
+{# The consent bar (#fs-consent, [data-consent], window.fsShowConsent; script: _consent_script.html): on the grid,
+   Accept and Decline with equal weight. The footer's "Cookie settings" and the privacy page reopen it. #}
+<div id="fs-consent" class="consent" hidden role="dialog" aria-live="polite" aria-label="Cookie consent">
+  <div class="consent-g">
+    <div class="consent-in">
+      <p class="consent-t">We'd like to use Google Analytics cookies to see how the site is used. <a href="/privacy#cookies">Privacy</a></p>
+      <div class="consent-b">
+        <button type="button" data-consent="denied" class="btn sec">Decline</button>
+        <button type="button" data-consent="granted" class="btn sec">Accept</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% include '_consent_script.html' %}

@@ -1,0 +1,431 @@
+{#- The design system's macros (approved redesign, 2026-10-14).
+    Logic: design.py (Jinja global `ds`). Styles: static/css/site.css. Behaviour: static/js/site.js.
+    Every time is server-rendered in UTC ("18:00 UTC", crawlers and no-JS visitors read it) inside the time
+    contract below; site.js shows it in the visitor's zone and redoes the day grouping, night hints, clock-change
+    rows and day counts there. Photos: photos.photo_meta() through ds.poster_half() / ds.face_crop(); a page renders
+    with or without metadata.
+
+    Index (arguments in brackets are optional):
+      icon(name)                                 ext, ar, chev, search, up, cal
+      time_el(e, fmt[, cls, est])                the time contract; fmt: big (table), long (poster), short (notes),
+      time_at(dt, fmt[, cls])                    ... the same from a UTC datetime (prelims, main card)
+      date_el(e[, cls])                          the event's day as <time data-format="date"> ("Sat 17 Oct")
+      watch(e, placement[, cls, live, look])     /go/ link (look: 'row' | 'btn'); not a link for a broadcaster
+                                                 without a provider; '' when none is announced
+      kick(e[, cls])                             UFC: the event; boxing: weight / title (+ "Boxing," for readers)
+      face(name, img[, extra, wrap, av, tone_attr])   a round face, or the quiet grey disc
+      res_face(side)                             results: winner in the green ring, loser greyed (ds.result_sides)
+      pair(e)                                    the two overlapping faces of a table row / pending row
+      ph_half(p, side[, eager])                  one half of the split poster (p = ds.poster_half(path) or none)
+      stage(e[, eager])                          both halves
+      lockup(names[, tag, cls, id])              the fitted surnames ("DUBOIS vs WARDLEY")
+      hero(e[, kind, label, placement, hid, eager, h1, tag, tz, sport_said])  one poster card: kind c1 / c2 / solo
+      big_band(bigs, h1[, tag, placement, labels, ids, eager, tz, sport_said])  0, 1 or 2 big fights with the page's h1;
+                                                 sport_said: the page names the sport (/boxing: no "Boxing" first)
+      ev_row(e, placement, uid[, tz])            a schedule row (desktop table row / phone card)
+      ptr_row(e, hid)                            a hero fight's one-line pointer ("Featured above")
+      dst_row(c)                                 a clock-change row (ds.clock_change)
+      day_head(d)                                a day heading (a day block of ds.schedule)
+      schedule(sch[, placement, sec_id, title, tz_text, tz])  the whole table from ds.schedule()
+      undercard(e, uid[, results])               "N fights" <details> (upcoming bouts, or bout results)
+      box(e[, span, just, uid])                  a box score (result)
+      pend_row(e)                                a "Result pending" row
+      results_block(items[, uid, pend_tag, tz, limit, undercards, fold])  box scores + pending rows + the
+                                                 folded no-record line
+      sec_head(title, id[, sub])                 a section heading (h2 + one quiet meta)
+      wordmark(), svg_defs(), site_header(active[, search_here, current]), site_footer()
+-#}
+
+{%- set _S = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"' -%}
+{%- set _ICONS = {
+    'ext': '<path d="M7 17 17 7"/><path d="M8 7h9v9"/>',
+    'ar': '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+    'chev': '<path d="m6 9 6 6 6-6"/>',
+    'search': '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    'up': '<path d="M12 19V5"/><path d="m6 11 6-6 6 6"/>',
+    'cal': '<path d="M16 18h6"/><path d="M16 2v3"/><path d="M19 15v6"/><path d="M21 11.5V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h8.3"/><path d="M3 9h18"/><path d="M8 2v3"/>',
+} -%}
+{%- set _NB = ' ·&#160;'|safe -%}
+
+{%- macro icon(name) -%}
+<svg class="ic {{ name }}" {{ _S|safe }}>{{ _ICONS[name]|safe }}</svg>
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- times -#}
+{%- macro time_el(e, fmt, cls='', est=none) -%}
+{%- set t = e.time if (e.time and e.time != 'TBA' and ':' in (e.time|string)) else none -%}
+{%- set est = e.time_estimated if est is none else est -%}
+{%- if t -%}
+<time class="fight-time {{ fmt }}{{ ' ' ~ cls if cls }}" datetime="{{ e.date|iso_utc(t) }}" data-utc-time="{{ t }}" data-date="{{ e.date }}" data-estimated="{{ 'true' if est else 'false' }}" data-format="{{ fmt }}">{{ '~' if est }}{{ t|utc_time }}</time>
+{%- else -%}
+<time class="fight-time {{ fmt }} no-time tba{{ ' ' ~ cls if cls }}" datetime="{{ e.date }}" data-date="{{ e.date }}" data-format="{{ fmt }}">Time TBA</time>
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro time_at(dt, fmt, cls='') -%}
+{{ time_el({'date': dt.strftime('%Y-%m-%d'), 'time': dt.strftime('%H:%M'), 'time_estimated': false}, fmt, cls) }}
+{%- endmacro %}
+
+{%- macro date_el(e, cls='') -%}
+{%- set t = e.time if (e.time and e.time != 'TBA' and ':' in (e.time|string)) else none -%}
+<time class="fdate{{ ' ' ~ cls if cls }}" datetime="{{ e.date|iso_utc(t) }}" data-date="{{ e.date }}"{% if t %} data-utc-time="{{ t }}"{% endif %} data-format="date">{{ ds.day_short(ds.local_day(e)) }}</time>
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- small parts -#}
+{%- macro watch(e, placement, cls='watch', live=false, look='row') -%}
+{%- set key = provider_key(e.streaming) if e.streaming else none -%}
+{%- set name = provider_name(key) if key else (clean_broadcaster(e.streaming) if e.streaming else none) -%}
+{%- set word = 'Watch live on' if live else 'Watch on' -%}
+{%- if key -%}
+<a class="{{ cls }}" href="/go/{{ key }}?event={{ ds.event_key(e)|urlencode }}&amp;sport={{ (e.sport or '')|lower }}&amp;p={{ placement }}" target="_blank" rel="sponsored nofollow noopener">
+{%- if look == 'btn' %}{{ word }} {{ name }} {{ icon('ext') }}{% else %}<span class="via">{{ word }}</span><span class="wv"><b>{{ name }}</b>{{ icon('ext') }}</span>{% endif -%}
+</a>
+{%- elif name -%}
+{%- if look == 'btn' %}<span class="bc">{{ 'Live on' if live else 'On' }} <b>{{ name }}</b></span>{% else %}<span class="{{ cls }} nolink"><span class="via">{{ word }}</span><span class="wv"><b>{{ name }}</b></span></span>{% endif -%}
+{%- else -%}
+<span class="bc">Broadcast not announced</span>
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro kick(e, cls='kick') -%}
+{%- set t = ds.kick_text(e) -%}
+{%- if e.sport == 'UFC' -%}
+<span class="{{ cls }}">{{ t }}</span>
+{%- else -%}
+<span class="{{ cls }}{{ '' if t else ' nil' }}"><span class="vh">Boxing{{ ', ' if t }}</span>{{ t }}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- faces -#}
+{#- A round face crop (table pairs, phone cards, results): the stored face centred and zoomed to fill. No photo, no
+    usable face or a TBA opponent -> the quiet grey disc in the same slot (no outline, no silhouette), so names stay
+    aligned. A file that fails to load leaves the disc. -#}
+{%- macro face(name, img, extra='', wrap='face', av='', tone_attr=false) -%}
+{%- if ds.is_tba(name) -%}
+<span class="{{ wrap }} tba{{ extra }}" aria-hidden="true"></span>
+{%- else -%}
+{%- set f = ds.face_crop(img) -%}
+{%- if not f -%}
+<span class="{{ wrap }} none{{ extra }}" aria-hidden="true"></span>
+{%- else -%}
+<span class="{{ wrap }}{{ extra }}" aria-hidden="true"><img class="av{{ av }}{{ ' ' ~ f.tone if (f.tone and not tone_attr) }}" src="{{ f.src }}" alt="" loading="lazy" decoding="async" style="{{ f.style }}"{% if f.tone and tone_attr %} data-tone="{{ f.tone }}"{% endif %} onerror="this.remove()"></span>
+{%- endif -%}
+{%- endif -%}
+{%- endmacro %}
+
+{#- Results: the winner's face in the green ring, the loser's greyed; production's exact markup
+    ('<span class="won-ring"><img class="av won"', '<img class="av b lost"'), the tone kept in data-tone. -#}
+{%- macro res_face(s) -%}
+{%- set bb = ' b' if s.second else '' -%}
+{%- if s.won -%}
+{%- set f = none if ds.is_tba(s.name) else ds.face_crop(s.img) -%}
+{%- if f -%}
+<span class="won-ring{{ bb }}"><img class="av{{ bb }} won" src="{{ f.src }}" alt="" loading="lazy" decoding="async" style="{{ f.style }}"{% if f.tone %} data-tone="{{ f.tone }}"{% endif %} onerror="this.remove()"></span>
+{%- else -%}
+<span class="won-ring{{ bb }} none" aria-hidden="true"></span>
+{%- endif -%}
+{%- elif s.lost -%}
+{{ face(s.name, s.img, ' rf lostf', av=bb ~ ' lost', tone_attr=true) }}
+{%- else -%}
+{{ face(s.name, s.img, ' rf', av=bb, tone_attr=true) }}
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro pair(e) -%}
+<span class="pair" aria-hidden="true">{{ face(e.fighter1, e.fighter1_image, ' pa') }}{{ face(e.fighter2, e.fighter2_image, ' pb') }}</span>
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- the split poster -#}
+{#- One half: the photo covers its half (sized and placed in CSS from the numbers in its style), the blurred copies
+    behind it where it cannot cover; a file that fails to load turns the half into the plain card surface. -#}
+{%- macro ph_half(p, side, eager=false) -%}
+{%- if not p -%}
+<span class="ph {{ side }} vacant"></span>
+{%- else -%}
+{%- set load = 'fetchpriority="high"' if eager else 'loading="lazy"' -%}
+<span class="ph {{ side }}{{ ' ' ~ p.cls if p.cls }}" style="{{ p.style }}">
+{%- for c in p.copies %}<img class="{{ c }}" src="{{ p.src }}" alt="" {{ load|safe }} decoding="async" onerror="this.remove()">{% endfor -%}
+<img class="pi" src="{{ p.src }}" alt="" {{ load|safe }} decoding="async" onerror="var s=this.parentNode;s.className=s.className.replace(/ (cut|ko|lt|sh|cr|cl|nometa)/g,'')+' vacant';s.replaceChildren()"></span>
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro stage(e, eager=false) -%}
+{%- set p = ds.poster_photos(e) -%}
+<div class="stage" aria-hidden="true">{{ ph_half(p[0], 'l', eager) }}{{ ph_half(p[1], 'r', eager) }}</div>
+{%- endmacro %}
+
+{%- macro _nm(n, cls) -%}
+{%- if n.tba -%}<span class="{{ cls }} tba">TBA</span>
+{%- elif n.parts -%}<span class="{{ cls }} hy" style="{{ n.style }}"><span class="ln">{{ n.parts[0] }}</span><span class="ln">{{ n.parts[1] }}</span></span>
+{%- else -%}<span class="{{ cls }}" style="{{ n.style }}">{{ n.text }}</span>
+{%- endif -%}
+{%- endmacro %}
+
+{#- names = ds.pair_fit(e) -#}
+{%- macro lockup(names, tag='p', cls='lockup', id='') -%}
+<{{ tag }} class="{{ cls }}"{% if id %} id="{{ id }}"{% endif %}>{{ _nm(names.n1, 'n1') }}<span class="vs">vs</span>{{ _nm(names.n2, 'n2') }}</{{ tag }}>
+{%- endmacro %}
+
+{%- macro _note(kind, val, e) -%}
+{%- if kind == 'est' -%}<b class="est">Estimated</b>
+{%- elif kind == 'night' -%}{{ val }}
+{%- elif kind == 'prelims' -%}Prelims {{ time_at(val, 'short') }}
+{%- elif kind == 'since' -%}since {{ time_at(val, 'short') }}
+{%- elif kind == 'main' -%}Main card {{ time_at(val, 'short') }}
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro _live_word() -%}<span class="live"><i class="ldot" aria-hidden="true"></i>Live</span>{%- endmacro %}
+
+{#- One poster card. kind: 'c1' / 'c2' (two big fights) or 'solo' (one). The label ("Next big fight", "Then") is
+    read by screen readers on the card and shown above it by big_band() at >= 1024 px. The whole card is one link to
+    the fight page (the Fight card button's ::after); Watch sits above it. -#}
+{%- macro hero(e, kind='c1', label='Next big fight', placement='home_lead', hid='lead', eager=true, h1=none, tag='h1', tz=none, sport_said=false) -%}
+{%- set v = ds.hero_view(e, kind, tz, sport_said=sport_said) -%}
+{%- set e = v.e -%}
+{%- set started = v.state in ('live', 'prelims') -%}
+<article class="{{ v.cls }}" id="{{ hid }}" data-sport="{{ e.sport }}" data-key="{{ ds.event_key(e) }}" style="{{ v.style }}">
+  <div class="stage" aria-hidden="true">{{ ph_half(v.p1, 'l', eager) }}{{ ph_half(v.p2, 'r', eager) }}</div>
+  <div class="wrap hero-in">
+    <div class="eyebrow">{% if h1 %}<{{ tag }} class="eb-h">{{ h1 }}</{{ tag }}>{% endif %}<p class="eb-l">{% if h1 %}<span class="dash" aria-hidden="true">—</span>{% endif %}<span class="eb-b">{% if started %}<i class="ldot" aria-hidden="true"></i>On now{% else %}{{ label }}{% endif %}</span></p></div>
+    {{ lockup(v.names) }}
+    <div class="info"><div class="when">
+      <p class="ld-date"><b>{{ date_el(e) }}</b>
+        {%- if v.state == 'live' %}<span class="rel now">Under way</span>
+        {%- elif v.state == 'prelims' %}<span class="rel now">Prelims on</span>
+        {%- else %}<span class="rel" data-rel data-date="{{ e.date }}"{% if v.has_time %} data-utc-time="{{ e.time }}"{% endif %}>{{ v.rel }}</span>
+          {%- if v.has_time %}<span class="cdw">{{ _NB }}<span class="cd" data-countdown="{{ e.date|iso_utc(e.time) }}">{{ v.countdown }}</span></span>{% endif %}
+        {%- endif %}</p>
+      <p class="ld-time"><span class="tm">{% if started %}{{ _live_word() }}{% elif v.has_time %}{{ time_el(e, 'long') }}{% else %}{{ time_el(e, 'long') }}{% endif %}</span></p>
+      {%- if not v.has_time %}<p class="ld-note">Start time not announced</p>
+      {%- else %}<p class="ld-note"{% if not v.notes %} hidden{% endif %}>{% for kind, val in v.notes %}{% if not loop.first %}<span class="ns" aria-hidden="true">{{ _NB }}</span>{% endif %}<span class="nt {{ kind }}">{{ _note(kind, val, e) }}</span>{% endfor %}</p>{% endif %}
+    </div>
+    <p class="ld-what"><b>{{ v.what_first }}</b>{% if v.what_rest %}<span>{{ v.what_rest|join(_NB) }}</span>{% endif %}</p>
+    <div class="acts">
+      {%- set key = provider_key(e.streaming) if e.streaming else none -%}
+      {%- if key -%}
+      {{ watch(e, placement, 'btn pri rc-watch', live=started, look='btn') }}<a class="btn sec rc-link lead-link fc" href="{{ e.path }}">Fight card<span class="vh">: {{ e.fighter1 }} vs {{ e.fighter2 }}</span> {{ icon('ar') }}</a>
+      {%- else -%}
+      {{ watch(e, placement, live=started, look='btn') }}<a class="btn pri rc-link lead-link fc" href="{{ e.path }}">Fight card<span class="vh">: {{ e.fighter1 }} vs {{ e.fighter2 }}</span> {{ icon('ar') }}</a>
+      {%- endif -%}
+    </div></div>
+  </div>
+</article>
+{%- endmacro %}
+
+{%- macro _band_label(e, label) -%}
+{%- if ds.fight_state(e) in ('live', 'prelims') -%}<i class="ldot" aria-hidden="true"></i>On now{%- else -%}{{ label }}{%- endif -%}
+{%- endmacro %}
+
+{#- The page's big-fight band: two or more big fights -> two poster cards (desktop 6 + 6 columns; phone: card 1
+    the stacked poster, card 2 a smaller card); one -> the single poster (columns 1-8, its type beside it); none -> the
+    h1 alone. The h1 is visually hidden (owner, 2026-10-14) and stays the page's one <h1>. -#}
+{%- macro big_band(bigs, h1, tag='h1', placement='home_lead', labels=('Next big fight', 'Then'), ids=('lead', 'lead2'), eager=true, tz=none, sport_said=false) -%}
+{%- if bigs|length >= 2 -%}
+<section class="big-section duo-sec" aria-label="Next big fights">
+<div class="wrap duo-top"><div class="dt1"><{{ tag }} class="duo-h1">{{ h1 }}</{{ tag }}><span class="duo-lb" aria-hidden="true"><span class="dash">—</span>{{ _band_label(bigs[0], labels[0]) }}</span></div><div class="dt2 duo-lb" aria-hidden="true">{{ _band_label(bigs[1], labels[1]) }}</div></div>
+<div class="duo">{{ hero(bigs[0], 'c1', labels[0], placement, ids[0], eager, tz=tz, sport_said=sport_said) }}{{ hero(bigs[1], 'c2', labels[1], placement, ids[1], eager, tz=tz, sport_said=sport_said) }}</div>
+</section>
+{%- elif bigs -%}
+<section class="big-section solo-sec" aria-label="Next big fight">
+<div class="wrap duo-top"><div class="dt1"><{{ tag }} class="duo-h1">{{ h1 }}</{{ tag }}><span class="duo-lb" aria-hidden="true"><span class="dash">—</span>{{ _band_label(bigs[0], labels[0]) }}</span></div></div>
+{{ hero(bigs[0], 'solo', labels[0], placement, ids[0], eager, tz=tz, sport_said=sport_said) }}
+</section>
+{%- else -%}
+<section class="big-section none" aria-label="Schedule"><div class="wrap duo-top"><{{ tag }} class="duo-h1">{{ h1 }}</{{ tag }}></div></section>
+{%- endif -%}
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- the schedule table -#}
+{%- macro _sn(name) -%}
+{%- if ds.is_tba(name) -%}<b class="sn tba">TBA</b>
+{%- else -%}<b class="sn">{{ ds.surname(name)|e|replace('-', '-<wbr>'|safe) }}</b>
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro undercard(e, uid, results=false) -%}
+{%- set groups = ds.undercard_groups(e, results) -%}
+{%- if groups -%}
+{%- set lbl = ds.fights_n(ds.card_size(e)) -%}
+<details class="ucd" id="ucd-{{ uid }}"><summary class="more" data-open-label="Hide fights" data-closed-label="{{ lbl }}"><span class="lbl">{{ lbl }}</span>{{ icon('chev') }}</summary>
+<div class="uc" id="uc-{{ uid }}"><div class="uc-in">{% if not results %}<div class="uc-groups g{{ groups|length }}">{% endif %}
+{%- for g in groups -%}
+<div class="uc-g{{ ' cont' if g.cont }}"><p class="uc-sub"><span class="gn">{{ g.name }}</span>
+{%- if g.start and not results %}<span class="gt">{{ time_at(g.start, 'short') }}</span>{% elif g.note %}<span class="gt">{{ g.note }}</span>{% endif %}</p><ul class="uc-list">
+{%- for x in g.bouts -%}
+{%- set k = [g.k0 + loop.index0, 10]|min -%}
+{%- if results -%}
+{%- set br = ds.bout_result(x) -%}
+<li class="bt rb" style="--k:{{ k }}"><span class="bn">
+{%- if br.kind == 'win' -%}<span class="bw">{{ br.first }}</span> <i>def.</i> <span class="bls">{{ br.second }}</span><span class="vh">, {{ br.words or br.code }}</span>
+{%- elif br.kind in ('draw', 'nc') -%}<span class="bd">{{ br.first }}</span> <i>vs</i> <span class="bd">{{ br.second }}</span><span class="vh">: {{ br.words }}</span>
+{%- else -%}<span class="bp">{{ br.first }}</span> <i>vs</i> <span class="bp">{% if ds.is_tba(br.second) %}<span class="tba">TBA</span>{% else %}{{ br.second }}{% endif %}</span>
+{%- endif -%}</span>
+{%- if br.kind == 'none' %}<span class="br q">No result</span>{% else %}<span class="br">{% if br.code %}<b>{{ br.code }}</b>{% endif %}{{ ' ' ~ br.detail if br.detail }}</span>{% endif %}</li>
+{%- else -%}
+<li class="bt" style="--k:{{ k }}"><span class="a">{{ x.fighter1 }}</span> <i>vs</i> <span class="b">{% if ds.is_tba(x.fighter2) %}<span class="tba">TBA</span>{% else %}{{ x.fighter2 }}{% endif %}</span></li>
+{%- endif -%}
+{%- endfor -%}
+</ul></div>
+{%- endfor -%}
+{% if not results %}</div>{% endif %}</div></div></details>
+{%- endif -%}
+{%- endmacro %}
+
+{#- A schedule row: desktop, a row of the 12-column table (time + one note | the pair of faces + names + "weight ·
+    place" | Watch | "N fights"); phone, a card (label + city, the stacked names with a face each, the time on the
+    right, Watch and "N fights" in the foot). -#}
+{%- macro ev_row(e, placement, uid, tz=none) -%}
+{%- set v = ds.row_view(e, tz) -%}
+{%- set e = v.e -%}
+<article class="{{ v.cls }}" data-sport="{{ e.sport }}" data-key="{{ ds.event_key(e) }}">
+<p class="t"><span class="tm">{% if v.live %}{{ _live_word() }}{{ time_el(e, 'big', 'under') }}{% else %}{{ time_el(e, 'big') }}{% endif %}</span>
+{%- if v.notes %}<span class="sub">{% for kind, val in v.notes %}{% if not loop.first %}<span class="ns" aria-hidden="true">&#8239;·&#160;</span>{% endif %}<span class="nt {{ kind }}">{{ _note(kind, val, e) }}</span>{% endfor %}</span>{% endif %}</p>
+{{- pair(e) -}}
+<a href="{{ e.path }}" class="ev-main"><span class="vh">{{ e.fighter1 }} vs {{ e.fighter2 }}</span><span class="fx" style="--em-s:{{ v.em_s }}" aria-hidden="true"><span class="f a">{{ face(e.fighter1, e.fighter1_image) }}{{ _sn(e.fighter1) }}</span><span class="vb"><i class="vs">vs</i><span class="f b">{{ face(e.fighter2, e.fighter2_image) }}{{ _sn(e.fighter2) }}</span></span></span></a>
+<p class="top">{% if v.kick %}{{ kick(e) }}{% endif %}{% if v.where %}<span class="where"><span class="w-full">{{ v.where }}</span>{% if v.where_short %}<span class="w-short" aria-hidden="true">{{ v.where_short }}</span>{% endif %}</span>{% endif %}</p>
+<p class="ch">{{ watch(e, placement, live=v.live) }}</p>
+{{- undercard(e, uid) -}}
+</article>
+{%- endmacro %}
+
+{#- A hero fight in its table slot: one quiet line (time · names · "Featured above"): no faces, Watch or card size,
+    so the table keeps its order without showing the fight twice. -#}
+{%- macro ptr_row(e, hid) -%}
+{%- set e = ds.title_order(e) -%}
+<article class="ev ptr {{ ds.sport_class(e) }}" data-sport="{{ e.sport }}" data-key="{{ ds.event_key(e) }}"><p class="t"><span class="tm">{{ time_el(e, 'short') }}</span></p><p class="ptr-n"><span class="vh">{{ e.fighter1 }} vs {{ e.fighter2 }}</span><span aria-hidden="true">{{ ds.surname(e.fighter1) }} <i>vs</i> {{ ds.surname(e.fighter2) }}</span></p><a class="ptr-go" href="#{{ hid }}">Featured above {{ icon('up') }}</a></article>
+{%- endmacro %}
+
+{%- macro dst_row(c) -%}
+<p class="clockchg{{ ' out' if c.outside }}" role="note" data-offset-from="{{ c['from'] }}" data-offset-to="{{ c.to }}"><span class="cc-d">{{ c.date_text }}</span><span class="cc-h">{{ c.hm }}</span><span class="cc-x"><b class="cc-t">Clocks go {{ c.word }} {{ c.by }}</b>{{ _NB }}times from here on are {{ c.gmt }}</span></p>
+{%- endmacro %}
+
+{%- macro day_head(d) -%}
+<h4 class="day-h"><span class="dfull">{{ d.full }} <span>{{ d.dm }}</span></span><span class="dshort" aria-hidden="true">{{ d.short }}</span><span class="drel{{ ' soon' if d.soon }}">{{ d.rel }}</span></h4>
+{%- endmacro %}
+
+{#- ONE table for every upcoming event (sch = ds.schedule(events, lead_keys={key: hero id}, ...)). Server-rendered
+    in UTC; site.js regroups it by the visitor's local day. -#}
+{%- macro schedule(sch, placement='home_list', sec_id='sched', title='Upcoming', tz_text='UTC', tz=none) -%}
+<section class="tt sched" aria-labelledby="{{ sec_id }}-t" id="{{ sec_id }}" data-today="{{ sch.today.isoformat() }}">
+  <div class="sec-h">
+    <h2 id="{{ sec_id }}-t">{{ title }}</h2>
+    <p class="sec-sub"><span data-count>{{ sch.count }} event{{ 's' if sch.count != 1 }}</span></p>
+    <p class="tz-copy">Times in <b class="tz-display">{{ tz_text }}</b></p>
+  </div>
+  {%- for g in sch.groups %}
+  {%- set gi = loop.index %}
+  <div class="grp" data-grp="{{ g.id }}" id="{{ sec_id }}-{{ g.id }}"><h3 class="grp-h"><span class="gn">{{ g.name }}</span>{% if g.sub %}<span class="gs">{{ g.sub }}</span>{% endif %}</h3>
+  <div class="days" data-order="asc" data-prefix="{{ g.prefix }}">
+  {%- for b in g.blocks -%}
+  {%- set bi = loop.index -%}
+  {%- if b.kind == 'dst' -%}{{ dst_row(b) }}
+  {%- else -%}
+  <section class="day" data-day="{{ b.iso }}">{{ day_head(b) }}
+  {%- for r in b.rows -%}
+  {%- if r.kind == 'ev' %}{{ ev_row(r.e, placement, sec_id ~ '-' ~ gi ~ '-' ~ bi ~ '-' ~ loop.index, tz) }}
+  {%- elif r.kind == 'ptr' %}{{ ptr_row(r.e, r.hid) }}
+  {%- else %}{{ dst_row(r) }}
+  {%- endif -%}
+  {%- endfor -%}
+  </section>
+  {%- endif -%}
+  {%- endfor -%}
+  </div>
+  {%- if not g.count %}<p class="grp-none">No fights listed {{ g.when }}</p>{% endif %}</div>
+  {%- endfor %}
+</section>
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- results -#}
+{#- A box score: the date and label; winner first (his face in the green ring + W, the loser's face and name
+    greyed); the method code, its round / time and its words. span (3 / 4 / 6 / 12, from ds.results_rows) sets its
+    width on the desktop grid; uid adds the undercard results ("N fights") under it. -#}
+{%- macro box(e, span=none, just=false, uid=none) -%}
+{%- set r = e.result -%}
+{%- set mp = ds.method_parts(r) -%}
+{%- set oc = r.outcome if (r and r.outcome in ('draw', 'nc')) else '' -%}
+{%- set uc = undercard(e, uid, results=true) if uid else '' -%}
+<article class="bx {{ ds.sport_class(e) }}{{ ' w' ~ span if span }}{{ ' just' if just }}{{ ' oc-' ~ oc if oc }}{{ ' has-uc' if uc }}" data-sport="{{ e.sport }}" style="--em-s:{{ ds.box_em(e.fighter1, e.fighter2) }}">
+<p class="bx-k"><span class="tm">{{ date_el(e, 'bx-d') }}</span>{{ kick(e) }}</p>
+<a class="bx-main" href="{{ e.path }}"><span class="vh">{{ e.fighter1 }} vs {{ e.fighter2 }}. {{ ds.result_text(e) }} </span><span class="bx-n" aria-hidden="true">
+{%- for s in ds.result_sides(e) -%}
+<span class="bl{{ ' w' if s.won }}{{ ' l' if s.lost }}">{{ res_face(s) }}{{ _sn(s.name) }}{% if s.won %}<span class="wtag" aria-hidden="true">W</span>{% endif %}</span>
+{%- endfor -%}
+</span></a>
+{%- if mp %}<p class="bx-r"><b class="code">{{ mp[0] or '—' }}</b><span class="dt">{{ mp[1] }}</span></p><p class="bx-w">{{ mp[2] }}</p>
+{%- else %}<p class="bx-r pend"><b class="code" aria-hidden="true">—</b><span class="dt">{{ 'Just finished' if just else 'Pending' }}</span></p><p class="bx-w">Result soon</p>
+{%- endif -%}
+{{ uc }}</article>
+{%- endmacro %}
+
+{%- macro pend_row(e) -%}
+<li class="pl-row {{ ds.sport_class(e) }}" data-sport="{{ e.sport }}"><span class="tm">{{ date_el(e, 'pl-d') }}</span>{{ pair(e) }}<a href="{{ e.path }}" class="pl-n">{{ ds.surname(e.fighter1) }} <i>vs</i> {{ ds.surname(e.fighter2) }}</a>{{ kick(e, 'pl-k') }}</li>
+{%- endmacro %}
+
+{#- One results block (past events): box scores (newest first, rows that fill the grid), then every fight whose
+    result is still due ("Result pending"), then the older ones with no result on record folded into one line.
+    limit: at most this many box scores (the home's "Latest results": 4); undercards: "N fights" opens each card's
+    bout results (the list pages); fold: the no-record line (the list pages; the home shows only the last days). -#}
+{%- macro results_block(items, uid='r', pend_tag='h3', tz=none, limit=none, undercards=true, fold=true) -%}
+{%- set dec, pen, nores = ds.results_split(items, tz) -%}
+{%- set dec = dec[:limit] if limit else dec -%}
+{%- if dec %}<div class="bxs">{% for x, span in ds.results_rows(dec) %}{{ box(x, span, uid=(uid ~ '-' ~ loop.index) if undercards else none) }}{% endfor %}</div>{% endif %}
+{%- if pen %}<div class="pend-w"><{{ pend_tag }} class="pend-h">Result pending</{{ pend_tag }}><ul class="pend-list">{% for x in pen %}{{ pend_row(x) }}{% endfor %}</ul></div>{% endif %}
+{%- if nores and fold %}<details class="nr"><summary class="nr-s"><span class="nr-t">{{ nores|length }} {{ 'more ' if (dec or pen) }}{{ 'card' if nores|length == 1 else 'cards' }} with no result on record</span>{{ icon('chev') }}</summary><ul class="pend-list">{% for x in nores %}{{ pend_row(x) }}{% endfor %}</ul></details>{% endif %}
+{%- endmacro %}
+
+{%- macro sec_head(title, id, sub='') -%}
+<div class="sec-h"><h2 id="{{ id }}">{{ title }}</h2>{% if sub %}<p class="sec-sub">{{ sub }}</p>{% endif %}</div>
+{%- endmacro %}
+
+{#- ---------------------------------------------------------------- chrome -#}
+{%- macro wordmark() -%}
+<svg class="wm" viewBox="33 6.5 176 24.5" width="158" height="22" role="img" aria-label="Fight Schedule"><use href="#wm-g"/></svg>
+{%- endmacro %}
+
+{#- Once per page, first thing in <body>: the photo filters (#ko keys out a white backdrop on a poster, #kos on a
+    small face, #lt tones a light backdrop down) and the wordmark's shapes. -#}
+{%- macro svg_defs() -%}
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false"><filter id="ko" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -3.4 -11.44 -1.155 0 15.52" result="k"/><feMorphology in="k" operator="erode" radius="2.5" result="e"/><feGaussianBlur in="e" stdDeviation="1.1" result="b"/><feComposite in="k" in2="b" operator="in"/></filter><filter id="kos" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  -3.4 -11.44 -1.155 0 15.52" result="k"/><feMorphology in="k" operator="erode" radius="1.5" result="e"/><feGaussianBlur in="e" stdDeviation=".8" result="b"/><feComposite in="k" in2="b" operator="in"/></filter><filter id="lt" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncR type="table" tableValues="0 0.2 0.4 0.54 0.6 0.62"/><feFuncG type="table" tableValues="0 0.2 0.4 0.54 0.6 0.62"/><feFuncB type="table" tableValues="0 0.2 0.4 0.54 0.6 0.62"/></feComponentTransfer></filter><defs>{% include '_wordmark.svg' %}</defs></svg>
+{%- endmacro %}
+
+{#- One row: wordmark | nav (the only sport control: Schedule, UFC, Boxing, Results are pages) | time zone + Search.
+    active: the nav item of this page ('' for none); current: 'page' on the page itself, 'true' on a page inside
+    that section (fight pages). search_here: the page carries the search data (#search-data) and opens the drawer;
+    elsewhere Search links to /#search. -#}
+{%- macro site_header(active='', search_here=false, current='page') -%}
+<header class="site-h">
+  <div class="wrap site-h-in">
+    <a class="logo" href="/">{{ wordmark() }}</a>
+    <nav class="nav" aria-label="Main">{% for n, h in [('Schedule', '/'), ('UFC', '/ufc'), ('Boxing', '/boxing'), ('Results', '/results')] %}<a class="nav-pill" href="{{ h }}"{% if n == active %} aria-current="{{ current }}"{% endif %}>{{ n }}</a>{% endfor %}</nav>
+    <p class="tzh">Times in <b id="timezone-display">UTC</b></p>
+    {% if search_here -%}
+    <button type="button" id="searchToggle" class="search-btn" aria-label="Search fighters and events" aria-expanded="false" aria-controls="searchBar">{{ icon('search') }}<span class="sl">Search</span></button>
+    {%- else -%}
+    <a id="searchToggle" class="search-btn" href="/#search" aria-label="Search fighters and events">{{ icon('search') }}<span class="sl">Search</span></a>
+    {%- endif %}
+  </div>
+  {%- if search_here %}
+  <div id="searchBar" class="wrap search-bar" hidden>
+    <label class="vh" for="searchInput">Search fighters or events</label>
+    <input id="searchInput" type="search" placeholder="Fighter or event" autocomplete="off">
+    <div id="searchResults" aria-live="polite"></div>
+  </div>
+  {%- endif %}
+</header>
+{%- endmacro %}
+
+{#- Four columns on the grid's quarters: brand | calendar feeds | about | photo credits. -#}
+{%- macro site_footer() -%}
+<footer class="page-foot">
+  <div class="wrap">
+    <div class="cols">
+      <div class="fb"><p class="fb-m">{{ wordmark() }}</p><p>UFC and boxing start times in your time zone, with where to watch.</p></div>
+      <div><h2>Calendar feeds</h2><a href="/calendar/ufc.ics">UFC events (.ics)</a><a href="/calendar/boxing.ics">Boxing events (.ics)</a></div>
+      <div><h2>About</h2><a href="/privacy">Privacy &amp; cookies</a><a href="/privacy#cookies" data-consent-open>Cookie settings</a></div>
+      <div><h2>Photos</h2><p class="note">Fighter photos: UFC, Wikimedia Commons and others. Credits on each fight page.</p></div>
+    </div>
+  </div>
+</footer>
+{%- endmacro %}

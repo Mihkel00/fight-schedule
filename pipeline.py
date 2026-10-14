@@ -6,6 +6,7 @@ Moved out of app.py unchanged (2026-10); app.py imports every module so
 the routes register on the one Flask app.
 """
 import image_pipeline as _images
+import photo_analysis as _photo_meta
 import locks as _locks
 import runs as _runs
 import threading
@@ -45,6 +46,7 @@ def _refresh_cache(wait=False):
         if fights:
             threading.Thread(target=profile_store.refresh_profiles, args=(fights,), daemon=True).start()
             threading.Thread(target=_images.fill_credits, daemon=True).start()
+            _photo_meta.start_backfill(reason='after scrape')   # photos without face/tone data
         return fights
     except Exception as e:
         logger.error(f"Background scrape failed: {e}", exc_info=True)

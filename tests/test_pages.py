@@ -8,6 +8,7 @@ import app as A
 
 EV_LINK = re.compile(r'<a href="(/(?:event|boxing-event)/[^"]+)" class="ev-main"')
 TIME = re.compile(r'<time class="fight-time[^"]*" datetime="([^"]*)"[^>]*>([^<]*)</time>')
+DATE = re.compile(r'<time class="fdate[^"]*" datetime="([^"]*)"[^>]*>([^<]*)</time>')
 
 
 def _events(fights):
@@ -58,17 +59,26 @@ def test_pages_render_without_nested_links(client):
 
 
 def test_crawlers_see_utc_times_and_valid_datetimes(client):
-    for p in ('/', '/ufc', '/boxing', '/results'):
+    for p in ('/', '/ufc', '/boxing'):
         ts = TIME.findall(client.get(p).get_data(as_text=True))
         assert ts, p
         for d, t in ts:
             assert re.fullmatch(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?', d), (p, d)
             assert t.strip().endswith(' UTC') or t.strip().endswith('TBA'), (p, t)
+    # Results show the day each fight was (the redesign's box scores carry a date, not a start time): a <time> with
+    # a valid datetime, its text the server's (UTC) day, which the page's script shows in the visitor's zone.
+    for p in ('/', '/ufc', '/boxing', '/results'):
+        ds = DATE.findall(client.get(p).get_data(as_text=True))
+        assert ds or p != '/results', p
+        for d, t in ds:
+            assert re.fullmatch(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?', d), (p, d)
+            assert re.fullmatch(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun) \d{1,2} [A-Z][a-z]{2}', t), (p, t)
 
 
 def test_ufc_event_page_leads_with_main_event_and_full_card(client, seeded_cache):
     h = client.get('/').get_data(as_text=True)
-    href = next(x for x in EV_LINK.findall(h) if 'ufc-332' in x)
+    # UFC 332 is the fixture day's next big fight: its link is the poster card's (its table slot is a pointer line)
+    href = next(x for x in re.findall(r'href="(/event/[^"#?]+)"', h) if 'ufc-332' in x)
     assert href.endswith('2026-10-04')
     r = client.get(href)
     assert r.status_code == 200
@@ -110,21 +120,30 @@ def test_robots_disallows_private_paths(client):
         assert f'Disallow: {p}' in rb
 
 
-def test_sport_label_is_coloured_text_without_dot(client):
+def test_sport_is_a_coloured_tick_without_dot(client):
+    # the redesign marks the sport with a coloured tick before each time (site.css .tm::before), never a dot
+    # (retargeted 2026-10-14 from the retired list.css, which no page loads any more)
     h = client.get('/').get_data(as_text=True)
     assert 'class="dot"' not in h
-    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'list.css')).read()
-    assert '.ev.ufc .tag { color: var(--ufc); }' in css and '.ev.boxing .tag { color: var(--box); }' in css
+    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'site.css')).read()
+    assert '.ufc { --sport: var(--ufc); }' in css and '.boxing { --sport: var(--box); }' in css
+    assert 'background: var(--sport, var(--t3)); }' in css
 
 
 def test_photos_are_black_and_white_with_green_winner_ring():
-    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'list.css')).read()
-    assert '.av:not(.ph), .rc img, .hero img:not(.ph) { filter: grayscale(1)' in css
+    # retargeted 2026-10-14 from list.css and _list.html (retired) to site.css and _ui.html's res_face
+    css = open(os.path.join(os.path.dirname(A.__file__), 'static', 'css', 'site.css')).read()
+    assert 'filter: grayscale(1) brightness(var(--b, .95)) contrast(var(--c, 1.05))' in css, 'poster photos'
+    assert 'filter: grayscale(1) brightness(1.18) contrast(1.18)' in css, 'round faces'
+    assert '.won-ring { box-shadow: 0 0 0 2px var(--rg, var(--bg)), 0 0 0 4px var(--win); }' in css
+    assert '--win: #22C55E;' in css
     with A.app.app_context():
-        t = A.app.jinja_env.from_string("{% from '_list.html' import face %}"
-                                        "{{ face('A', '/a.png', 'UFC', 'av won') }}|{{ face('B', '/b.png', 'UFC', 'av b won') }}"
-                                        "|{{ face('C', '/c.png', 'UFC', 'av lost') }}")
+        t = A.app.jinja_env.from_string(
+            "{% import '_ui.html' as ui %}"
+            "{{ ui.res_face({'name': 'A', 'img': '/a.png', 'won': true, 'lost': false, 'second': false}) }}"
+            "|{{ ui.res_face({'name': 'B', 'img': '/b.png', 'won': true, 'lost': false, 'second': true}) }}"
+            "|{{ ui.res_face({'name': 'C', 'img': '/c.png', 'won': false, 'lost': true, 'second': true}) }}")
         a, b, c = [x.strip() for x in t.render().split('|')]
     assert a.startswith('<span class="won-ring"><img class="av won"') and a.endswith('</span>')
     assert b.startswith('<span class="won-ring b"><img class="av b won"')
-    assert c.startswith('<img class="av lost"')
+    assert '<img class="av b lost"' in c and 'lostf' in c

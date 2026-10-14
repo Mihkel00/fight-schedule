@@ -1,0 +1,77 @@
+{
+ "_about": "Hand-made corrections to the measured photo metadata (photo_analysis.py), keyed by site path. An entry with sha1 applies only to that exact file, so a replaced photo never inherits it. Fields: x0/x1 (usable horizontal range), crown, backdrop (ko | lt | null), ex/ey/em/box_h (face position), b/c (tone). After editing, the next backfill re-measures the file; static images: run python3 photo_analysis.py --static.",
+ "/persisted-fighters/alexander-volkanovski.jpg": {
+  "sha1": "2c4c84dfc1f66d493f5aea51683d0de73b21caa6",
+  "x1": 0.665,
+  "crown": 0.06,
+  "why": "a child stands in the right third of the frame; crown read off the photo by eye"
+ },
+ "/persisted-fighters/maureen-shea.jpg": {
+  "sha1": "6dd6f2dc634e9b1668c41762775a8cd80cef3a33",
+  "x0": 0.3,
+  "why": "a lit sponsor board fills the left 30 %"
+ },
+ "/persisted-fighters/ryan-garcia.jpg": {
+  "sha1": "29aaa9144d222b3dd4992be793185d88eaab5657",
+  "x1": 0.54,
+  "crown": 0.3,
+  "why": "two masked bystanders stand in the right 36 % and a raised fist starts at 53 %; crown by eye"
+ },
+ "/persisted-fighters/daniel-dubois.jpg": {
+  "sha1": "86e8521ba23bba3f6e96342225752b9d92436802",
+  "crown": 0.045,
+  "why": "crown read off the photo by eye"
+ },
+ "/persisted-fighters/fabio-wardley.jpg": {
+  "sha1": "2699890adfcc25e37e1aadde7b91602d5868a507",
+  "crown": 0.36,
+  "why": "an arena long shot; crown read off the photo by eye"
+ },
+ "/persisted-fighters/milan-prat.jpg": {
+  "sha1": "98437129f071502b0d5e826d0c69f48f56722a36",
+  "backdrop": "lt",
+  "crown": 0.105,
+  "why": "light wall behind him; crown by eye"
+ },
+ "/persisted-fighters/ermal-hadribeaj.jpg": {
+  "sha1": "2100b1a63386e7168a0a1dac333608908aac9190",
+  "backdrop": "ko",
+  "why": "white studio backdrop, keyed out"
+ },
+ "/persisted-fighters/julian-vogel.jpg": {
+  "sha1": "3240a4d6ec4fc82fdc73687b99b0956352fc1d02",
+  "backdrop": "ko",
+  "why": "white backdrop, keyed out (the automatic rule only finds it light)"
+ },
+ "/persisted-fighters/dalton-smith.jpg": {
+  "sha1": "73371c85006e8eefe64814528c85a79b82e5013d",
+  "backdrop": "lt",
+  "why": "light grey backdrop"
+ },
+ "/persisted-fighters/nico-ali-walsh.jpg": {
+  "sha1": "e0224510279d22a9decf9912fe56efba3c68a3e3",
+  "backdrop": "lt",
+  "why": "light grey backdrop"
+ },
+ "/persisted-fighters/alberto-puello.jpg": {
+  "sha1": "c45ef62d77278545661236f9c35ffb0c104cfd85",
+  "backdrop": "lt",
+  "why": "a 299 x 168 press-conference frame with a lit sponsor board beside his head: its highlights toned down"
+ },
+ "/persisted-fighters/vlad-panin.jpg": {
+  "sha1": "60f2ba3fb435e833568b5bc236dc2d2589b05171",
+  "ex": 0.722,
+  "ey": 0.357,
+  "em": 0.0561,
+  "box_h": 0.157,
+  "why": "action shot with five faces: the fighter picked by hand (the referee is the largest face); photo not confirmed, replace first"
+ },
+ "/persisted-fighters/dakota-linger.jpg": {
+  "sha1": "98c1421999a0e84fed63795e464e433fb4eeed14",
+  "ex": 0.467,
+  "ey": 0.288,
+  "em": 0.0169,
+  "box_h": 0.049,
+  "why": "ring group photo with seven faces: the fighter picked by hand; photo not confirmed, replace first"
+ }
+}

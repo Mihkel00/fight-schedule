@@ -1,102 +1,128 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy & Cookie Policy - FightSchedule</title>
-    <meta name="description" content="Privacy policy and cookie information for FightSchedule. Learn how we handle your data on our UFC and boxing fight schedule platform.">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://fightschedule.live/privacy">
-    {% include '_analytics.html' %}
+{#- /privacy (approved redesign, 2026-10-14: landing/pages/lists): every word of the policy as before, set as a
+    document on the grid (the text on columns 4-9 at ~70 characters a line, "On this page" on columns 1-3 from 1024 px).
+    The section ids #cookies, #usage and #affiliate are linked from elsewhere (the consent bar, the usage note, the
+    Watch links' note); the other ids are anchors for the list. SEO head unchanged from before the redesign. -#}
+{% extends '_base.html' %}
+{% block head %}
+<title>Privacy & Cookie Policy - FightSchedule</title>
+<meta name="description" content="Privacy policy and cookie information for FightSchedule. Learn how we handle your data on our UFC and boxing fight schedule platform.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://fightschedule.live/privacy">
 
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://fightschedule.live/privacy">
-    <meta property="og:title" content="Privacy & Cookie Policy - FightSchedule">
-    <meta property="og:description" content="Privacy policy and cookie information for FightSchedule.">
-    <meta property="og:site_name" content="FightSchedule">
-
-    <link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/styles.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Work Sans', sans-serif;
-            background: #0d0d0d;
-            color: #efe5e4;
-            line-height: 1.6;
-        }
-        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-        h1 { font-size: 2.5rem; margin-bottom: 10px; }
-        .subtitle { color: #998c8a; margin-bottom: 40px; }
-        h2 { font-size: 1.5rem; margin-top: 40px; margin-bottom: 15px; color: #fb923c; }
-        p, li { color: #d1d1d1; margin-bottom: 15px; }
-        ul { margin-left: 20px; list-style: disc; }
-        h1, h2, h3, strong, b { font-weight: 700; }
-        a { color: #fb923c; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .back-link { margin-bottom: 30px; }
-    </style>
-</head>
-<body>
-    {% from '_site_header.html' import site_header %}
-    {{ site_header('') }}
-    <div class="container">
-
-        <h1>Privacy & Cookie Policy</h1>
-        <p class="subtitle">Last updated: {{ updated }}</p>
-        
-        <h2>What We Collect</h2>
-        <p>Fight Schedule uses Google Analytics to understand how visitors use our site. We collect:</p>
-        <ul>
-            <li>Page views and navigation patterns</li>
-            <li>Device type and browser information</li>
-            <li>Geographic location (city/country level only)</li>
-            <li>Referral sources</li>
-        </ul>
-        <p>We do NOT collect personal information like names, emails, or IP addresses.</p>
-        
-        <h2 id="cookies">Cookies</h2>
-        <p>Google Analytics cookies are only set if you choose <strong>Accept</strong> in the cookie bar. If you decline, or don't answer, Google Analytics is not loaded at all.</p>
-        <ul>
-            <li><strong>Google Analytics (only with your consent):</strong> anonymous traffic analysis</li>
-            <li><strong>Your cookie choice:</strong> stored in your browser's local storage so we don't ask again</li>
-        </ul>
-        <p>Fight times are converted to your timezone in your browser; nothing is stored for that.</p>
-        
-        <h2>Google Analytics</h2>
-        <p>Google Analytics processes data on our behalf to provide insights about site usage. Google may use this data in accordance with their own privacy policy. Learn more at <a href="https://policies.google.com/privacy" target="_blank">Google Privacy Policy</a>.</p>
-        
-        <h2 id="usage">Usage Counts</h2>
-        <p>To see which parts of the site are useful we count page views and taps on elements (a fight card, a filter, a "more fights" button, a calendar or watch link). A page also counts as "seen" once it has been on screen for five seconds, which tells people apart from automated visitors. Each count records only the kind of page, the element, the time, and whether the browser looks automated. No cookie is set and no IP address, user ID or other personal data is stored, so these counts cannot be linked to you.</p>
-
-        <h2 id="affiliate">Affiliate Links</h2>
-        <p>Some "Watch on" links to streaming services are affiliate links. If you subscribe through one of them we may earn a commission, at no extra cost to you. This never affects which fights we list or which service we show — we display the broadcaster that actually carries the event. Clicks on these links are counted (provider, event, page, browser type and browser language, to tell people from automated crawlers) so we can see what is useful; no IP address or other personal data is stored.</p>
-
-        <h2>Third-Party Services</h2>
-        <p>We display fighter images and fight data from public sources. We do not share your data with any third parties beyond Google Analytics.</p>
-        
-        <h2>Your Rights</h2>
-        <p>You can:</p>
-        <ul>
-            <li>Change your cookie choice at any time: <button type="button" onclick="window.fsShowConsent && window.fsShowConsent()" style="text-decoration:underline;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer">cookie settings</button> (declining removes Google Analytics cookies)</li>
-            <li>Block cookies in your browser settings</li>
-            <li>Opt out of Google Analytics via <a href="https://tools.google.com/dlpage/gaoptout" target="_blank">browser add-on</a></li>
-            <li>Use private/incognito browsing mode</li>
-        </ul>
-        
-        <h2>Data Retention</h2>
-        <p>Google Analytics data is retained for 14 months, after which it is automatically deleted.</p>
-        
-        <h2>Children's Privacy</h2>
-        <p>Our site is not directed at children under 13. We do not knowingly collect data from children.</p>
-        
-        <h2>Changes to This Policy</h2>
-        <p>We may update this policy occasionally. Changes will be posted on this page with an updated date.</p>
-        
-        <h2>Contact</h2>
-        <p>Questions about this policy? Contact us via our <a href="/">main site</a>.</p>
-    </div>
-    {% include '_consent.html' %}
-</body>
-</html>
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://fightschedule.live/privacy">
+<meta property="og:title" content="Privacy & Cookie Policy - FightSchedule">
+<meta property="og:description" content="Privacy policy and cookie information for FightSchedule.">
+<meta property="og:site_name" content="FightSchedule">
+{% endblock %}
+{% block styles %}<link rel="stylesheet" href="/static/css/site-lists.css">{% endblock %}
+{% block body_class %}list doc-page{% endblock %}
+{% block skip %}<a class="skip" href="#pv-text">Skip to the text</a>{% endblock %}
+{%- set sections = [
+    ('collect', 'What We Collect'), ('cookies', 'Cookies'), ('analytics', 'Google Analytics'), ('usage', 'Usage Counts'),
+    ('affiliate', 'Affiliate Links'), ('third-party', 'Third-Party Services'), ('rights', 'Your Rights'),
+    ('retention', 'Data Retention'), ('children', "Children's Privacy"), ('changes', 'Changes to This Policy'),
+    ('contact', 'Contact')] %}
+{% block main %}
+<div class="wrap pv">
+  <header class="pv-head">
+    <h1 class="pv-h1">Privacy &amp; Cookie Policy</h1>
+    <p class="pv-upd">Last updated: {{ updated }}</p>
+  </header>
+  <nav class="pv-toc" aria-label="On this page"><p class="pv-toc-h">On this page</p><ol>{% for i, t in sections %}<li><a href="#{{ i }}">{{ t }}</a></li>{% endfor %}</ol></nav>
+  <div class="pv-text" id="pv-text">
+<section class="pv-s" aria-labelledby="collect"><h2 id="collect">What We Collect</h2>
+<p>Fight Schedule uses Google Analytics to understand how visitors use our site. We collect:</p>
+<ul>
+  <li>Page views and navigation patterns</li>
+  <li>Device type and browser information</li>
+  <li>Geographic location (city/country level only)</li>
+  <li>Referral sources</li>
+</ul>
+<p>We do NOT collect personal information like names, emails, or IP addresses.</p>
+</section>
+<section class="pv-s" aria-labelledby="cookies"><h2 id="cookies">Cookies</h2>
+<p>Google Analytics cookies are only set if you choose <strong>Accept</strong> in the cookie bar. If you decline, or don't answer, Google Analytics is not loaded at all.</p>
+<ul>
+  <li><strong>Google Analytics (only with your consent):</strong> anonymous traffic analysis</li>
+  <li><strong>Your cookie choice:</strong> stored in your browser's local storage so we don't ask again</li>
+</ul>
+<p>Fight times are converted to your timezone in your browser; nothing is stored for that.</p>
+</section>
+<section class="pv-s" aria-labelledby="analytics"><h2 id="analytics">Google Analytics</h2>
+<p>Google Analytics processes data on our behalf to provide insights about site usage. Google may use this data in accordance with their own privacy policy. Learn more at <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</p>
+</section>
+<section class="pv-s" aria-labelledby="usage"><h2 id="usage">Usage Counts</h2>
+<p>To see which parts of the site are useful we count page views and taps on elements (a fight card, a filter, a "more fights" button, a calendar or watch link). A page also counts as "seen" once it has been on screen for five seconds, which tells people apart from automated visitors. Each count records only the kind of page, the element, the time, and whether the browser looks automated. No cookie is set and no IP address, user ID or other personal data is stored, so these counts cannot be linked to you.</p>
+</section>
+<section class="pv-s" aria-labelledby="affiliate"><h2 id="affiliate">Affiliate Links</h2>
+<p>Some "Watch on" links to streaming services are affiliate links. If you subscribe through one of them we may earn a commission, at no extra cost to you. This never affects which fights we list or which service we show — we display the broadcaster that actually carries the event. Clicks on these links are counted (provider, event, page, browser type and browser language, to tell people from automated crawlers) so we can see what is useful; no IP address or other personal data is stored.</p>
+</section>
+<section class="pv-s" aria-labelledby="third-party"><h2 id="third-party">Third-Party Services</h2>
+<p>We display fighter images and fight data from public sources. We do not share your data with any third parties beyond Google Analytics.</p>
+</section>
+<section class="pv-s" aria-labelledby="rights"><h2 id="rights">Your Rights</h2>
+<p>You can:</p>
+<ul>
+  <li>Change your cookie choice at any time: <button type="button" class="tlink" onclick="window.fsShowConsent &amp;&amp; window.fsShowConsent()">cookie settings</button> (declining removes Google Analytics cookies)</li>
+  <li>Block cookies in your browser settings</li>
+  <li>Opt out of Google Analytics via <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">browser add-on</a></li>
+  <li>Use private/incognito browsing mode</li>
+</ul>
+</section>
+<section class="pv-s" aria-labelledby="retention"><h2 id="retention">Data Retention</h2>
+<p>Google Analytics data is retained for 14 months, after which it is automatically deleted.</p>
+</section>
+<section class="pv-s" aria-labelledby="children"><h2 id="children">Children's Privacy</h2>
+<p>Our site is not directed at children under 13. We do not knowingly collect data from children.</p>
+</section>
+<section class="pv-s" aria-labelledby="changes"><h2 id="changes">Changes to This Policy</h2>
+<p>We may update this policy occasionally. Changes will be posted on this page with an updated date.</p>
+</section>
+<section class="pv-s" aria-labelledby="contact"><h2 id="contact">Contact</h2>
+<p>Questions about this policy? Contact us via our <a href="/">main site</a>.</p>
+</section>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+/* "On this page": the section being read is the last one whose heading has passed 30 % of the screen height (at the
+   end of the page, where the last short sections can never reach that line, the last heading in view); a jump from
+   the list or from a #link, or a click / keyboard focus inside a section ("cookie settings" in Your Rights), marks
+   that section until the reader scrolls on. */
+(function () {
+  var links = [].slice.call(document.querySelectorAll('.pv-toc a'));
+  if (!links.length) return;
+  var hs = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+  var held = null, heldAt = 0;
+  function mark(i) { links.forEach(function (a, k) { if (k === i) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); }); }
+  function pick() {
+    if (held !== null && Math.abs(scrollY - heldAt) < 4) { mark(held); return; }
+    held = null;
+    var line = innerHeight * .3, cur = 0;
+    hs.forEach(function (h, k) { if (h && h.getBoundingClientRect().top <= line) cur = k; });
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 2) {
+      hs.forEach(function (h, k) { if (h && k > cur && h.getBoundingClientRect().top < innerHeight - 40) cur = k; });
+    }
+    mark(cur);
+  }
+  function hold() {
+    var i = hs.findIndex(function (h) { return h && '#' + h.id === location.hash; });
+    if (i < 0) return;
+    held = i; requestAnimationFrame(function () { heldAt = scrollY; mark(i); });
+  }
+  var q = false;
+  addEventListener('scroll', function () { if (q) return; q = true; requestAnimationFrame(function () { q = false; pick(); }); }, {passive: true});
+  addEventListener('hashchange', hold);
+  var text = document.querySelector('.pv-text');
+  if (text) text.addEventListener('focusin', function (e) {
+    var sec = e.target.closest('.pv-s'), i = sec ? hs.indexOf(sec.querySelector('h2')) : -1;
+    if (i < 0) return;
+    held = i; mark(i); requestAnimationFrame(function () { heldAt = scrollY; });
+  });
+  if (location.hash) hold(); else pick();
+})();
+</script>
+{% endblock %}

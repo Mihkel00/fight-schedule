@@ -1,0 +1,8 @@
+Self-hosted web fonts (latin and latin-ext subsets, woff2, as served by Google Fonts in October 2026).
+Used by static/css/site.css. Both are licensed under the SIL Open Font License, Version 1.1
+(https://openfontlicense.org); the copyright notice and licence URL are also in each file's name table.
+
+bs-*.woff2   Big Shoulders (72pt optical size, variable weight 100-900)
+             Copyright 2019 The Big Shoulders Project Authors (https://github.com/xotypeco/big_shoulders)
+is-*.woff2   Instrument Sans (variable weight 400-700)
+             Copyright 2022 The Instrument Sans Project Authors (https://github.com/Instrument/instrument-sans)

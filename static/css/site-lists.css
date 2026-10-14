@@ -1,0 +1,54 @@
+/* fightschedule.live — page CSS for /results, /privacy and the 404 page (approved redesign, 2026-10-14:
+   landing/pages/lists/lists.css). The system (site.css) carries everything these pages share with the home: the
+   poster cards, the schedule table, box scores, pending rows, the folded no-record line, the "nothing here"
+   composition and the consent bar. This file adds only what one page needs. */
+
+/* ---------- /results: the h1 visually hidden (the nav names the page); the window on the home's label line ---------- */
+.rp-lb { padding: 18px 0 0; font: 650 14px/1.35 var(--f-t); color: var(--t1); }
+@media (min-width: 1024px) { .rp-lb { padding: 20px 0 0; } .rpage > .bxs { margin-top: 14px; } }
+
+/* ---------- the 404 page: this week's fights start well clear of the message ---------- */
+@media (min-width: 1024px) { .nf-page .tt.sched > .sec-h { margin-top: 64px; } }
+
+/* ---------- privacy: a document on the grid ---------- */
+.pv { padding: 28px 0 0; }
+.pv-head { padding-bottom: 8px; }
+.pv-h1 { font: 650 30px/1.15 var(--f-t); letter-spacing: -.02em; color: var(--t1); }
+.pv-upd { margin-top: 8px; font-size: 14px; color: var(--t2); }
+.pv-toc { display: none; }
+.pv-text { --body: color-mix(in srgb, var(--t1) 84%, var(--bg)); }
+.pv-s { padding-top: 28px; margin-top: 28px; box-shadow: inset 0 1px 0 var(--line); scroll-margin-top: 12px; }
+.pv-s:first-child { margin-top: 20px; }
+.pv-s h2 { font: 650 19px/1.3 var(--f-t); letter-spacing: -.01em; color: var(--t1); scroll-margin-top: 40px; }
+.pv-s p, .pv-s li { font-size: 16px; line-height: 1.65; color: var(--body); }
+.pv-s h2 + p, .pv-s h2 + ul { margin-top: 10px; }
+.pv-s p + p, .pv-s ul + p, .pv-s p + ul { margin-top: 14px; }
+.pv-s ul { padding-left: 1.15em; list-style: disc; }
+.pv-s li + li { margin-top: 6px; }
+.pv-s li::marker { color: var(--t3); }
+.pv-s strong { font-weight: 650; color: var(--t1); }
+.pv-s a, .tlink { color: var(--t1); text-decoration: underline; text-decoration-color: var(--t3); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.tlink { font: inherit; padding: 12px 0; margin: -12px 0; }
+.pv-s li a { padding: 12px 0; margin: -12px 0; }
+@media (hover: hover) and (pointer: fine) { .pv-s a:hover, .tlink:hover { text-decoration-color: var(--t1); } }
+@media (min-width: 1024px) {
+  .pv { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: var(--cg); padding-top: 44px; }
+  .pv-head { grid-column: 4 / 10; grid-row: 1; padding-bottom: 4px; }
+  .pv-h1 { font-size: 40px; }
+  .pv-upd { margin-top: 10px; font-size: 15px; }
+  /* the list of sections: columns 1-3, sticky, its first link on the first section's heading line */
+  .pv-toc { display: block; grid-column: 1 / 4; grid-row: 2; align-self: start; position: sticky; top: 20px; margin-top: 26px; }
+  .pv-toc-h { padding: 2px 0 6px; font: 650 12px/1.3 var(--f-t); letter-spacing: .09em; text-transform: uppercase; color: var(--t2); }
+  .pv-toc ol { box-shadow: inset 1px 0 0 var(--line2); }
+  .pv-toc a { position: relative; display: flex; align-items: center; min-height: 44px; padding: 0 0 0 16px; font: 500 14px/1.25 var(--f-t); color: var(--t2); }
+  .pv-toc a[aria-current]::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 2px; background: var(--t1); }
+  .pv-toc a[aria-current] { color: var(--t1); }
+  /* the rules and headings run on columns 4-9; the reading lines stop at ~70 characters */
+  .pv-text { grid-column: 4 / 10; grid-row: 2; }
+  .pv-s:first-child { margin-top: 26px; }
+  .pv-s { padding-top: 32px; margin-top: 32px; }
+  .pv-s h2 { font-size: 21px; }
+  .pv-s p, .pv-s li { font-size: 17px; }
+  .pv-s p, .pv-s ul { max-width: 32em; }
+}
+@media (hover: hover) and (pointer: fine) { .pv-toc a:hover { color: var(--t1); } }

@@ -361,6 +361,24 @@ def debug_state():
     if part == 'clicks':
         return jsonify(tracking.click_stats(int(request.args.get('days') or 30)))
 
+    if part == 'photo_meta':
+        # Face/tone metadata for fighter photos: counts and the last backfill;
+        # &path=<image path> shows one photo's entry; &start=1 measures every
+        # photo that has none yet (in the background; see photo_analysis.py).
+        import photo_analysis as _pa
+        import photos as _photos
+        out = {'started': None}
+        if request.args.get('start') == '1':
+            out['started'] = _pa.start_backfill(reason='debug API')
+        path = (request.args.get('path') or '')[:300]
+        if path:
+            k = _pa.path_key(path)
+            stored = (_pa.load_static().get(k) or _pa.load_store().get(k)) if k else None
+            out['path'] = {'key': k, 'meta': _photos.photo_meta(path), 'stored': stored,
+                           'override': _pa.override_for(k, (stored or {}).get('sha1')) if k else None}
+        out.update(_pa.summary())
+        return jsonify(out)
+
     if part == 'backfill':
         # POST a JSON list of fights to merge into the cache, e.g. to restore a
         # card a source dropped. Past fights by default; &upcoming=1 also
