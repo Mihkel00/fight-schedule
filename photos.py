@@ -1,11 +1,13 @@
 """
-Fighter photos: which image to show, same-picture checks, photo credits.
+Fighter photos: which image to show, same-picture checks, photo credits,
+and photo metadata (photo_meta(), measured by photo_analysis.py).
 
 Moved out of app.py unchanged (2026-10); app.py imports every module so
 the routes register on the one Flask app.
 """
 import image_pipeline as _images
 import json
+import photo_analysis as _photo_analysis
 import os
 from flask import send_from_directory
 from core import app, data_path
@@ -38,6 +40,17 @@ def get_fighter_image(fighter_name):
     """Image to display for a fighter: reviewed/manual overrides first, then the
     legacy fighters.json / fighters_ufc.json databases (see image_pipeline.py)."""
     return _images.image_for(fighter_name)
+
+
+def photo_meta(path):
+    """Where the face is in a stored fighter photo and how to tone it, for the
+    path stored for a fighter image ("/static/fighters/x.png",
+    "/persisted-fighters/x.jpg?v=1"; the query string is ignored). A dict with
+    w, h, face, ex, ey, em, box_h, crown, score, b, c, backdrop, cut, x0, x1
+    (meanings in photo_analysis.py), or None when the photo has not been
+    measured yet or is remote: pages then use their fallback geometry. Reads
+    stored data only; measuring happens in the background, never here."""
+    return _photo_analysis.meta_for(path)
 
 
 @app.route('/persisted-fighters/<path:filename>')

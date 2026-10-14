@@ -31,3 +31,7 @@ last_good.json.tmp
 data/runs/
 data/snapshots/
 usage.jsonl
+photo_meta.json
+photo_meta.json.tmp
+photo_meta_job.json
+photo_meta_job.json.tmp

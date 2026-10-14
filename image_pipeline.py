@@ -45,6 +45,7 @@ import requests
 
 from scrapers import fighter_profiles as fp
 import locks as _locks
+import photo_analysis as _photo_meta
 
 DATA_DIR = os.environ.get('DATA_DIR', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data'))
 META_FILE = os.path.join(DATA_DIR, 'image_meta.json')
@@ -541,7 +542,9 @@ def store(name, data, ext):
                 pass
     with open(os.path.join(PERSIST_DIR, fname), 'wb') as f:
         f.write(data)
-    return f'/persisted-fighters/{fname}?v={int(time.time())}'
+    path = f'/persisted-fighters/{fname}?v={int(time.time())}'
+    _photo_meta.analyse_later(path)          # face position and tone, measured in the background
+    return path
 
 
 def _profile_titles():
@@ -634,10 +637,12 @@ def set_manual_from_url(name, sport, url):
 def approve(name, sport):
     e = load_meta().get(key(name))
     if e and e.get('path'):
+        _photo_meta.analyse_later(e['path'])   # measured already: a no-op in the background
         return update_entry(name, status='approved')
     current = legacy_image(name)
     if not current:
         return None
+    _photo_meta.analyse_later(current)
     return update_entry(name, sport=sport, status='approved', source='legacy', source_url=current, path=current)
 
 
