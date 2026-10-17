@@ -20,6 +20,8 @@ import formatting
 import pipeline
 import profile_store
 import site_pages
+import design
+import preview_service
 
 
 INDEXNOW_KEY = os.environ.get('INDEXNOW_KEY', '')
@@ -231,6 +233,14 @@ def fight_page_seo(sport, name, date_iso, venue, location, is_past, kind=None, s
     return title, desc
 
 
+def page_worth_indexing(main, n_other, preview_entry):
+    """The sitemap's side of design.worth_indexing: the main event's stored tapes, the other bouts on the
+    card, and whether a checked preview is on file (a grounded entry that passed its check)."""
+    has_tape = bool(main.get('fighter1_tape') or main.get('fighter2_tape'))
+    has_preview = bool(preview_entry and preview_entry.get('grounded') and preview_entry.get('ok'))
+    return design.worth_indexing(main, n_other, has_tape, has_preview)
+
+
 # ============================================================================
 # SEO Routes
 @app.route('/sitemap.xml')
@@ -254,7 +264,12 @@ def sitemap():
 
     # UFC events — one URL per event (first non-prelim fight defines the
     # canonical date; must stay in sync with the redirect in event_detail)
+    previews = preview_service.load_previews()
     ufc_fights = [f for f in fights if f.get('sport') == 'UFC' and f.get('card_type') != 'Prelims']
+    ufc_counts = {}
+    for f in fights:
+        if f.get('sport') == 'UFC':
+            ufc_counts[f.get('event_name')] = ufc_counts.get(f.get('event_name'), 0) + 1
     seen = set()
     for fight in ufc_fights:
         if fight['event_name'] in seen:
@@ -262,15 +277,25 @@ def sitemap():
         seen.add(fight['event_name'])
         slug = f"{fight['event_name'].lower().replace(' ', '-').replace(':', '').replace(',', '')}-{fight['date']}"
         url = f"https://fightschedule.live/event/{slug}"
+        if not page_worth_indexing(fight, ufc_counts.get(fight['event_name'], 1) - 1, previews.get(slug)):
+            continue
         pages.append({'loc': url, 'lastmod': versions.get(url, {}).get('lastmod', fight['date']), 'changefreq': 'daily', 'priority': '0.8'})
 
     # Boxing events - all main events
     boxing_fights = [f for f in fights if f.get('sport') == 'Boxing' and f.get('is_main_event')]
+    box_counts = {}
+    for f in fights:
+        if f.get('sport') == 'Boxing':
+            k = (f.get('venue', ''), f.get('date', ''))
+            box_counts[k] = box_counts.get(k, 0) + 1
     seen = set()
     for fight in boxing_fights:
         # Must use the same slug rules as the boxing_event_detail matcher,
         # otherwise the sitemap emits URLs that 404 (e.g. names with periods)
         slug = f"{formatting._to_slug(fight['fighter1'])}-vs-{formatting._to_slug(fight['fighter2'])}-{fight['date']}"
+        pid = preview_service.boxing_preview_id(fight['fighter1'], fight['fighter2'], fight['date'])
+        if not page_worth_indexing(fight, box_counts.get((fight.get('venue', ''), fight.get('date', '')), 1) - 1, previews.get(pid)):
+            continue
         if slug not in seen:
             url = f"https://fightschedule.live/boxing-event/{slug}"
             pages.append({'loc': url, 'lastmod': versions.get(url, {}).get('lastmod', fight['date']), 'changefreq': 'daily', 'priority': '0.7'})

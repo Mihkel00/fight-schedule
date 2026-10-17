@@ -835,6 +835,8 @@ def fight_view(sport, main, groups, event, slug):
         'has_time': bool(start), 'notes': notes, 'result': result, 'pending_label': pending_label, 'in_grace': in_grace,
         'watch': watch, 'watch_plain': plain, 'slug': slug, 'gcal': _gcal(sport, e, event),
         'tape': _tape_view(sport, e), 'groups': view_groups, 'total': total, 'one_bout': total <= 1,
+        # sitemap + index, or noindex (the same rule the sitemap applies: design.worth_indexing)
+        'indexable': design.worth_indexing(e, len(e['undercard']), _tape_view(sport, e) is not None, bool(pv_event)),
         'any_res': past and any_res, 'pv_event': pv_event, 'section': section, 'crumb': crumb,
         # every decided bout gets a weight line when any has one, so the box scores' names align
         'box_kick': any(b['kick'] for g in view_groups for b in g['bouts'] if b.get('result') and not b['main']),

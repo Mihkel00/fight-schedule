@@ -512,7 +512,7 @@
         var cards = [].slice.call(duo.querySelectorAll(':scope > .hero'));
         if (cards.length !== 2) return;
         var phone = window.matchMedia('(max-width: 699.98px)');
-        var SLIDE = 6000;
+        var SLIDE = 8000;
         var names = cards.map(function (c) {
             var n = c.querySelectorAll('.lockup .n1, .lockup .n2');
             return n.length === 2 ? n[0].textContent.trim() + ' vs ' + n[1].textContent.trim() : 'the other fight';
