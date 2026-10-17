@@ -65,6 +65,20 @@ FAMILY_FIRST = {'Wang Cong', 'Zhang Weili', 'Yan Xiaonan', 'Song Yadong', 'Li Ji
 _NICK = re.compile(r'["“”‘’\'][^"“”‘’\']+["“”‘’\']')
 
 
+INDEX_MIN_OTHER_BOUTS = 4
+
+
+def worth_indexing(main, n_other, has_tape, has_preview):
+    """Whether a fight page has enough of its own to go to search engines (sitemap + index), or stays
+    `noindex` (rule B, owner 2026-10-17): never with a TBA fighter; otherwise a tale of the tape, an AI
+    preview, or a card with at least INDEX_MIN_OTHER_BOUTS other bouts. A thinner page says nothing the
+    schedule row does not. Re-evaluated on every render and scrape, so a page comes back on its own
+    once the opponent is named or a profile or preview arrives."""
+    if is_tba(main.get('fighter1')) or is_tba(main.get('fighter2')):
+        return False
+    return bool(has_tape or has_preview or n_other >= INDEX_MIN_OTHER_BOUTS)
+
+
 def is_tba(name):
     return (name or '').strip().upper() in ('', 'TBA', 'TBD')
 

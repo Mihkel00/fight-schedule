@@ -674,3 +674,13 @@ def test_every_odd_case_renders(client, meta):
     assert '<span class="bc">On <b>ProBoxTV</b></span>' in h and 'Start time not announced' in h
     assert '<span class="ln">Guerrero-</span><span class="ln">Martínez</span>' in h
     assert '<b class="code">NC</b>' in h
+
+
+def test_worth_indexing_rule_b():
+    """Owner 2026-10-17: never a TBA fighter; otherwise a tale of the tape, a preview, or 4+ other bouts."""
+    m = {'fighter1': 'A', 'fighter2': 'B'}
+    assert not D.worth_indexing({'fighter1': 'A', 'fighter2': 'TBA'}, 12, True, True)
+    assert not D.worth_indexing({'fighter1': 'TBD', 'fighter2': 'B'}, 12, True, True)
+    assert D.worth_indexing(m, 0, True, False) and D.worth_indexing(m, 0, False, True)
+    assert D.worth_indexing(m, 4, False, False) and not D.worth_indexing(m, 3, False, False)
+    assert not D.worth_indexing(m, 0, False, False)
