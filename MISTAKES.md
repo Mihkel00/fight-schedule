@@ -6,6 +6,28 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-10-31 — Christian Mbilli had no tale of the tape or photo on his Canelo fight day
+
+**What happened:** The boxing source spells the name "Christian Mbilli"; the
+Wikipedia article is "Christian M'billi". The profile job compared the two
+after a normalisation that turns an apostrophe into a space, so "mbilli" never
+equalled "m billi", the article counted as missing, and the fight page of the
+biggest boxing card of the month had no tape and no photo. The owner found it
+by opening the Wikipedia page himself. The "no article" result was then kept
+for a week, so even a fixed resolver would not have retried him.
+
+**Root cause:** The name comparison was built for diacritics and case, and
+tested on names where sources and Wikipedia agree on punctuation. Apostrophes
+and hyphens are exactly where sources disagree (O'Malley / OMalley,
+M'billi / Mbilli), and nobody listed the fighters whose lookup returned
+nothing to see whether the misses looked real. A negative cache with no
+version means a resolver fix only takes effect after the cache expires.
+
+**Rule:** Compare names ignoring punctuation and spacing as well as case and
+diacritics. When the resolver changes, negative cache entries from the old
+resolver are retried on the next run. Periodically list the fighters without
+an article and check the ones with punctuation or a big-fight context by hand.
+
 ## 2026-10-14 — No gap between the first two fights of the same day (phone)
 
 **What happened:** On phones, the first and second fight cards of a day

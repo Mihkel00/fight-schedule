@@ -31,6 +31,10 @@ RESULT_TTL_HOURS = 6            # ...but every 6h while one of their fights is r
 NEGATIVE_TTL_HOURS = 24 * 7     # retry unknown names weekly
 
 
+RESOLVER_VERSION = 2            # bump when resolve_title changes: "no article" entries from an
+                                # older resolver are retried on the next run instead of after the TTL
+
+
 PROFILE_JOB_MIN_INTERVAL_S = 10 * 60
 
 
@@ -88,6 +92,8 @@ def _profile_work_list(fights, profiles):
                 continue
             k = _profile_key(name)
             entry = profiles.get(k)
+            if entry and not entry.get('title') and entry.get('resolver') != RESOLVER_VERSION:
+                entry = None    # a miss from an older resolver: look again now
             if recent_iso <= d < today_iso:
                 # results pending: refresh often, and only for fighters with an article
                 if entry and entry.get('title') and _hours_since(entry.get('fetched_at', '')) < RESULT_TTL_HOURS:
@@ -131,6 +137,7 @@ def refresh_profiles(fights, max_fetch=150):
             profiles[k] = {
                 'name': name, 'sport': sport, 'title': title if profile else None,
                 'profile': profile, 'fetched_at': datetime.now().isoformat(),
+                'resolver': RESOLVER_VERSION,
             }
             fetched += 1
             if fetched % 10 == 0:
