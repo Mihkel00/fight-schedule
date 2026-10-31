@@ -36,6 +36,12 @@ def _norm(s):
     return re.sub(r'\s+', ' ', s).strip()
 
 
+def _loose(s):
+    """`_norm` without spaces, so punctuation inside a name does not matter:
+    "M'billi" == "Mbilli", "O'Malley" == "OMalley", "Jean-Pierre" == "Jean Pierre"."""
+    return _norm(s).replace(' ', '')
+
+
 def _strip_refs(text):
     """Remove Wikipedia citation markers like [ 1 ] and collapse whitespace."""
     text = re.sub(r'\[\s*\d+\s*\]', '', text or '')
@@ -49,8 +55,10 @@ def resolve_title(name, sport):
     """Find the Wikipedia article for a fighter. Returns a title or None.
 
     Accepts a search hit only if its title (ignoring a parenthetical such as
-    "(boxer)") equals the fighter's name, so unknown fighters return None
-    rather than a wrong article.
+    "(boxer)", and ignoring punctuation and spacing inside the name) equals
+    the fighter's name, so unknown fighters return None rather than a wrong
+    article. When no search hit matches, the name is tried as a title (which
+    follows redirects such as "Christian Mbilli" -> "Christian M'billi").
     """
     hint = _SPORT_HINT.get(sport, '')
     try:
@@ -58,20 +66,41 @@ def resolve_title(name, sport):
                                        'srsearch': f'{name} {hint}'.strip(),
                                        'srlimit': 5, 'format': 'json'},
                          headers=_UA, timeout=15)
-        hits = r.json().get('query', {}).get('search', [])
+        titles = [h.get('title', '') for h in r.json().get('query', {}).get('search', [])]
     except Exception:
         return None
+    found = _matching_title(name, titles)
+    if found:
+        return found
+    direct = _direct_title(name)
+    return _matching_title(name, [direct]) if direct else None
 
-    want = _norm(name)
-    for h in hits:
-        title = h.get('title', '')
-        base = _norm(re.sub(r'\s*\([^)]*\)\s*$', '', title))
+
+def _matching_title(name, titles):
+    want = _loose(name)
+    if not want:
+        return None
+    for title in titles:
+        base = _loose(re.sub(r'\s*\([^)]*\)\s*$', '', title))
         paren = re.search(r'\(([^)]*)\)\s*$', title)
         if base == want:
             # "Ryan Garcia" or "Ryan Garcia (boxer)" — but not "Ryan Garcia (politician)"
             if paren and not re.search(r'boxer|fighter|martial|kickboxer|wrestler', paren.group(1), re.I):
                 continue
             return title
+    return None
+
+
+def _direct_title(name):
+    """The canonical title the name itself leads to (following redirects), or None."""
+    try:
+        r = requests.get(_API, params={'action': 'query', 'titles': name, 'redirects': 1,
+                                       'format': 'json'}, headers=_UA, timeout=15)
+        for page in r.json().get('query', {}).get('pages', {}).values():
+            if 'missing' not in page and page.get('title'):
+                return page['title']
+    except Exception:
+        pass
     return None
 
 
@@ -263,7 +292,7 @@ def _same_person(a, b):
     na, nb = _norm(a), _norm(b)
     if not na or not nb:
         return False
-    if na == nb:
+    if na == nb or _loose(a) == _loose(b):
         return True
     # surname + first-initial match handles "Jose Ramirez" vs "José Carlos Ramírez"
     ta, tb = na.split(), nb.split()
