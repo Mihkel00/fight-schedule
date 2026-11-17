@@ -12,7 +12,8 @@
       the end line: breadcrumbs on the left, the photo credit on the right.
     < 1024 the same order in one column (the phone's poster is the home page's stacked poster).
 
-    JS HOOKS (static/js/site.js; without JavaScript every time and date reads in UTC):
+    JS HOOKS (static/js/site.js; without JavaScript every time reads in US Eastern / UK time and the date is the
+    US Eastern day, the way search results show fight times):
       time.fight-time[data-utc-time][data-date][data-format]   the poster column's time (long), the prelims, "since"
                                 and the fight card's group times (short): shown in the visitor's zone
       time.fdate[data-format="date"]   the date line: the visitor's local day
@@ -57,7 +58,7 @@
 {#- ---------------------------------------------------------------- the column beside the poster -#}
 {%- macro _note(kind, val) -%}
 {%- if kind == 'est' -%}<b class="est">Estimated</b>
-{%- elif kind == 'prelims' -%}Prelims {{ ui.time_at(val, 'short') }}
+{%- elif kind == 'prelims' -%}Prelims {{ ui.time_at(val, 'short', zone='us_uk') }}
 {%- else -%}{{ val }}
 {%- endif -%}
 {%- endmacro %}
@@ -77,7 +78,7 @@
 {%- set e = fv.e -%}
 {%- if fv.past -%}
 <aside class="when {{ fv.sc }} past" aria-label="Result"><div class="when-in">{{ _what(fv) }}
-<div class="wh-when"><p class="ld-date"><b>{{ ui.date_el(e) }}</b>{{ _rel(fv) }}</p></div>
+<div class="wh-when"><p class="ld-date"><b>{{ ui.date_el(e, zone='us_uk') }}</b>{{ _rel(fv) }}</p></div>
 <div class="wh-res">
 {%- if fv.result -%}
 <p class="ld-time res"><span class="tm"><b class="code">{{ fv.result.code }}</b></span></p>
@@ -89,20 +90,20 @@
 </div></div></aside>
 {%- else -%}
 <aside class="when {{ fv.sc }}{{ ' is-live' if fv.live }}" aria-label="When and where to watch"><div class="when-in">{{ _what(fv) }}
-<div class="wh-when"><p class="ld-date"><b>{{ ui.date_el(e) }}</b>
+<div class="wh-when"><p class="ld-date"><b>{{ ui.date_el(e, zone='us_uk') }}</b>
 {%- if fv.state == 'live' %}<span class="rel now">Under way</span>
 {%- elif fv.state == 'prelims' %}<span class="rel now">Prelims on</span>
 {%- else %}{{ _rel(fv) }}{% if fv.has_time %}<span class="cdw">{{ _NB }}<span class="cd" data-countdown="{{ e.date|iso_utc(e.time) }}">{{ fv.countdown }}</span></span>{% endif %}
 {%- endif %}</p>
-<p class="ld-time"><span class="tm">{% if fv.live %}<span class="live"><i class="ldot" aria-hidden="true"></i>Live</span>{% else %}{{ ui.time_el(e, 'long') }}{% endif %}</span></p>
+<p class="ld-time"><span class="tm">{% if fv.live %}<span class="live"><i class="ldot" aria-hidden="true"></i>Live</span>{% else %}{{ ui.time_el(e, 'long', zone='us_uk') }}{% endif %}</span></p>
 {%- if not fv.has_time %}<p class="ld-note">Start time not announced</p>
-{%- elif fv.state == 'live' %}<p class="ld-note">since {{ ui.time_el(e, 'short') }}</p>
-{%- elif fv.state == 'prelims' %}<p class="ld-note">Main card {{ ui.time_el(e, 'short') }}</p>
+{%- elif fv.state == 'live' %}<p class="ld-note">since {{ ui.time_el(e, 'short', zone='us_uk') }}</p>
+{%- elif fv.state == 'prelims' %}<p class="ld-note">Main card {{ ui.time_el(e, 'short', zone='us_uk') }}</p>
 {%- else %}<p class="ld-note" data-night{% if not fv.notes %} hidden{% endif %}>{% for kind, val in fv.notes %}{% if not loop.first %}<span class="ns" aria-hidden="true">{{ _NB }}</span>{% endif %}<span class="nt {{ kind }}">{{ _note(kind, val) }}</span>{% endfor %}</p>
 {%- endif %}
 {%- if fv.one_bout %}<p class="ld-note solo-n">Only the main event has been announced so far.</p>{% endif -%}
 </div>
-<p class="tz-copy">Times in <b class="tz-display">UTC</b></p>
+<p class="tz-copy">Times in <b class="tz-display">ET / UK</b></p>
 <div class="wh-go">{{ watch_panel(fv) }}
 {%- if fv.gcal %}<div class="cal-links"><a class="btn sec" href="{{ fv.gcal }}" target="_blank" rel="noopener">{{ ui.icon('cal') }}Add to calendar</a></div>{% endif -%}
 </div></div></aside>
@@ -156,7 +157,7 @@
 {%- if fv.past and not fv.any_res %}<p class="fc-note">{{ 'Results not in yet.' if fv.in_grace else 'No results on record.' }}</p>{% endif %}
 {%- for g in fv.groups %}
 <div class="fc-g">
-{%- if g.label %}<h3 class="fc-sub"><span class="gn">{{ g.label }}</span>{% if g.start and not fv.past %}<span class="tm">{{ ui.time_at(g.start, 'short') }}</span>{% endif %}</h3>{% endif %}
+{%- if g.label %}<h3 class="fc-sub"><span class="gn">{{ g.label }}</span>{% if g.start and not fv.past %}<span class="tm">{{ ui.time_at(g.start, 'short', zone='us_uk') }}</span>{% endif %}</h3>{% endif %}
 {%- set mains = g.bouts|selectattr('main')|list -%}
 {%- if fv.past -%}
 {%- set dec = g.bouts|rejectattr('main')|selectattr('result')|list -%}

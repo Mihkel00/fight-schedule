@@ -774,10 +774,24 @@ with sync_playwright() as p:
             pg = ctx.new_page()
             pg.goto(B + path, wait_until='networkidle')
             times = pg.eval_on_selector_all('time.fight-time[data-utc-time]', 'ts => ts.map(t => t.textContent)')
-            if not times or any(not t.endswith('UTC') for t in times):
-                fail(f'no JavaScript {path}: times {times[:3]} do not read UTC')
-            if (pg.text_content('#timezone-display') or '') != 'UTC':
-                fail(f'no JavaScript {path}: the time-zone label is not UTC')
+            fight_page = path.startswith(('/event/', '/boxing-event/'))
+            if fight_page:
+                # owner 2026-11-17: fight pages read like fight-time search results, "7pm ET / Sun 12am UK"
+                if not times or any(not re.fullmatch(r'~?\d{1,2}(:\d{2})?[ap]m ET / (\w{3} )?\d{1,2}(:\d{2})?[ap]m UK', t)
+                                    for t in times):
+                    fail(f'no JavaScript {path}: times {times[:3]} do not read ET / UK')
+                if (pg.text_content('.tz-display') or '') != 'ET / UK':
+                    fail(f'no JavaScript {path}: the time-zone label is not ET / UK')
+                big = pg.query_selector('.ld-time time.long')
+                if big and pg.evaluate("t => { const r = t.getBoundingClientRect(), z = t.querySelector('.z2'); "
+                                       "return !z || z.getBoundingClientRect().height * 3 > r.height || "
+                                       "t.scrollWidth > t.parentElement.parentElement.clientWidth + 1; }", big):
+                    fail(f'no JavaScript {path}: the big time is not one ET line with the UK line under it')
+            else:
+                if not times or any(not t.endswith('UTC') for t in times):
+                    fail(f'no JavaScript {path}: times {times[:3]} do not read UTC')
+                if (pg.text_content('#timezone-display') or '') != 'UTC':
+                    fail(f'no JavaScript {path}: the time-zone label is not UTC')
             if path in ('/', '/ufc') and not pg.locator('.tt.sched a.ev-main').count():
                 fail(f'no JavaScript {path}: no fight links')
             pg.close()

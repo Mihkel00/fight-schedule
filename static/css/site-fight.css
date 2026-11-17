@@ -456,3 +456,9 @@
   .bout:not(.bx) .bn, .bout:not(.bx) .bk, .bout.ptr .ptr-n { padding-left: 0; }
   .fcard .pl-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n k"; }
 }
+
+/* ---------------------------------------------------------------- THE BIG TIME WITHOUT JAVASCRIPT (2026-11-17)
+   Search engines and visitors without JavaScript read the poster's time as "7pm ET / Sun 12am UK": the US time
+   stays big, the UK time sits under it in text size. site.js replaces the whole text with the visitor's time. */
+.ld-time time .z2 { display: block; margin-top: calc(var(--tsz, 76px) * .3); font: 600 max(14px, calc(var(--tsz, 76px) * .22))/1.2 var(--f-t);
+  letter-spacing: 0; color: var(--t2); }
