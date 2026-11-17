@@ -113,11 +113,12 @@ def _surname(name):
 
 def _renamed_article(name, sport, titles, direct):
     """The fighter's article under a different title than the schedule's name, accepted only when
-    it has the same surname AND is a fighter's page (it has a fight-record table):
+    it has the same surname AND is a fighter's page (a results table with a method or round):
       - the page the name redirects to ("Shara Magomedov" -> "Sharabutdin Magomedov"),
       - the name plus a suffix ("Brian Norman" -> "Brian Norman Jr."),
       - a nickname written inside the name ('James "Jazza" Dickens' -> "Jazza Dickens").
-    A redirect to anything else ("Tyrone McKenna" -> "The Mighty Celt", a film) is rejected."""
+    A redirect to anything else ("Tyrone McKenna" -> "The Mighty Celt", a film) is rejected, and
+    so is another sport's results table ("Eric Sanchez" -> "Érick Sánchez", a footballer)."""
     want = _loose(name)
     candidates = [direct] if direct else []
     candidates += [t for t in titles
@@ -137,9 +138,16 @@ def _renamed_article(name, sport, titles, direct):
             continue
         seen.add(title)
         profile = fetch_profile(title, sport)
-        if profile and profile.get('fights'):
+        if is_fight_record(profile):
             return profile.get('title') or title
     return None
+
+
+def is_fight_record(profile):
+    """True when the page's results table is a fight record: rows carry a method or a round.
+    "Result" + "Opponent" alone also describe a footballer's international goals (Érick Sánchez)."""
+    return any((f.get('method') or '').strip() or (f.get('round') or '').strip()
+               for f in (profile or {}).get('fights') or [])
 
 
 def _matching_title(name, titles):

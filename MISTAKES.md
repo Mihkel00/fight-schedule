@@ -6,6 +6,23 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-11-17 — A footballer's article was accepted as boxer Eric Sanchez
+
+**What happened:** The new rule for articles under another title accepted
+"Érick Sánchez" for the boxer "Eric Sanchez". The check was "same surname and a
+fight-record table", and a table was recognised by "Result" and "Opponent"
+columns. A footballer's international-goals table has both. Found in the first
+production run, before the photo job took his picture.
+
+**Root cause:** The "is this a fighter's page" test was designed from fighter
+pages only and never run against a page it should reject other than the one
+known film. "Result + Opponent" describes any sport's results table.
+
+**Rule:** A test that accepts identity must be tried against near-misses from
+other sports before it ships. A fight record needs a fight-only column
+(method / type / round). After a resolver change, check the first production
+results for wrong positives, not only for the expected new finds.
+
 ## 2026-11-17 — A refused Wikipedia request was saved as "no article" for a week
 
 **What happened:** While checking fighters without a profile, Wikipedia

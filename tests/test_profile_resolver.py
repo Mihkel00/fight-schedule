@@ -168,3 +168,33 @@ def test_same_surname_without_a_fight_record_is_rejected(monkeypatch):
     monkeypatch.setattr(fp, 'fetch_profile', lambda t, s=None: fp.parse_profile(_PAGES_NO[t], t, s) if t in _PAGES_NO else None)
     monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Brian Norman Jr.']))
     assert fp.resolve_title('Brian Norman', 'Boxing') is None
+
+
+_GOALS = ('<table class="wikitable"><tr><th>No.</th><th>Date</th><th>Venue</th><th>Opponent</th><th>Score</th>'
+          '<th>Result</th><th>Competition</th></tr><tr><td>1</td><td>11 June 2022</td><td>X</td><td>Suriname</td>'
+          '<td>1–0</td><td>3–0</td><td>Nations League</td></tr></table>')
+
+
+def test_another_sports_results_table_is_not_a_fight_record(monkeypatch):
+    # 2026-11-17: "Eric Sanchez" (boxer) was matched to "Érick Sánchez", a footballer
+    _PAGES['Érick Sánchez'] = _GOALS
+    _REDIRECTS['Eric Sanchez'] = 'Érick Sánchez'
+    try:
+        monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Érick Sánchez']))
+        assert fp.resolve_title('Eric Sanchez', 'Boxing') is None
+    finally:
+        _PAGES.pop('Érick Sánchez'); _REDIRECTS.pop('Eric Sanchez')
+
+
+def test_renamed_titles_from_the_faulty_resolver_are_checked_again():
+    fresh = datetime.now().isoformat()
+    fights = [{'fighter1': 'Eric Sanchez', 'fighter2': 'Shara Magomedov', 'date': '2026-12-11', 'sport': 'Boxing'},
+              {'fighter1': 'Brian Ortega', 'fighter2': 'Joel Camilleri', 'date': '2026-12-11', 'sport': 'UFC'}]
+    profiles = {
+        'eric sanchez': {'title': 'Érick Sánchez', 'fetched_at': fresh, 'resolver': 3},          # renamed, v3: recheck
+        'shara magomedov': {'title': 'Sharabutdin Magomedov', 'fetched_at': fresh,
+                            'resolver': profile_store.RESOLVER_VERSION},                       # renamed, current: keep
+        'brian ortega': {'title': 'Brian Ortega', 'fetched_at': fresh, 'resolver': 3},          # exact title: keep
+        'joel camilleri': {'title': None, 'fetched_at': fresh, 'resolver': 3},                  # v3 miss: keep
+    }
+    assert [n for n, _ in profile_store._profile_work_list(fights, profiles)] == ['Eric Sanchez']
