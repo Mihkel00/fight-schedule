@@ -28,6 +28,14 @@ _UA = {'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'}
 _SPORT_HINT = {'Boxing': 'boxer', 'UFC': 'mixed martial artist'}
 
 
+# Letters that Unicode decomposition does not split into base + accent, so `_norm`
+# deletes them ("Michał Cieślak" -> "micha cieslak"). Applied only when comparing
+# names (`_loose`): `_norm` also builds stored profile and photo keys, which must not change.
+_FOLD = str.maketrans({'ł': 'l', 'Ł': 'L', 'ø': 'o', 'Ø': 'O', 'đ': 'd', 'Đ': 'D', 'ß': 'ss',
+                       'æ': 'ae', 'Æ': 'AE', 'œ': 'oe', 'Œ': 'OE', 'ı': 'i', 'þ': 'th', 'Þ': 'Th',
+                       'ð': 'd', 'Ð': 'D'})
+
+
 def _norm(s):
     """Lowercase, strip diacritics/punctuation, collapse spaces."""
     s = unicodedata.normalize('NFD', s or '')
@@ -38,8 +46,9 @@ def _norm(s):
 
 def _loose(s):
     """`_norm` without spaces, so punctuation inside a name does not matter:
-    "M'billi" == "Mbilli", "O'Malley" == "OMalley", "Jean-Pierre" == "Jean Pierre"."""
-    return _norm(s).replace(' ', '')
+    "M'billi" == "Mbilli", "O'Malley" == "OMalley", "Jean-Pierre" == "Jean Pierre",
+    "Michał" == "Michal"."""
+    return _norm((s or '').translate(_FOLD)).replace(' ', '')
 
 
 def _strip_refs(text):

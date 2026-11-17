@@ -70,3 +70,17 @@ def test_old_resolver_misses_are_retried_but_current_ones_wait():
     }
     names = [n for n, _ in profile_store._profile_work_list(fights, profiles)]
     assert names == ['Christian Mbilli']
+
+
+def test_letters_without_a_separate_accent_still_match(monkeypatch):
+    # "ł" does not decompose into "l" + accent; it must not be deleted (2026-11-17, Michał Cieślak)
+    get, _ = _fake_api(['Michał Cieślak (boxer)'])
+    monkeypatch.setattr(fp.requests, 'get', get)
+    assert fp.resolve_title('Michal Cieslak', 'Boxing') == 'Michał Cieślak (boxer)'
+    for a, b in [('Søren', 'Soren'), ('Đorđe', 'Dorde'), ('Strauß', 'Strauss'), ('Kılıç', 'Kilic')]:
+        assert fp._loose(a) == fp._loose(b), (a, b)
+
+
+def test_stored_keys_do_not_change():
+    # profile and photo keys are built from _norm; changing them would orphan saved data
+    assert fp._norm('Michał Cieślak') == 'micha cieslak'

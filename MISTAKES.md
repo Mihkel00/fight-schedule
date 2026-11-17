@@ -6,6 +6,22 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-11-17 — Letters like "ł" were deleted, so Michał Cieślak had no profile
+
+**What happened:** The source spells "Michal Cieslak"; the Wikipedia article is
+"Michał Cieślak (boxer)". The name normaliser removes accents by splitting a
+letter into base + accent, but "ł" (like ø, đ, ß, æ) is a letter of its own
+with no accent to split off, so it was deleted: "micha cieslak" never equalled
+"michal cieslak". Found while reviewing every upcoming fighter without a
+profile.
+
+**Root cause:** The 2026-10-31 fix for apostrophes was tested only on
+punctuation; nobody listed the letters that Unicode decomposition does not
+handle.
+
+**Rule:** Name comparison maps the non-decomposing Latin letters (ł ø đ ß æ
+œ ı þ ð) to ASCII. Stored keys stay as they are, because changing them would orphan saved profiles and photos. The resolver test covers these letters.
+
 ## 2026-10-31 — Christian Mbilli had no tale of the tape or photo on his Canelo fight day
 
 **What happened:** The boxing source spells the name "Christian Mbilli"; the
