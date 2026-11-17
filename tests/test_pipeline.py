@@ -127,3 +127,11 @@ def test_backfill_writes_a_manual_run(seeded_cache):
 def test_debug_check_part_runs_invariants(client):
     d = client.get('/api/debug/state?token=t&part=check').get_json()
     assert 'checks' in d and any(c['name'] == 'no_duplicate_bouts' for c in d['checks'])
+
+
+def test_debug_api_accepts_bearer_header(client):
+    ok = client.get('/api/debug/state?part=check', headers={'Authorization': 'Bearer t'})
+    assert ok.status_code == 200 and 'healthy' in ok.get_json()
+    assert client.get('/api/debug/state?part=check', headers={'Authorization': 'Bearer wrong'}).status_code == 404
+    assert client.get('/api/debug/state?part=check').status_code == 404
+    assert client.get('/api/debug/state?token=t&part=check').status_code == 200

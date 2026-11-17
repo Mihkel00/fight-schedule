@@ -223,7 +223,10 @@ _DEBUG_PARTS = {
 @app.route('/api/debug/state', methods=['GET', 'POST'])
 def debug_state():
     expected = os.environ.get('DEBUG_API_TOKEN', '')
-    provided = request.args.get('token', '')
+    # The token may come in the URL (?token=…) or as "Authorization: Bearer …", which keeps it
+    # out of URLs, logs and browser history.
+    auth = request.headers.get('Authorization', '')
+    provided = auth[7:].strip() if auth[:7].lower() == 'bearer ' else request.args.get('token', '')
     if not expected or not hmac.compare_digest(provided, expected):
         abort(404)
 
