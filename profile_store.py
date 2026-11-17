@@ -31,8 +31,12 @@ RESULT_TTL_HOURS = 6            # ...but every 6h while one of their fights is r
 NEGATIVE_TTL_HOURS = 24 * 7     # retry unknown names weekly
 
 
-RESOLVER_VERSION = 3            # bump when resolve_title changes: "no article" entries from an
-                                # older resolver are retried on the next run instead of after the TTL
+RESOLVER_VERSION = 4            # bump when resolve_title changes; see _needs_recheck
+
+
+NEGATIVE_RECHECK_BELOW = 3      # "no article" from resolvers older than this is looked at again
+RENAMED_RECHECK_BELOW = 4       # an article under another title from older resolvers is checked again
+                                # (v3 accepted a footballer's page for boxer Eric Sanchez)
 
 
 PROFILE_JOB_MIN_INTERVAL_S = 10 * 60
@@ -82,6 +86,16 @@ def _hours_since(ts):
         return 1e9
 
 
+def _needs_recheck(name, entry):
+    """An entry an older resolver decided and the current one might decide differently."""
+    if not entry:
+        return False
+    version = entry.get('resolver') or 0
+    if not entry.get('title'):
+        return version < NEGATIVE_RECHECK_BELOW
+    return version < RENAMED_RECHECK_BELOW and not _wiki._matching_title(name, [entry['title']])
+
+
 def _profile_work_list(fights, profiles):
     """Names to (re)fetch, most useful first: recent results, then soonest upcoming."""
     today = date.today()
@@ -95,8 +109,8 @@ def _profile_work_list(fights, profiles):
                 continue
             k = _profile_key(name)
             entry = profiles.get(k)
-            if entry and not entry.get('title') and entry.get('resolver') != RESOLVER_VERSION:
-                entry = None    # a miss from an older resolver: look again now
+            if _needs_recheck(name, entry):
+                entry = None    # decided by an older resolver: look again now
             if recent_iso <= d < today_iso:
                 # results pending: refresh often, and only for fighters with an article
                 if entry and entry.get('title') and _hours_since(entry.get('fetched_at', '')) < RESULT_TTL_HOURS:
@@ -133,6 +147,8 @@ def refresh_profiles(fights, max_fetch=150):
         for name, sport in work:
             k = _profile_key(name)
             existing = profiles.get(k) or {}
+            if existing.get('title') and _needs_recheck(name, existing):
+                existing = {}   # renamed title from an older resolver: resolve again from scratch
             try:
                 title = existing.get('title') or _wiki.resolve_title(name, sport)
                 profile = _wiki.fetch_profile(title, sport) if title else None
