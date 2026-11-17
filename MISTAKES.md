@@ -6,6 +6,26 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-11-17 — A refused Wikipedia request was saved as "no article" for a week
+
+**What happened:** While checking fighters without a profile, Wikipedia
+answered "429 too many requests" to about half the lookups. The resolver
+catches every error and returns None, the same value it returns for "no such
+article", and the fetcher does the same. The profile job then saves the
+fighter as having no article and does not look again for seven days. A
+fighter with a real article can therefore lose their tape and photo for a
+week because of one busy minute, and nobody sees it, because the result
+looks like a normal miss.
+
+**Root cause:** "The lookup failed" and "the answer is no" were folded into one
+return value for convenience, and the job's 0.3 s pause was never compared
+with Wikipedia's rate limits.
+
+**Rule:** A lookup that fails says so (an exception), separately from "not
+found". A job that caches negatives stores one only for a real "not found";
+on a refusal it keeps what it had and stops the run, and it paces requests
+well inside the source's limits.
+
 ## 2026-11-17 — Letters like "ł" were deleted, so Michał Cieślak had no profile
 
 **What happened:** The source spells "Michal Cieslak"; the Wikipedia article is

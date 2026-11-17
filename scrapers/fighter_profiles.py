@@ -28,6 +28,24 @@ _UA = {'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'}
 _SPORT_HINT = {'Boxing': 'boxer', 'UFC': 'mixed martial artist'}
 
 
+class WikiUnavailable(Exception):
+    """Wikipedia did not answer (rate limit, error page, timeout). Not the same as "no article":
+    callers must not cache it as a miss."""
+
+
+def _api(params, timeout=15):
+    try:
+        r = requests.get(_API, params={**params, 'format': 'json'}, headers=_UA, timeout=timeout)
+    except requests.RequestException as e:
+        raise WikiUnavailable(str(e)) from e
+    if r.status_code != 200:
+        raise WikiUnavailable(f'HTTP {r.status_code}')
+    try:
+        return r.json()
+    except ValueError as e:
+        raise WikiUnavailable('not JSON') from e
+
+
 # Letters that Unicode decomposition does not split into base + accent, so `_norm`
 # deletes them ("Michał Cieślak" -> "micha cieslak"). Applied only when comparing
 # names (`_loose`): `_norm` also builds stored profile and photo keys, which must not change.
@@ -68,16 +86,12 @@ def resolve_title(name, sport):
     the fighter's name, so unknown fighters return None rather than a wrong
     article. When no search hit matches, the name is tried as a title (which
     follows redirects such as "Christian Mbilli" -> "Christian M'billi").
+    Raises WikiUnavailable when Wikipedia does not answer, so a refusal is never
+    mistaken for "no article".
     """
     hint = _SPORT_HINT.get(sport, '')
-    try:
-        r = requests.get(_API, params={'action': 'query', 'list': 'search',
-                                       'srsearch': f'{name} {hint}'.strip(),
-                                       'srlimit': 5, 'format': 'json'},
-                         headers=_UA, timeout=15)
-        titles = [h.get('title', '') for h in r.json().get('query', {}).get('search', [])]
-    except Exception:
-        return None
+    j = _api({'action': 'query', 'list': 'search', 'srsearch': f'{name} {hint}'.strip(), 'srlimit': 5})
+    titles = [h.get('title', '') for h in j.get('query', {}).get('search', [])]
     found = _matching_title(name, titles)
     if found:
         return found
@@ -102,14 +116,10 @@ def _matching_title(name, titles):
 
 def _direct_title(name):
     """The canonical title the name itself leads to (following redirects), or None."""
-    try:
-        r = requests.get(_API, params={'action': 'query', 'titles': name, 'redirects': 1,
-                                       'format': 'json'}, headers=_UA, timeout=15)
-        for page in r.json().get('query', {}).get('pages', {}).values():
-            if 'missing' not in page and page.get('title'):
-                return page['title']
-    except Exception:
-        pass
+    j = _api({'action': 'query', 'titles': name, 'redirects': 1})
+    for page in j.get('query', {}).get('pages', {}).values():
+        if 'missing' not in page and page.get('title'):
+            return page['title']
     return None
 
 
@@ -282,14 +292,12 @@ def parse_profile(html, title=None, sport=None):
 
 
 def fetch_profile(title, sport=None):
-    """Fetch and parse the article for a resolved title. Returns dict or None."""
+    """Fetch and parse the article for a resolved title. Returns dict, or None when the page
+    does not exist or cannot be parsed. Raises WikiUnavailable when Wikipedia does not answer."""
+    payload = _api({'action': 'parse', 'page': title, 'prop': 'text', 'redirects': 1}, timeout=20)
+    if 'error' in payload:
+        return None
     try:
-        r = requests.get(_API, params={'action': 'parse', 'page': title, 'prop': 'text',
-                                       'format': 'json', 'redirects': 1},
-                         headers=_UA, timeout=20)
-        payload = r.json()
-        if 'error' in payload:
-            return None
         return parse_profile(payload['parse']['text']['*'], payload['parse'].get('title', title), sport)
     except Exception:
         return None

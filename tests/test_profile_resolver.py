@@ -8,8 +8,9 @@ from scrapers import fighter_profiles as fp
 
 
 class _Resp:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200):
         self._payload = payload
+        self.status_code = status_code
 
     def json(self):
         return self._payload
@@ -84,3 +85,36 @@ def test_letters_without_a_separate_accent_still_match(monkeypatch):
 def test_stored_keys_do_not_change():
     # profile and photo keys are built from _norm; changing them would orphan saved data
     assert fp._norm('Michał Cieślak') == 'micha cieslak'
+
+
+def test_refusal_is_not_no_article(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', lambda *a, **k: _Resp(None, status_code=429))
+    import pytest
+    with pytest.raises(fp.WikiUnavailable):
+        fp.resolve_title('Tyrone McKenna', 'Boxing')
+    with pytest.raises(fp.WikiUnavailable):
+        fp.fetch_profile('Tyrone McKenna', 'Boxing')
+
+
+def test_profile_job_keeps_data_and_stops_when_refused(monkeypatch):
+    fights = [{'fighter1': 'Tyrone McKenna', 'fighter2': 'Josh Blenkiron', 'date': '2026-12-19', 'sport': 'Boxing'}]
+    saved = {}
+    old = {'josh blenkiron': {'name': 'Josh Blenkiron', 'title': 'Josh Blenkiron', 'profile': {'record': '1-0'},
+                              'fetched_at': '2026-01-01T00:00:00'}}
+    calls = []
+
+    def refuse(name, sport):
+        calls.append(name)
+        raise fp.WikiUnavailable('HTTP 429')
+    monkeypatch.setattr(profile_store, 'load_profiles', lambda: dict(old))
+    monkeypatch.setattr(profile_store, 'save_profiles', lambda d: saved.update(d))
+    monkeypatch.setattr(profile_store._wiki, 'resolve_title', refuse)
+    monkeypatch.setattr(profile_store._wiki, 'fetch_profile', refuse)
+    monkeypatch.setattr(profile_store.time, 'sleep', lambda s: None)
+    monkeypatch.setattr(profile_store._images, 'autofill_new_fighters', lambda: None)
+    monkeypatch.setattr(profile_store.seo, 'sync_page_versions', lambda *a, **k: None)
+    profile_store._profile_job_state['running'] = False
+    profile_store._real_refresh_profiles(fights)
+    assert len(calls) == 1                                   # stopped at the first refusal
+    assert 'tyrone mckenna' not in saved                     # no "no article" stored for him
+    assert saved['josh blenkiron']['profile'] == {'record': '1-0'}   # existing data untouched
