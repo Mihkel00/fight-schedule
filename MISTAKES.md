@@ -6,6 +6,42 @@ points out a mistake or one is discovered — before fixing it.
 
 ---
 
+## 2026-11-17 — A refused Wikipedia request was saved as "no article" for a week
+
+**What happened:** While checking fighters without a profile, Wikipedia
+answered "429 too many requests" to about half the lookups. The resolver
+catches every error and returns None, the same value it returns for "no such
+article", and the fetcher does the same. The profile job then saves the
+fighter as having no article and does not look again for seven days. A
+fighter with a real article can therefore lose their tape and photo for a
+week because of one busy minute, and nobody sees it, because the result
+looks like a normal miss.
+
+**Root cause:** "The lookup failed" and "the answer is no" were folded into one
+return value for convenience, and the job's 0.3 s pause was never compared
+with Wikipedia's rate limits.
+
+**Rule:** A lookup that fails says so (an exception), separately from "not
+found". A job that caches negatives stores one only for a real "not found";
+on a refusal it keeps what it had and stops the run, and it paces requests
+well inside the source's limits.
+
+## 2026-11-17 — Letters like "ł" were deleted, so Michał Cieślak had no profile
+
+**What happened:** The source spells "Michal Cieslak"; the Wikipedia article is
+"Michał Cieślak (boxer)". The name normaliser removes accents by splitting a
+letter into base + accent, but "ł" (like ø, đ, ß, æ) is a letter of its own
+with no accent to split off, so it was deleted: "micha cieslak" never equalled
+"michal cieslak". Found while reviewing every upcoming fighter without a
+profile.
+
+**Root cause:** The 2026-10-31 fix for apostrophes was tested only on
+punctuation; nobody listed the letters that Unicode decomposition does not
+handle.
+
+**Rule:** Name comparison maps the non-decomposing Latin letters (ł ø đ ß æ
+œ ı þ ð) to ASCII. Stored keys stay as they are, because changing them would orphan saved profiles and photos. The resolver test covers these letters.
+
 ## 2026-10-31 — Christian Mbilli had no tale of the tape or photo on his Canelo fight day
 
 **What happened:** The boxing source spells the name "Christian Mbilli"; the

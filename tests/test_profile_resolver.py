@@ -8,8 +8,9 @@ from scrapers import fighter_profiles as fp
 
 
 class _Resp:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200):
         self._payload = payload
+        self.status_code = status_code
 
     def json(self):
         return self._payload
@@ -70,3 +71,100 @@ def test_old_resolver_misses_are_retried_but_current_ones_wait():
     }
     names = [n for n, _ in profile_store._profile_work_list(fights, profiles)]
     assert names == ['Christian Mbilli']
+
+
+def test_letters_without_a_separate_accent_still_match(monkeypatch):
+    # "ł" does not decompose into "l" + accent; it must not be deleted (2026-11-17, Michał Cieślak)
+    get, _ = _fake_api(['Michał Cieślak (boxer)'])
+    monkeypatch.setattr(fp.requests, 'get', get)
+    assert fp.resolve_title('Michal Cieslak', 'Boxing') == 'Michał Cieślak (boxer)'
+    for a, b in [('Søren', 'Soren'), ('Đorđe', 'Dorde'), ('Strauß', 'Strauss'), ('Kılıç', 'Kilic')]:
+        assert fp._loose(a) == fp._loose(b), (a, b)
+
+
+def test_stored_keys_do_not_change():
+    # profile and photo keys are built from _norm; changing them would orphan saved data
+    assert fp._norm('Michał Cieślak') == 'micha cieslak'
+
+
+def test_refusal_is_not_no_article(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', lambda *a, **k: _Resp(None, status_code=429))
+    import pytest
+    with pytest.raises(fp.WikiUnavailable):
+        fp.resolve_title('Tyrone McKenna', 'Boxing')
+    with pytest.raises(fp.WikiUnavailable):
+        fp.fetch_profile('Tyrone McKenna', 'Boxing')
+
+
+def test_profile_job_keeps_data_and_stops_when_refused(monkeypatch):
+    fights = [{'fighter1': 'Tyrone McKenna', 'fighter2': 'Josh Blenkiron', 'date': '2026-12-19', 'sport': 'Boxing'}]
+    saved = {}
+    old = {'josh blenkiron': {'name': 'Josh Blenkiron', 'title': 'Josh Blenkiron', 'profile': {'record': '1-0'},
+                              'fetched_at': '2026-01-01T00:00:00'}}
+    calls = []
+
+    def refuse(name, sport):
+        calls.append(name)
+        raise fp.WikiUnavailable('HTTP 429')
+    monkeypatch.setattr(profile_store, 'load_profiles', lambda: dict(old))
+    monkeypatch.setattr(profile_store, 'save_profiles', lambda d: saved.update(d))
+    monkeypatch.setattr(profile_store._wiki, 'resolve_title', refuse)
+    monkeypatch.setattr(profile_store._wiki, 'fetch_profile', refuse)
+    monkeypatch.setattr(profile_store.time, 'sleep', lambda s: None)
+    monkeypatch.setattr(profile_store._images, 'autofill_new_fighters', lambda: None)
+    monkeypatch.setattr(profile_store.seo, 'sync_page_versions', lambda *a, **k: None)
+    profile_store._profile_job_state['running'] = False
+    profile_store._real_refresh_profiles(fights)
+    assert len(calls) == 1                                   # stopped at the first refusal
+    assert 'tyrone mckenna' not in saved                     # no "no article" stored for him
+    assert saved['josh blenkiron']['profile'] == {'record': '1-0'}   # existing data untouched
+
+
+# Responses as Wikipedia gave them on 2026-11-17 (search titles, redirect targets), plus
+# whether each page has a fight-record table.
+_RECORD = ('<table class="wikitable"><tr><th>Res.</th><th>Record</th><th>Opponent</th><th>Method</th><th>Date</th></tr>'
+           '<tr><td>Win</td><td>1-0</td><td>X</td><td>KO</td><td>1 March 2025</td></tr></table>')
+_PAGES = {'Sharabutdin Magomedov': _RECORD, 'Brian Norman Jr.': _RECORD, 'Jazza Dickens': _RECORD,
+          'The Mighty Celt': '<p>The Mighty Celt is a 2005 film.</p>', 'Brian Norman Smith': _RECORD}
+_REDIRECTS = {'Shara Magomedov': 'Sharabutdin Magomedov', 'Tyrone McKenna': 'The Mighty Celt'}
+
+
+def _wiki_fake(search):
+    def get(url, params=None, headers=None, timeout=None):
+        if params.get('list') == 'search':
+            return _Resp({'query': {'search': [{'title': t} for t in search]}})
+        if params.get('action') == 'parse':
+            html = _PAGES.get(params['page'])
+            if html is None:
+                return _Resp({'error': {'code': 'missingtitle'}})
+            return _Resp({'parse': {'title': params['page'], 'text': {'*': html}}})
+        t = _REDIRECTS.get(params['titles']) or (params['titles'] if params['titles'] in _PAGES else None)
+        return _Resp({'query': {'pages': {'1': {'title': t} if t else {'missing': ''}}}})
+    return get
+
+
+def test_redirect_to_a_fighter_page_is_accepted(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['2026 in UFC']))
+    assert fp.resolve_title('Shara Magomedov', 'UFC') == 'Sharabutdin Magomedov'
+
+
+def test_redirect_to_a_film_is_rejected(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Belfast']))
+    assert fp.resolve_title('Tyrone McKenna', 'Boxing') is None
+
+
+def test_jr_suffix_on_the_article_is_accepted(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Brian Norman Jr.', 'Brian Norman Smith']))
+    assert fp.resolve_title('Brian Norman', 'Boxing') == 'Brian Norman Jr.'
+
+
+def test_nickname_inside_the_name(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Jazza Dickens', 'Dickens (surname)']))
+    assert fp.resolve_title('James “Jazza” Dickens', 'Boxing') == 'Jazza Dickens'
+
+
+def test_same_surname_without_a_fight_record_is_rejected(monkeypatch):
+    _PAGES_NO = {**_PAGES, 'Brian Norman Jr.': '<p>American politician.</p>'}
+    monkeypatch.setattr(fp, 'fetch_profile', lambda t, s=None: fp.parse_profile(_PAGES_NO[t], t, s) if t in _PAGES_NO else None)
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Brian Norman Jr.']))
+    assert fp.resolve_title('Brian Norman', 'Boxing') is None

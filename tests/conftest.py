@@ -22,6 +22,7 @@ import app as A  # noqa: E402
 A.app.config['WTF_CSRF_ENABLED'] = False
 import seo, profile_store  # noqa: E402  (patch where the functions live)
 seo.ping_indexnow = lambda u: None
+profile_store._real_refresh_profiles = profile_store.refresh_profiles   # for tests that fake Wikipedia
 profile_store.refresh_profiles = lambda *a, **k: None
 profile_store._maybe_start_profile_job = lambda f: None
 A._images.fill_credits = lambda *a, **k: 0    # no Wikimedia calls from tests

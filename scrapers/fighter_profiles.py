@@ -28,6 +28,32 @@ _UA = {'User-Agent': 'FightScheduleBot/1.0 (https://fightschedule.live)'}
 _SPORT_HINT = {'Boxing': 'boxer', 'UFC': 'mixed martial artist'}
 
 
+class WikiUnavailable(Exception):
+    """Wikipedia did not answer (rate limit, error page, timeout). Not the same as "no article":
+    callers must not cache it as a miss."""
+
+
+def _api(params, timeout=15):
+    try:
+        r = requests.get(_API, params={**params, 'format': 'json'}, headers=_UA, timeout=timeout)
+    except requests.RequestException as e:
+        raise WikiUnavailable(str(e)) from e
+    if r.status_code != 200:
+        raise WikiUnavailable(f'HTTP {r.status_code}')
+    try:
+        return r.json()
+    except ValueError as e:
+        raise WikiUnavailable('not JSON') from e
+
+
+# Letters that Unicode decomposition does not split into base + accent, so `_norm`
+# deletes them ("Michał Cieślak" -> "micha cieslak"). Applied only when comparing
+# names (`_loose`): `_norm` also builds stored profile and photo keys, which must not change.
+_FOLD = str.maketrans({'ł': 'l', 'Ł': 'L', 'ø': 'o', 'Ø': 'O', 'đ': 'd', 'Đ': 'D', 'ß': 'ss',
+                       'æ': 'ae', 'Æ': 'AE', 'œ': 'oe', 'Œ': 'OE', 'ı': 'i', 'þ': 'th', 'Þ': 'Th',
+                       'ð': 'd', 'Ð': 'D'})
+
+
 def _norm(s):
     """Lowercase, strip diacritics/punctuation, collapse spaces."""
     s = unicodedata.normalize('NFD', s or '')
@@ -38,8 +64,9 @@ def _norm(s):
 
 def _loose(s):
     """`_norm` without spaces, so punctuation inside a name does not matter:
-    "M'billi" == "Mbilli", "O'Malley" == "OMalley", "Jean-Pierre" == "Jean Pierre"."""
-    return _norm(s).replace(' ', '')
+    "M'billi" == "Mbilli", "O'Malley" == "OMalley", "Jean-Pierre" == "Jean Pierre",
+    "Michał" == "Michal"."""
+    return _norm((s or '').translate(_FOLD)).replace(' ', '')
 
 
 def _strip_refs(text):
@@ -59,21 +86,60 @@ def resolve_title(name, sport):
     the fighter's name, so unknown fighters return None rather than a wrong
     article. When no search hit matches, the name is tried as a title (which
     follows redirects such as "Christian Mbilli" -> "Christian M'billi").
+    Raises WikiUnavailable when Wikipedia does not answer, so a refusal is never
+    mistaken for "no article".
     """
     hint = _SPORT_HINT.get(sport, '')
-    try:
-        r = requests.get(_API, params={'action': 'query', 'list': 'search',
-                                       'srsearch': f'{name} {hint}'.strip(),
-                                       'srlimit': 5, 'format': 'json'},
-                         headers=_UA, timeout=15)
-        titles = [h.get('title', '') for h in r.json().get('query', {}).get('search', [])]
-    except Exception:
-        return None
+    j = _api({'action': 'query', 'list': 'search', 'srsearch': f'{name} {hint}'.strip(), 'srlimit': 5})
+    titles = [h.get('title', '') for h in j.get('query', {}).get('search', [])]
     found = _matching_title(name, titles)
     if found:
         return found
     direct = _direct_title(name)
-    return _matching_title(name, [direct]) if direct else None
+    if direct and _matching_title(name, [direct]):
+        return direct
+    return _renamed_article(name, sport, titles, direct)
+
+
+_SUFFIXES = ('jr', 'sr', 'ii', 'iii')
+_NICK = re.compile(r'\s*[“"]([^”"]+)[”"]\s*')
+
+
+def _surname(name):
+    toks = [t for t in _norm(re.sub(r'\s*\([^)]*\)\s*$', '', name or '').translate(_FOLD)).split()
+            if t not in _SUFFIXES]
+    return toks[-1] if toks else ''
+
+
+def _renamed_article(name, sport, titles, direct):
+    """The fighter's article under a different title than the schedule's name, accepted only when
+    it has the same surname AND is a fighter's page (it has a fight-record table):
+      - the page the name redirects to ("Shara Magomedov" -> "Sharabutdin Magomedov"),
+      - the name plus a suffix ("Brian Norman" -> "Brian Norman Jr."),
+      - a nickname written inside the name ('James "Jazza" Dickens' -> "Jazza Dickens").
+    A redirect to anything else ("Tyrone McKenna" -> "The Mighty Celt", a film) is rejected."""
+    want = _loose(name)
+    candidates = [direct] if direct else []
+    candidates += [t for t in titles
+                   if any(_loose(re.sub(r'\s*\([^)]*\)\s*$', '', t)) == want + sfx for sfx in _SUFFIXES)]
+    nick = _NICK.search(name or '')
+    if nick:
+        rest = _NICK.sub(' ', name).split()
+        for variant in (' '.join(rest), f'{nick.group(1)} {rest[-1]}' if rest else ''):
+            if variant:
+                candidates += [t for t in titles if _matching_title(variant, [t])]
+                d = _direct_title(variant)
+                if d:
+                    candidates.append(d)
+    seen = set()
+    for title in candidates:
+        if title in seen or _surname(title) != _surname(name):
+            continue
+        seen.add(title)
+        profile = fetch_profile(title, sport)
+        if profile and profile.get('fights'):
+            return profile.get('title') or title
+    return None
 
 
 def _matching_title(name, titles):
@@ -93,14 +159,10 @@ def _matching_title(name, titles):
 
 def _direct_title(name):
     """The canonical title the name itself leads to (following redirects), or None."""
-    try:
-        r = requests.get(_API, params={'action': 'query', 'titles': name, 'redirects': 1,
-                                       'format': 'json'}, headers=_UA, timeout=15)
-        for page in r.json().get('query', {}).get('pages', {}).values():
-            if 'missing' not in page and page.get('title'):
-                return page['title']
-    except Exception:
-        pass
+    j = _api({'action': 'query', 'titles': name, 'redirects': 1})
+    for page in j.get('query', {}).get('pages', {}).values():
+        if 'missing' not in page and page.get('title'):
+            return page['title']
     return None
 
 
@@ -273,14 +335,12 @@ def parse_profile(html, title=None, sport=None):
 
 
 def fetch_profile(title, sport=None):
-    """Fetch and parse the article for a resolved title. Returns dict or None."""
+    """Fetch and parse the article for a resolved title. Returns dict, or None when the page
+    does not exist or cannot be parsed. Raises WikiUnavailable when Wikipedia does not answer."""
+    payload = _api({'action': 'parse', 'page': title, 'prop': 'text', 'redirects': 1}, timeout=20)
+    if 'error' in payload:
+        return None
     try:
-        r = requests.get(_API, params={'action': 'parse', 'page': title, 'prop': 'text',
-                                       'format': 'json', 'redirects': 1},
-                         headers=_UA, timeout=20)
-        payload = r.json()
-        if 'error' in payload:
-            return None
         return parse_profile(payload['parse']['text']['*'], payload['parse'].get('title', title), sport)
     except Exception:
         return None

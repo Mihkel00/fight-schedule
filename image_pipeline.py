@@ -346,7 +346,10 @@ def espn_candidate(name, sport):
 
 def wikipedia_candidate(name, sport, title=None):
     """Lead image of the fighter's own Wikipedia article (exact-title identity)."""
-    title = title or fp.resolve_title(name, sport)
+    try:
+        title = title or fp.resolve_title(name, sport)
+    except fp.WikiUnavailable:
+        return None
     if not title:
         return None
     try:

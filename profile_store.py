@@ -31,11 +31,14 @@ RESULT_TTL_HOURS = 6            # ...but every 6h while one of their fights is r
 NEGATIVE_TTL_HOURS = 24 * 7     # retry unknown names weekly
 
 
-RESOLVER_VERSION = 2            # bump when resolve_title changes: "no article" entries from an
+RESOLVER_VERSION = 3            # bump when resolve_title changes: "no article" entries from an
                                 # older resolver are retried on the next run instead of after the TTL
 
 
 PROFILE_JOB_MIN_INTERVAL_S = 10 * 60
+
+
+WIKI_PAUSE_S = 1.5               # between fighters (2-3 requests each); Wikipedia refuses bursts with 429
 
 
 _profiles_lock = threading.Lock()
@@ -130,8 +133,13 @@ def refresh_profiles(fights, max_fetch=150):
         for name, sport in work:
             k = _profile_key(name)
             existing = profiles.get(k) or {}
-            title = existing.get('title') or _wiki.resolve_title(name, sport)
-            profile = _wiki.fetch_profile(title, sport) if title else None
+            try:
+                title = existing.get('title') or _wiki.resolve_title(name, sport)
+                profile = _wiki.fetch_profile(title, sport) if title else None
+            except _wiki.WikiUnavailable as e:
+                # Refused or no answer: keep what we had and stop; the next run picks up from here.
+                logger.warning(f"Profile job stopped after {fetched}: Wikipedia unavailable ({e})")
+                break
             if title and profile is None and existing.get('profile'):
                 profile = existing['profile']   # transient failure: keep what we had
             profiles[k] = {
@@ -143,7 +151,7 @@ def refresh_profiles(fights, max_fetch=150):
             if fetched % 10 == 0:
                 with _profiles_lock:
                     save_profiles(profiles)
-            time.sleep(0.3)
+            time.sleep(WIKI_PAUSE_S)
         with _profiles_lock:
             save_profiles(profiles)
         logger.info(f"Profile job done: {fetched} fetched, {sum(1 for p in profiles.values() if p.get('title'))} with articles")
