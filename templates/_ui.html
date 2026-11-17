@@ -7,9 +7,11 @@
 
     Index (arguments in brackets are optional):
       icon(name)                                 ext, ar, chev, search, up, cal
-      time_el(e, fmt[, cls, est])                the time contract; fmt: big (table), long (poster), short (notes),
-      time_at(dt, fmt[, cls])                    ... the same from a UTC datetime (prelims, main card)
-      date_el(e[, cls])                          the event's day as <time data-format="date"> ("Sat 17 Oct")
+      time_el(e, fmt[, cls, est, zone])          the time contract; fmt: big (table), long (poster), short (notes),
+                                                 zone='us_uk': the server text reads "7pm ET / 12am UK" (fight pages)
+      time_at(dt, fmt[, cls, zone])              ... the same from a UTC datetime (prelims, main card)
+      date_el(e[, cls, zone])                    the event's day as <time data-format="date"> ("Sat 17 Oct");
+                                                 zone='us_uk': the US Eastern day
       watch(e, placement[, cls, live, look])     /go/ link (look: 'row' | 'btn'); not a link for a broadcaster
                                                  without a provider; '' when none is announced
       kick(e[, cls])                             UFC: the event; boxing: weight / title (+ "Boxing," for readers)
@@ -52,23 +54,26 @@
 {%- endmacro %}
 
 {#- ---------------------------------------------------------------- times -#}
-{%- macro time_el(e, fmt, cls='', est=none) -%}
+{%- macro time_el(e, fmt, cls='', est=none, zone=none) -%}
 {%- set t = e.time if (e.time and e.time != 'TBA' and ':' in (e.time|string)) else none -%}
 {%- set est = e.time_estimated if est is none else est -%}
 {%- if t -%}
-<time class="fight-time {{ fmt }}{{ ' ' ~ cls if cls }}" datetime="{{ e.date|iso_utc(t) }}" data-utc-time="{{ t }}" data-date="{{ e.date }}" data-estimated="{{ 'true' if est else 'false' }}" data-format="{{ fmt }}">{{ '~' if est }}{{ t|utc_time }}</time>
+<time class="fight-time {{ fmt }}{{ ' ' ~ cls if cls }}" datetime="{{ e.date|iso_utc(t) }}" data-utc-time="{{ t }}" data-date="{{ e.date }}" data-estimated="{{ 'true' if est else 'false' }}" data-format="{{ fmt }}">{{ '~' if est }}
+{%- if zone == 'us_uk' and fmt == 'long' %}{% set zp = ds.us_uk_parts(e.date, t) %}{{ zp[0] }}<span class="z2"><span class="vh"> / </span>{{ zp[1] }}</span>
+{%- elif zone == 'us_uk' %}{{ ds.us_uk_time(e.date, t) }}
+{%- else %}{{ t|utc_time }}{% endif %}</time>
 {%- else -%}
 <time class="fight-time {{ fmt }} no-time tba{{ ' ' ~ cls if cls }}" datetime="{{ e.date }}" data-date="{{ e.date }}" data-format="{{ fmt }}">Time TBA</time>
 {%- endif -%}
 {%- endmacro %}
 
-{%- macro time_at(dt, fmt, cls='') -%}
-{{ time_el({'date': dt.strftime('%Y-%m-%d'), 'time': dt.strftime('%H:%M'), 'time_estimated': false}, fmt, cls) }}
+{%- macro time_at(dt, fmt, cls='', zone=none) -%}
+{{ time_el({'date': dt.strftime('%Y-%m-%d'), 'time': dt.strftime('%H:%M'), 'time_estimated': false}, fmt, cls, zone=zone) }}
 {%- endmacro %}
 
-{%- macro date_el(e, cls='') -%}
+{%- macro date_el(e, cls='', zone=none) -%}
 {%- set t = e.time if (e.time and e.time != 'TBA' and ':' in (e.time|string)) else none -%}
-<time class="fdate{{ ' ' ~ cls if cls }}" datetime="{{ e.date|iso_utc(t) }}" data-date="{{ e.date }}"{% if t %} data-utc-time="{{ t }}"{% endif %} data-format="date">{{ ds.day_short(ds.local_day(e)) }}</time>
+<time class="fdate{{ ' ' ~ cls if cls }}" datetime="{{ e.date|iso_utc(t) }}" data-date="{{ e.date }}"{% if t %} data-utc-time="{{ t }}"{% endif %} data-format="date">{{ ds.day_short(ds.us_day(e) if zone == 'us_uk' else ds.local_day(e)) }}</time>
 {%- endmacro %}
 
 {#- ---------------------------------------------------------------- small parts -#}

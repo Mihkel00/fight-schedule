@@ -462,6 +462,41 @@ def day_short(d):
     return f'{_DAYS[d.weekday()]} {d.day} {d.strftime("%b")}' if d else ''
 
 
+# Search engines and visitors without JavaScript read fight pages in US Eastern and UK time, the way fight sites
+# write it ("Sat 5 Dec · 7pm ET / 12am UK"); site.js still shows every time in the visitor's own zone.
+# (Owner 2026-11-17: UTC text and the UTC date lost US searchers, who saw "Sunday" for a Saturday night fight.)
+US_ET = ZoneInfo('America/New_York')
+UK = ZoneInfo('Europe/London')
+
+
+def clock12(dt):
+    """'7pm', '7:30pm', '12am'."""
+    h = dt.hour % 12 or 12
+    return f"{h}{f':{dt.minute:02d}' if dt.minute else ''}{'am' if dt.hour < 12 else 'pm'}"
+
+
+def us_uk_parts(date_iso, t):
+    """('7pm ET', 'Sun 12am UK') for a stored UTC date + time; the UK day is named when it differs from the
+    US day. None without a time."""
+    s = utc_start(date_iso, t)
+    if not s:
+        return None
+    us, uk = s.astimezone(US_ET), s.astimezone(UK)
+    day = '' if uk.date() == us.date() else f'{_DAYS[uk.weekday()]} '
+    return f'{clock12(us)} ET', f'{day}{clock12(uk)} UK'
+
+
+def us_uk_time(date_iso, t):
+    """'7pm ET / 12am UK' ('7pm ET / Sun 12am UK' when the UK day differs). None without a time."""
+    p = us_uk_parts(date_iso, t)
+    return ' / '.join(p) if p else None
+
+
+def us_day(e):
+    """The event's calendar day in US Eastern time (its stored date when it has no time)."""
+    return local_day(e, US_ET)
+
+
 def night_hint(dt):
     """A start between 00:00 and 05:59 is the night between two days:
     'Thu–Fri night' agrees with the date it is listed under and still says

@@ -43,13 +43,18 @@ def test_fight_page_is_on_the_redesign_frame(client):
     assert '<a class="nav-pill" href="/ufc" aria-current="true">UFC</a>' in h, 'the section the page belongs to'
 
 
-def test_times_are_utc_for_crawlers_and_the_prelims_keep_their_day(client):
+def test_times_read_et_and_uk_for_crawlers_and_the_prelims_keep_their_day(client):
+    # owner 2026-11-17: search results show fight times as "7pm ET / 12am UK"; <time datetime> stays UTC
     h = client.get(UFC_URL).get_data(as_text=True)
     ts = TIME.findall(h)
     assert ts
     for d, t in ts:
         assert re.fullmatch(r'\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}Z)?', d), d
-        assert t.endswith(' UTC') or t.endswith('TBA'), t
+        assert re.fullmatch(r'~?\d{1,2}(:\d{2})?[ap]m ET / (\w{3} )?\d{1,2}(:\d{2})?[ap]m UK', t) or t.endswith('TBA'), t
+    assert ' UTC<' not in h.split('<footer')[0].split('</header>')[-1]
+    assert '<b class="tz-display">ET / UK</b>' in h
+    # 00:00 UTC Sunday 4 Oct = 8pm ET Saturday 3 Oct: the date line is the US day
+    assert '>Sat 3 Oct</time>' in h and '>8pm ET / Sun 1am UK</time>' in h
     # the prelims start the evening before the main card (UTC): their own day, not the main card's
     sub = re.search(r'<span class="gn">Prelims</span><span class="tm"><time [^>]*datetime="([^"]+)"', h)
     assert sub and sub.group(1) == '2026-10-03T20:00Z'

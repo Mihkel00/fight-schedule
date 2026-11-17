@@ -471,7 +471,8 @@ def event_detail(event_slug):
     # SEO metadata
     event_data['page_title'], event_data['meta_description'] = seo.fight_page_seo(
         'UFC', matched_event_name, event_data.get('date') or main_event_fight['date'], main_event_fight.get('venue'),
-        main_event_fight.get('location'), bool(main_event_fight.get('is_past')))
+        main_event_fight.get('location'), bool(main_event_fight.get('is_past')),
+        time=main_event_fight.get('time'), estimated=bool(main_event_fight.get('time_estimated')))
     event_data['canonical_url'] = f"https://fightschedule.live/event/{event_slug}"
 
     fv = fight_view('UFC', main_event_fight, [('Main card', main_card_fights), ('Prelims', prelim_fights)],
@@ -574,7 +575,8 @@ def boxing_event_detail(event_slug):
         'Boxing', f"{main_event_fight['fighter1']} vs {main_event_fight['fighter2']}", main_event_fight['date'],
         main_event_fight.get('venue'), main_event_fight.get('location'), bool(main_event_fight.get('is_past')),
         kind=seo._boxing_kind(main_event_fight.get('weight_class')),
-        streaming=_aff.clean_broadcaster(main_event_fight.get('streaming')) if main_event_fight.get('streaming') else None)
+        streaming=_aff.clean_broadcaster(main_event_fight.get('streaming')) if main_event_fight.get('streaming') else None,
+        time=main_event_fight.get('time'), estimated=bool(main_event_fight.get('time_estimated')))
     event_data['canonical_url'] = f"https://fightschedule.live/boxing-event/{event_slug}"
 
     # the card in the view: the main event, then every other bout of the night once
@@ -746,7 +748,7 @@ def fight_view(sport, main, groups, event, slug):
         pre = design.prelim_start(e)
         if pre:
             notes.append(('lead', 'Main card'))
-        nh = design.night_hint(start)
+        nh = design.night_hint(start.astimezone(design.US_ET))   # as the server text reads it (ET)
         if nh:
             notes.append(('night', nh))
         if pre:

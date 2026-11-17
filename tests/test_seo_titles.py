@@ -57,3 +57,21 @@ def test_fight_page_h1_names_the_matchup(client):
     h = client.get('/event/ufc-332-silva-vs.-wang-2026-10-04').get_data(as_text=True)
     h1 = re.sub(r'\s+', ' ', re.sub('<[^>]+>', ' ', re.search(r'<h1[^>]*>(.*?)</h1>', h, re.S).group(1))).strip()
     assert h1.startswith('UFC 332') and ' vs ' in h1
+
+
+def test_upcoming_descriptions_give_the_us_date_and_et_uk_time():
+    import design
+    assert design.us_uk_time('2026-12-06', '00:00') == '7pm ET / Sun 12am UK'
+    assert design.us_uk_time('2026-11-21', '18:00') == '1pm ET / 6pm UK'
+    assert design.us_uk_time('2026-07-11', '02:30') == '10:30pm ET / Sat 3:30am UK'     # summer time on both sides
+    assert design.us_uk_time('2026-11-21', 'TBA') is None
+    t, d = A.fight_page_seo('Boxing', 'David Benavidez vs Michal Cieslak', '2026-12-06', 'Glendale, Ariz.',
+                            'Glendale, Ariz.', False, kind='cruiserweight bout', streaming='DAZN', time='00:00')
+    assert 'Saturday 5 December 2026' in d and 'Starts 7pm ET / Sun 12am UK.' in d and len(d) <= A.DESC_MAX
+    t, d = A.fight_page_seo('UFC', 'UFC Fight Night: Procházka vs. Stirling', '2026-11-21', 'ABHA Arena', 'Doha, Qatar',
+                            False, time='18:00', estimated=True)
+    assert 'Main card around 1pm ET / 6pm UK.' in d
+    t, d = A.fight_page_seo('Boxing', 'A vs B', '2026-12-06', 'X', 'X', True, time='00:00')      # past: no clock
+    assert 'ET' not in d and 'Sunday 6 December 2026' in d
+    t, d = A.fight_page_seo('Boxing', 'A vs B', '2026-12-06', 'X', 'X', False, time=None)       # no time yet
+    assert 'Start time in your time zone' in d

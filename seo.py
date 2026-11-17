@@ -199,10 +199,19 @@ def _boxing_kind(weight_class):
     return f"{division + ' ' if division else ''}{'title fight' if title else 'bout'}"
 
 
-def fight_page_seo(sport, name, date_iso, venue, location, is_past, kind=None, streaming=None):
+def fight_page_seo(sport, name, date_iso, venue, location, is_past, kind=None, streaming=None,
+                   time=None, estimated=False):
     """(page_title, meta_description) for a UFC event or boxing card page.
-    name: 'UFC 333: Volkanovski vs. Evloev' or 'Daniel Dubois vs Fabio Wardley'."""
-    when = _long_date(date_iso)
+    name: 'UFC 333: Volkanovski vs. Evloev' or 'Daniel Dubois vs Fabio Wardley'.
+    time: the stored UTC start ('00:00'); an upcoming page then gives the US Eastern date and the time in ET and UK
+    time, as search results for fight times do ('Saturday 5 December 2026 ... Starts 7pm ET / Sun 12am UK')."""
+    clock = None if is_past else design.us_uk_time(date_iso, time)
+    if clock:
+        d = design.us_day({'date': date_iso, 'time': time})
+        when = _long_date(d.isoformat())
+        clock = ('around ' if estimated else '') + clock
+    else:
+        when = _long_date(date_iso)
     place = _place_text(venue, location)
     sep = 'at' if sport == 'UFC' else 'in'
 
@@ -220,7 +229,10 @@ def fight_page_seo(sport, name, date_iso, venue, location, is_past, kind=None, s
             desc = desc_fit(lambda at: f"{name} results and the full fight card, {when}{at}.")
         else:
             title = _fit_title(f"{name}: Start Time, Date & Fight Card", f"{name}: Start Time & Card", name)
-            desc = desc_fit(lambda at: f"{name}, {when}{at}. Start times in your time zone, full card and where to watch.")
+            if clock:
+                desc = desc_fit(lambda at: f"{name}, {when}{at}. Main card {clock}. Full card and where to watch.")
+            else:
+                desc = desc_fit(lambda at: f"{name}, {when}{at}. Start times in your time zone, full card and where to watch.")
     else:
         if is_past:
             title = _fit_title(f"{name}: Result & Full Card", f"{name}: Result", name)
@@ -228,8 +240,12 @@ def fight_page_seo(sport, name, date_iso, venue, location, is_past, kind=None, s
         else:
             title = _fit_title(f"{name}: Start Time, Date & Full Card", f"{name}: Start Time & Card", name)
             watch = f" ({streaming})" if streaming else ''
-            desc = desc_fit(lambda at: f"{name}, {kind or 'bout'}, {when}{at}. Start time in your time zone, "
-                                       f"full undercard and where to watch{watch}.")
+            if clock:
+                desc = desc_fit(lambda at: f"{name}, {kind or 'bout'}, {when}{at}. Starts {clock}. "
+                                           f"Full undercard and where to watch{watch}.")
+            else:
+                desc = desc_fit(lambda at: f"{name}, {kind or 'bout'}, {when}{at}. Start time in your time zone, "
+                                           f"full undercard and where to watch{watch}.")
     return title, desc
 
 
