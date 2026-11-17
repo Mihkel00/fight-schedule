@@ -118,3 +118,53 @@ def test_profile_job_keeps_data_and_stops_when_refused(monkeypatch):
     assert len(calls) == 1                                   # stopped at the first refusal
     assert 'tyrone mckenna' not in saved                     # no "no article" stored for him
     assert saved['josh blenkiron']['profile'] == {'record': '1-0'}   # existing data untouched
+
+
+# Responses as Wikipedia gave them on 2026-11-17 (search titles, redirect targets), plus
+# whether each page has a fight-record table.
+_RECORD = ('<table class="wikitable"><tr><th>Res.</th><th>Record</th><th>Opponent</th><th>Method</th><th>Date</th></tr>'
+           '<tr><td>Win</td><td>1-0</td><td>X</td><td>KO</td><td>1 March 2025</td></tr></table>')
+_PAGES = {'Sharabutdin Magomedov': _RECORD, 'Brian Norman Jr.': _RECORD, 'Jazza Dickens': _RECORD,
+          'The Mighty Celt': '<p>The Mighty Celt is a 2005 film.</p>', 'Brian Norman Smith': _RECORD}
+_REDIRECTS = {'Shara Magomedov': 'Sharabutdin Magomedov', 'Tyrone McKenna': 'The Mighty Celt'}
+
+
+def _wiki_fake(search):
+    def get(url, params=None, headers=None, timeout=None):
+        if params.get('list') == 'search':
+            return _Resp({'query': {'search': [{'title': t} for t in search]}})
+        if params.get('action') == 'parse':
+            html = _PAGES.get(params['page'])
+            if html is None:
+                return _Resp({'error': {'code': 'missingtitle'}})
+            return _Resp({'parse': {'title': params['page'], 'text': {'*': html}}})
+        t = _REDIRECTS.get(params['titles']) or (params['titles'] if params['titles'] in _PAGES else None)
+        return _Resp({'query': {'pages': {'1': {'title': t} if t else {'missing': ''}}}})
+    return get
+
+
+def test_redirect_to_a_fighter_page_is_accepted(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['2026 in UFC']))
+    assert fp.resolve_title('Shara Magomedov', 'UFC') == 'Sharabutdin Magomedov'
+
+
+def test_redirect_to_a_film_is_rejected(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Belfast']))
+    assert fp.resolve_title('Tyrone McKenna', 'Boxing') is None
+
+
+def test_jr_suffix_on_the_article_is_accepted(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Brian Norman Jr.', 'Brian Norman Smith']))
+    assert fp.resolve_title('Brian Norman', 'Boxing') == 'Brian Norman Jr.'
+
+
+def test_nickname_inside_the_name(monkeypatch):
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Jazza Dickens', 'Dickens (surname)']))
+    assert fp.resolve_title('James “Jazza” Dickens', 'Boxing') == 'Jazza Dickens'
+
+
+def test_same_surname_without_a_fight_record_is_rejected(monkeypatch):
+    _PAGES_NO = {**_PAGES, 'Brian Norman Jr.': '<p>American politician.</p>'}
+    monkeypatch.setattr(fp, 'fetch_profile', lambda t, s=None: fp.parse_profile(_PAGES_NO[t], t, s) if t in _PAGES_NO else None)
+    monkeypatch.setattr(fp.requests, 'get', _wiki_fake(['Brian Norman Jr.']))
+    assert fp.resolve_title('Brian Norman', 'Boxing') is None

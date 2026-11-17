@@ -96,7 +96,50 @@ def resolve_title(name, sport):
     if found:
         return found
     direct = _direct_title(name)
-    return _matching_title(name, [direct]) if direct else None
+    if direct and _matching_title(name, [direct]):
+        return direct
+    return _renamed_article(name, sport, titles, direct)
+
+
+_SUFFIXES = ('jr', 'sr', 'ii', 'iii')
+_NICK = re.compile(r'\s*[“"]([^”"]+)[”"]\s*')
+
+
+def _surname(name):
+    toks = [t for t in _norm(re.sub(r'\s*\([^)]*\)\s*$', '', name or '').translate(_FOLD)).split()
+            if t not in _SUFFIXES]
+    return toks[-1] if toks else ''
+
+
+def _renamed_article(name, sport, titles, direct):
+    """The fighter's article under a different title than the schedule's name, accepted only when
+    it has the same surname AND is a fighter's page (it has a fight-record table):
+      - the page the name redirects to ("Shara Magomedov" -> "Sharabutdin Magomedov"),
+      - the name plus a suffix ("Brian Norman" -> "Brian Norman Jr."),
+      - a nickname written inside the name ('James "Jazza" Dickens' -> "Jazza Dickens").
+    A redirect to anything else ("Tyrone McKenna" -> "The Mighty Celt", a film) is rejected."""
+    want = _loose(name)
+    candidates = [direct] if direct else []
+    candidates += [t for t in titles
+                   if any(_loose(re.sub(r'\s*\([^)]*\)\s*$', '', t)) == want + sfx for sfx in _SUFFIXES)]
+    nick = _NICK.search(name or '')
+    if nick:
+        rest = _NICK.sub(' ', name).split()
+        for variant in (' '.join(rest), f'{nick.group(1)} {rest[-1]}' if rest else ''):
+            if variant:
+                candidates += [t for t in titles if _matching_title(variant, [t])]
+                d = _direct_title(variant)
+                if d:
+                    candidates.append(d)
+    seen = set()
+    for title in candidates:
+        if title in seen or _surname(title) != _surname(name):
+            continue
+        seen.add(title)
+        profile = fetch_profile(title, sport)
+        if profile and profile.get('fights'):
+            return profile.get('title') or title
+    return None
 
 
 def _matching_title(name, titles):

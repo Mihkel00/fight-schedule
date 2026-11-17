@@ -31,7 +31,7 @@ RESULT_TTL_HOURS = 6            # ...but every 6h while one of their fights is r
 NEGATIVE_TTL_HOURS = 24 * 7     # retry unknown names weekly
 
 
-RESOLVER_VERSION = 2            # bump when resolve_title changes: "no article" entries from an
+RESOLVER_VERSION = 3            # bump when resolve_title changes: "no article" entries from an
                                 # older resolver are retried on the next run instead of after the TTL
 
 
